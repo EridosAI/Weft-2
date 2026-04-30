@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Checkpoints and large artifacts
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Logs
+logs/*.log
+logs/*.pid
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Local-only state
+*.local
+.env
+
+# Results — keep .json and .md, ignore raw dumps
+results/**/*.npy
+results/**/*.npz
