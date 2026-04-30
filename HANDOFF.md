@@ -84,3 +84,37 @@ If the reviewer concludes the seed-7 bank's lack of instance variation is the bi
 - Working tree: clean.
 - Push hold: in effect.
 - No running jobs.
+
+---
+
+## DINOv2 substrate verification batch — STOP (2026-04-30)
+
+The DINOv2 substrate verification batch was issued to re-run the §5
+protocol against DINOv2 ViT-L/14 on the seed-7 furniture-run frames,
+for direct comparison to the V-JEPA 2 result.
+
+**Stop trigger.** Per the batch §2.1 and §6, the seed-7 furniture-run
+**source RGB frames are not retained** in the previous repo. Only
+encoded V-JEPA 2 embeddings, per-frame annotations, and metadata are
+present. The original training script encoded each frame in the
+forward pass and discarded the pixels. DINOv2 cannot be evaluated
+without re-encoding, and re-encoding requires source pixels.
+
+**Re-rendering is feasible but not authorised by this batch.** The
+furniture-run env is deterministic (fixed house seed, fixed Teleport
+poses, deterministic AI2-THOR rendering pipeline) — re-running the
+route would produce bit-identical pixels for every dwell frame.
+Estimated cost: ~2.5 hr cuda + AI2-THOR time + ~1–20 GB disk
+(format-dependent). The batch instructions chose to make the
+absence-of-frames a hard stop rather than authorise the re-render.
+
+**Full evidence + reviewer options** in `STOP_REPORT.md` at the
+project root.
+
+**Resumption requires one of the four reviewer options in the STOP
+report:** authorise re-rendering at full scope, authorise a smaller
+deliberate probe set (which would also address the V-JEPA 2
+verification's Check 1 degeneracy), defer DINOv2 verification, or
+provide the source frames if they exist outside the project tree.
+
+*STOP commit: pending.*
