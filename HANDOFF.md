@@ -18,22 +18,69 @@ The previous repo stays in place as historical record. This repo does not edit i
 
 - Repo bootstrapped per `instructions/` setup batch.
 - `CODING_STANDARDS.md`, `research_operations_v1.md`, `WEFT_INNER_PAM_v0_Spec.md` carried forward.
-- No implementation code yet.
+- Encoder substrate verification (per `instructions/ENCODER_SUBSTRATE_VERIFICATION.md`) **complete — verdict FAIL.**
+
+---
+
+## Encoder substrate verification — verdict FAIL (2026-04-30)
+
+Read-only protocol from `WEFT_INNER_PAM_v0_Spec.md` §5 against the
+seed-7 furniture-run bank in the previous repo. Headline numbers from
+`results/encoder_verification/verification_data.json`; full breakdown
+in `results/encoder_verification/ENCODER_VERIFICATION_REPORT.md`.
+
+| check | aggregate | starting threshold | result |
+|---|---:|---|---|
+| 1. cross-instance stability (mean cosine, n = 250 pairs across 5 items) | `1.0000` | `> 0.75` | PASS (degenerate — see report §7) |
+| 2. cross-element distinguishability (mean cosine, n = 1000 pairs across 20 ordered pairs) | `0.8697` | `< 0.60` | **FAIL** (load-bearing) |
+| 3. combined gap (Check 1 − Check 2) | `0.1303` | `≥ 0.15` | FAIL |
+
+**Verdict: FAIL.** Encoder does not meet the protocol on this bank.
+
+**Why FAIL is the right call (load-bearing finding):** Check 2 is the
+real failure — V-JEPA 2 mean-pool produces cross-element cosines
+ranging `0.8347` (Bed ↔ Dresser) to `0.9210` (DiningTable ↔ Sofa) for
+the 5 furniture items in seed 7's house. All 10 distinct cross-pair
+values are far above the 0.60 starting threshold. This is consistent
+with the prior Stage 0b room-distinctness diagnostics: V-JEPA 2 mean-
+pool's geometry is dominated by scene context, not the recurring
+unit. Check 2's failure does *not* depend on Check 1.
+
+**Caveat — Check 1 is degenerate, not informative.** The seed-7
+furniture-run dwell mechanism teleports the agent to the *exact same
+pose* every dwell frame, every loop, so AI2-THOR renders bit-identical
+pixels and V-JEPA 2 (deterministic, frozen) produces bit-identical
+embeddings. The within-instance cosine of `1.0000` with std `0.0000`
+across all 50 sampled pairs at all 5 items reflects this — it is
+measuring rendering determinism, not encoder stability under natural
+instance variation. Spec §5.1 was written assuming instances would
+carry natural variation (different angles, lighting, etc.); this bank
+does not provide that. Same artifact appears in §3's per-pair std =
+`0.0000` for every ordered pair: with bit-identical embeddings within
+an item, sampling 50 pairs reduces to one cosine repeated 50 times.
+
+The verdict therefore stands on Check 2 alone. Check 3's gap of
+`0.1303` corroborates rather than adds independent signal: it is the
+1.0 (degenerate) minus the 0.87 (real). A non-degenerate Check 1 (on
+varied instances) would lower its mean and shrink the gap further.
+
+**Per spec §5.5,** v0 implementation does not proceed on this encoder
+without substrate work. The decision (alternative frozen encoder,
+fine-tuning, redefining the recurring unit) is human review, not
+autonomous.
 
 ---
 
 ## Next immediate action
 
-Run the encoder substrate verification per `instructions/ENCODER_SUBSTRATE_VERIFICATION.md`. This is a read-only diagnostic on the previous repo's seed 7 furniture-run memory bank — no new training, no new data.
+Human review of `results/encoder_verification/ENCODER_VERIFICATION_REPORT.md`. The verdict is FAIL on the seed-7 bank; the §5.5 options (alternative encoder, fine-tuning, reframing the recurring unit) are decided in review. No autonomous progression.
 
-The verification's verdict (Pass / Pass-after-recalibration / Borderline / Fail) determines whether v0 implementation can proceed with frozen V-JEPA 2 mean-pool as the encoder, or whether encoder substitution is needed first.
-
-Path to previous bank (read-only access): `/mnt/c/Users/Jason/Desktop/Eridos/Weft/results/stage_0b_furniture/main/` and the corresponding memory bank snapshot location documented in the previous repo's HANDOFF.md.
+If the reviewer concludes the seed-7 bank's lack of instance variation is the binding limitation rather than V-JEPA 2 itself, the natural follow-up is a re-run of the protocol on a bank where instances carry natural variation (e.g., the perturbed-loop frames at `/mnt/c/Users/Jason/Desktop/Eridos/Weft/results/stage_0b_furniture/perturbed/`, or new data with deliberate per-loop perturbation). That is a *new* batch under §5 of the spec, not a recalibration of this one.
 
 ---
 
 ## Operational state
 
-- Working tree: clean except newly-created files in this bootstrap.
-- Push hold: in effect (carried forward from previous repo discipline).
+- Working tree: clean.
+- Push hold: in effect.
 - No running jobs.
