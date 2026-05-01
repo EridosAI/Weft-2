@@ -100,21 +100,82 @@ present. The original training script encoded each frame in the
 forward pass and discarded the pixels. DINOv2 cannot be evaluated
 without re-encoding, and re-encoding requires source pixels.
 
-**Re-rendering is feasible but not authorised by this batch.** The
-furniture-run env is deterministic (fixed house seed, fixed Teleport
-poses, deterministic AI2-THOR rendering pipeline) — re-running the
-route would produce bit-identical pixels for every dwell frame.
-Estimated cost: ~2.5 hr cuda + AI2-THOR time + ~1–20 GB disk
-(format-dependent). The batch instructions chose to make the
-absence-of-frames a hard stop rather than authorise the re-render.
+**Resolution:** The reviewer authorised a full re-render (next entry).
 
-**Full evidence + reviewer options** in `STOP_REPORT.md` at the
-project root.
+*STOP commit:* `aefa1bc`.
 
-**Resumption requires one of the four reviewer options in the STOP
-report:** authorise re-rendering at full scope, authorise a smaller
-deliberate probe set (which would also address the V-JEPA 2
-verification's Check 1 degeneracy), defer DINOv2 verification, or
-provide the source frames if they exist outside the project tree.
+---
+
+## Seed-7 furniture re-render with frames saved — DETERMINISM CHECK FAIL (2026-05-01)
+
+The reviewer authorised re-rendering the seed-7 furniture run with
+frames written to disk so DINOv2 (and any future encoder) could be
+verified on the same substrate the V-JEPA 2 verification analysed.
+
+**The re-render itself completed cleanly:**
+  - 100 000 frames saved as `frame_{idx:08d}.png` to
+    `data/seed7_furniture_frames/` (~5.2 GB, gitignored).
+  - 218 loops completed — matching the original run's loop count
+    exactly.
+  - Wall-clock 11 219 s (~3.1 hr); ~5 min slower than the original
+    due to PNG-write overhead.
+  - `frame_annotations.jsonl` is **bit-identical** to the original
+    run's (same md5 `6f241260...`); the explorer's trajectory and
+    per-frame metadata are deterministic.
+  - Modified script committed in previous repo as `98578d3`
+    (`feat(furniture-rerun): save frames during forward pass for
+    verification reuse`) — opt-in flags only; original behaviour
+    preserved when neither flag is set.
+
+**Determinism check FAILED at the spec'd 0.9999 threshold.** Re-encoded
+50 sampled frames (10 per viewing position) through the same V-JEPA 2
+checkpoint; compared cosine to original bank entries.
+
+| viewing position | object type | room | n samples | cos (mean = min = max) | < 0.9999 |
+|---:|---|---|---:|---:|---:|
+| 1 | Bed | Bedroom | 10 | `1.000000` | 0/10 |
+| 2 | DiningTable | Bedroom | 10 | `1.000000` | 0/10 |
+| 3 | Dresser | LivingRoom | 10 | `0.999188` | **10/10** |
+| 4 | Sofa | LivingRoom | 10 | `0.999481` | **10/10** |
+| 5 | Television | Bedroom | 10 | `1.000000` | 0/10 |
+
+**Pattern:** Bedroom items render bit-identically across runs (cos =
+1.000000 exactly). LivingRoom items 3 and 4 differ from the original
+by a small, item-specific, run-constant amount — every sampled
+frame at item 3 has cos `0.999188` exactly; every sampled frame at
+item 4 has cos `0.999481` exactly. The re-render is deterministic
+*within* a run (frames at the same item across loops are bit-
+identical, consistent with the V-JEPA 2 verification's degenerate
+Check 1) but differs from the original *between* runs at the two
+LivingRoom items.
+
+**Most plausible cause:** scene-state-dependent rendering on first
+entry to LivingRoom (shader compilation order, asset upload,
+physics settling on instantiation). Bedroom is the spawn room and
+warms before LivingRoom is ever rendered, so its rendering is stable
+across runs. Once LivingRoom is "warm" within a run, it renders
+deterministically — explaining the within-run consistency.
+Numerically, the cosines correspond to L2 distances of 0.040 / 0.032
+between unit vectors, ≈14–17× closer to "identical" than typical
+inter-furniture cross-element distances (~0.55) — but the threshold
+is 0.9999 and the protocol's stop trigger is "any sample below". Per
+spec §5.5 / batch §9, recalibration is reviewer-only; the script does
+not recalibrate the threshold autonomously.
+
+**Per the batch §5 and §8, this is an unconditional stop.**
+
+**Full evidence + four reviewer options** in `STOP_REPORT.md` at the
+project root. Options range from a one-time threshold relaxation
+(items 3 and 4 cluster near `0.999`, well above any plausible
+"different content" floor) to investigating AI2-THOR non-determinism,
+running DINOv2 on the re-render with the caveat documented, or
+treating the V-JEPA 2 result as final and skipping alternative-encoder
+verification on this bank.
+
+**Operational state.**
+  - Working tree: clean modulo this stop's commits.
+  - `data/seed7_furniture_frames/` (5.2 GB), `data/seed7_furniture_rerender_aux/` (411 MB) gitignored.
+  - Push hold: in effect.
+  - No running jobs.
 
 *STOP commit: pending.*

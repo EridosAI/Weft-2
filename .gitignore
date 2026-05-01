@@ -38,3 +38,7 @@ Thumbs.db
 # Results — keep .json and .md, ignore raw dumps
 results/**/*.npy
 results/**/*.npz
+
+# Data dir — bulk artifacts (rendered frames, aux training outputs, encoder cache).
+# Keep small reference files via explicit !pattern overrides if/when added.
+data/
