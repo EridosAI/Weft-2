@@ -75,3 +75,7 @@ Reviewer chooses one of the four options above and issues a follow-up batch. No 
 ---
 
 *Following the batch instructions §6: HANDOFF will be updated with this stop, this report committed in the new repo, and no further work performed.*
+
+---
+
+**Superseded.** This STOP_REPORT was produced under the original 0.9999 threshold. Reviewer recalibrated to 0.999 per `WEFT_INNER_PAM_v0_Spec.md` §5.5 on 2026-05-12. Final verdict: PASS-AFTER-RECALIBRATION. See [`results/frame_rerender/RERENDER_REPORT.md`](results/frame_rerender/RERENDER_REPORT.md) for the recalibration justification and final verdict.

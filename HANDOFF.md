@@ -73,15 +73,15 @@ autonomous.
 
 ## Next immediate action
 
-Human review of `results/encoder_verification/ENCODER_VERIFICATION_REPORT.md`. The verdict is FAIL on the seed-7 bank; the §5.5 options (alternative encoder, fine-tuning, reframing the recurring unit) are decided in review. No autonomous progression.
+**DINOv2 substrate verification batch** against `data/seed7_furniture_frames/`. The re-render is verified PASS-AFTER-RECALIBRATION (2026-05-12 entry below); frames are usable substrate. The batch should record at the start the documented caveat from [`results/frame_rerender/RERENDER_REPORT.md`](results/frame_rerender/RERENDER_REPORT.md) §note-for-next-batch: 2 of 5 viewing positions (items 3 Dresser, 4 Sofa, both LivingRoom) carry constant per-item offsets from the original V-JEPA 2 bank at the `0.0005`–`0.0008` cosine level — accepted as immaterial for substrate-verification purposes, recorded in case it surfaces in downstream analysis.
 
-If the reviewer concludes the seed-7 bank's lack of instance variation is the binding limitation rather than V-JEPA 2 itself, the natural follow-up is a re-run of the protocol on a bank where instances carry natural variation (e.g., the perturbed-loop frames at `/mnt/c/Users/Jason/Desktop/Eridos/Weft/results/stage_0b_furniture/perturbed/`, or new data with deliberate per-loop perturbation). That is a *new* batch under §5 of the spec, not a recalibration of this one.
+The original V-JEPA 2 substrate verification FAIL on the seed-7 bank (see entry above) stands as historical record. The §5.5 path chosen by the reviewer was (a) alternative encoder — DINOv2 — which is the next batch.
 
 ---
 
 ## Operational state
 
-- Working tree: clean.
+- Working tree: clean modulo this batch's pending commit.
 - Push hold: in effect.
 - No running jobs.
 
@@ -106,7 +106,23 @@ without re-encoding, and re-encoding requires source pixels.
 
 ---
 
-## Seed-7 furniture re-render with frames saved — DETERMINISM CHECK FAIL (2026-05-01)
+## Seed-7 furniture re-render with frames saved — PASS-AFTER-RECALIBRATION (2026-05-12)
+
+**Final verdict updated 2026-05-12.** Reviewer applied a one-time
+threshold recalibration from 0.9999 to 0.999 under spec §5.5; all 50
+sampled frames pass the recalibrated threshold (`cos_min = 0.999188`).
+Recalibration justification and final report:
+[`results/frame_rerender/RERENDER_REPORT.md`](results/frame_rerender/RERENDER_REPORT.md).
+Original stop record preserved in
+[`STOP_REPORT.md`](STOP_REPORT.md) (commit `56050cc`), now marked
+superseded. Frames at [`data/seed7_furniture_frames/`](data/seed7_furniture_frames/)
+are usable substrate for downstream encoder verification.
+
+The audit trail below is preserved from the original 2026-05-01 entry.
+
+---
+
+### Original entry (2026-05-01) — superseded by the 2026-05-12 recalibration above
 
 The reviewer authorised re-rendering the seed-7 furniture run with
 frames written to disk so DINOv2 (and any future encoder) could be
