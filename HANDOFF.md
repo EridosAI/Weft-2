@@ -73,9 +73,9 @@ autonomous.
 
 ## Next immediate action
 
-**DINOv2 substrate verification batch** against `data/seed7_furniture_frames/`. The re-render is verified PASS-AFTER-RECALIBRATION (2026-05-12 entry below); frames are usable substrate. The batch should record at the start the documented caveat from [`results/frame_rerender/RERENDER_REPORT.md`](results/frame_rerender/RERENDER_REPORT.md) §note-for-next-batch: 2 of 5 viewing positions (items 3 Dresser, 4 Sofa, both LivingRoom) carry constant per-item offsets from the original V-JEPA 2 bank at the `0.0005`–`0.0008` cosine level — accepted as immaterial for substrate-verification purposes, recorded in case it surfaces in downstream analysis.
+**Human review of the DINOv2 verification PASS verdict** (entry below). Per the DINOv2 batch §7 / §8, the verdict is reported without architectural recommendation; the reviewer decides whether to (a) proceed with DINOv2 ViT-L/14 CLS as the v0 frozen encoder, (b) run further protocol on a non-degenerate bank (instances with natural variation), or (c) a different §5.5 path. No autonomous progression.
 
-The original V-JEPA 2 substrate verification FAIL on the seed-7 bank (see entry above) stands as historical record. The §5.5 path chosen by the reviewer was (a) alternative encoder — DINOv2 — which is the next batch.
+The original V-JEPA 2 substrate verification FAIL stands as historical record. The §5.5 path (a) alternative encoder — DINOv2 — produced a comfortable PASS on the same bank, same seed, same sampling.
 
 ---
 
@@ -103,6 +103,60 @@ without re-encoding, and re-encoding requires source pixels.
 **Resolution:** The reviewer authorised a full re-render (next entry).
 
 *STOP commit:* `aefa1bc`.
+
+---
+
+## DINOv2 substrate verification on rerendered seed-7 frames — PASS (2026-05-12)
+
+DINOv2 ViT-L/14 CLS, frozen, fp16 eval, encoded over the rerender's
+32 760 dwell frames at items 1..5 (224×224 center crop of the 256×256
+source, ImageNet mean/std). Same protocol, same seeds (7 / 8), same
+pair counts, same sampling procedure as the V-JEPA 2 verification —
+encoder is the only variable.
+
+| check | DINOv2 (this batch) | starting threshold | V-JEPA 2 (prior) | DINOv2 result |
+|---|---:|---|---:|---|
+| 1. cross-instance stability (mean cosine, 250 pairs) | `1.0000` | `> 0.75` | `1.0000` | PASS (degenerate — see below) |
+| 2. cross-element distinguishability (mean cosine, 1000 pairs) | **`0.4422`** | `< 0.60` | `0.8697` (FAIL) | **PASS** (load-bearing) |
+| 3. combined gap (Check 1 − Check 2) | **`0.5578`** | `≥ 0.15` | `0.1303` (FAIL) | **PASS** |
+
+**Verdict: PASS** (no recalibration applied; empirical values are not
+within ±0.05 of the starting thresholds). Per-pair Check 2 means span
+`0.2547` (DiningTable ↔ Television) to `0.6709` (DiningTable ↔ Sofa);
+DiningTable ↔ Sofa is the only ordered pair above 0.60, and the
+aggregate is still 0.16 below the threshold. Full per-pair matrix and
+V-JEPA 2 side-by-side in
+[`results/encoder_verification_dinov2/ENCODER_VERIFICATION_DINOV2_REPORT.md`](results/encoder_verification_dinov2/ENCODER_VERIFICATION_DINOV2_REPORT.md);
+raw cosines in
+[`results/encoder_verification_dinov2/verification_data.json`](results/encoder_verification_dinov2/verification_data.json).
+
+**Check 1 carries the same degeneracy caveat as the V-JEPA 2 result.**
+Within-position dwell frames are bit-identical across loops within the
+rerender, so DINOv2 (deterministic eval-mode forward) produces bit-
+identical embeddings — std `0.0000` across all 50 within-instance
+pairs at all 5 items. The verdict stands on Check 2, which is genuine
+encoder discrimination on bit-identical pixels and is not a sampling
+artifact: every per-pair std is `0.0000` for the same reason (one
+distinct cosine value per ordered pair), but the *values themselves*
+are how DINOv2 separates the 5 items. The 10 distinct cross-pair
+values range `0.2547`–`0.6709`, against V-JEPA 2's `0.8347`–`0.9210`
+on the same items — a ~0.43 reduction in aggregate cross-element
+similarity.
+
+**Caveat (from RERENDER_REPORT).** Items 3 (Dresser) and 4 (Sofa) —
+both LivingRoom — have constant per-item offsets from the original
+V-JEPA 2 bank at the cosine `0.0005`–`0.0008` level *when read by
+V-JEPA 2*. DINOv2 re-encodes the rerender's frames directly, so its
+numbers are internally consistent. Recorded in case downstream
+analysis surfaces an unexplained discrepancy at that magnitude; not
+load-bearing on the verdict.
+
+**Compute:** ~75 s of GPU forward (RTX 4080 Super, fp16, batch 64) +
+~15 s for sampling / I/O. 32 760 dwell frames; one embedding per
+frame; encoded once and saved to
+`data/dinov2_embeddings/embeddings.npy` (391 MB, gitignored).
+
+*Verification commit: pending.*
 
 ---
 
