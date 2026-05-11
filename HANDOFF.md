@@ -73,9 +73,7 @@ autonomous.
 
 ## Next immediate action
 
-**Human review of the DINOv2 verification PASS verdict** (entry below). Per the DINOv2 batch §7 / §8, the verdict is reported without architectural recommendation; the reviewer decides whether to (a) proceed with DINOv2 ViT-L/14 CLS as the v0 frozen encoder, (b) run further protocol on a non-degenerate bank (instances with natural variation), or (c) a different §5.5 path. No autonomous progression.
-
-The original V-JEPA 2 substrate verification FAIL stands as historical record. The §5.5 path (a) alternative encoder — DINOv2 — produced a comfortable PASS on the same bank, same seed, same sampling.
+**Human review of the DINOv2 stability PASS verdict** (entry below). Per the stability batch §6/§10, the verdict is reported without architectural recommendation. The full §5 protocol is now met by DINOv2 ViT-L/14 CLS on a non-degenerate substrate (Check 1 = `0.9260`, Check 2 = `0.4422`, Check 3 gap = `0.4838` — all PASS). The reviewer decides whether to (a) proceed with DINOv2 as the v0 encoder, (b) probe additional jitter magnitudes, or (c) any other §5.5 path. No autonomous progression.
 
 ---
 
@@ -103,6 +101,89 @@ without re-encoding, and re-encoding requires source pixels.
 **Resolution:** The reviewer authorised a full re-render (next entry).
 
 *STOP commit:* `aefa1bc`.
+
+---
+
+## DINOv2 cross-instance stability under per-frame jitter — PASS (2026-05-12)
+
+Fills the Check 1 gap left by the prior DINOv2 verification, whose
+aggregate `1.0000` was a tautology (bit-identical pixels → bit-
+identical embeddings). New collection: one full loop of the seed-7
+furniture route with **per-frame** position+heading jitter applied
+inside the explorer's dwell teleport, so every dwell frame has a
+genuinely different pose.
+
+**Spec interpretation decision (documented per CODING_STANDARDS §9.2).**
+Batch §3 reads "apply per-loop jitter … the agent then dwells at the
+jittered pose" (one jitter per visit) but §5 expects "~30 unique
+frames per viewing position from one jittered loop" and §9 stops on
+"fewer than 15 dwell frames per viewing position". One-jitter-per-
+visit on a single loop gives 1 unique pose per item → Check 1 is
+degenerate again, exactly the failure mode the batch was built to
+fix. Per-frame jitter is the only interpretation consistent with §5's
+sample-count expectation, so per-frame is what was implemented. RNG
+seeded once with `jitter_seed=7`, drawn sequentially in frame order
+for reproducibility. Flagging for review.
+
+**Collection** (previous repo, `scripts/run_furniture_stability_collect.py`):
+
+  - 458 frames total, one loop. Wall-clock 25.0 s.
+  - 30 dwell frames at each of items 1..5 (150 total dwell); 308
+    transit.
+  - Jitter: `position_m=0.2` per horizontal axis, `heading_deg=10.0`,
+    fallback ladder 100% → 50% → 25% → unjittered for NavMesh-
+    unreachable poses. **Zero fallbacks** — all 150 jittered teleports
+    succeeded at full 100% magnitude.
+  - frames at [`data/seed7_dinov2_stability_frames/`](data/seed7_dinov2_stability_frames/)
+    (PNG, ~12 MB total, gitignored); annotations at
+    [`data/seed7_dinov2_stability_annotations.jsonl`](data/seed7_dinov2_stability_annotations.jsonl).
+  - Modification in previous repo: `src/env/furniture_route_explorer.py`
+    (jitter logic with fallback ladder, opt-in via constructor args),
+    `src/env/ai2thor_furniture_env.py` (pass-through), and new
+    `scripts/run_furniture_stability_collect.py` (pure data
+    extraction, no V-JEPA 2 / predictor / trainer).
+
+**DINOv2 stability test** (new repo, `scripts/run_dinov2_stability_test.py`):
+
+| viewing_position_id | object | n pairs | mean | std | min | max |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | Bed | 50 | `0.9467` | `0.0289` | `0.8475` | `0.9889` |
+| 2 | DiningTable | 50 | `0.9447` | `0.0189` | `0.9037` | `0.9755` |
+| 3 | Dresser | 50 | `0.9317` | `0.0453` | `0.7834` | `0.9847` |
+| 4 | Sofa | 50 | `0.8524` | `0.0969` | `0.6682` | `0.9749` |
+| 5 | Television | 50 | `0.9547` | `0.0223` | `0.9034` | `0.9846` |
+
+**Aggregate**: mean **`0.9260`** (n=250), std `0.0635`, min `0.6682`,
+max `0.9889`. Pass criterion (>0.75): **PASS** with margin `0.176`.
+
+**Pattern noted, not a finding.** Sofa is the least stable item (mean
+0.8524, std 0.0969, min 0.6682). Sofa also produced the highest
+cross-element pair in the prior Check 2 (DiningTable↔Sofa = 0.6709).
+Coincidence is plausible; the report flags but does not interpret
+the pattern.
+
+**DINOv2 full §5 status (combining Check 1 from this batch with
+Checks 2/3 from the prior DINOv2 verification on the same encoder):**
+
+| check | DINOv2 | starting threshold | result |
+|---|---:|---|---|
+| 1 (cross-instance stability, non-degenerate jitter substrate) | `0.9260` | `> 0.75` | PASS |
+| 2 (cross-element distinguishability, prior) | `0.4422` | `< 0.60` | PASS |
+| 3 (combined gap, `0.9260 − 0.4422`) | `0.4838` | `≥ 0.15` | PASS |
+
+Full report:
+[`results/encoder_verification_dinov2_stability/STABILITY_REPORT.md`](results/encoder_verification_dinov2_stability/STABILITY_REPORT.md);
+raw cosines + jitter summary in
+[`results/encoder_verification_dinov2_stability/stability_data.json`](results/encoder_verification_dinov2_stability/stability_data.json).
+
+**Caveat (recorded in the report §6).** Jitter magnitudes `0.2 m` /
+`10°` are SCAFFOLDING values per the batch's §3 — verdict is
+conditional on this magnitude. A non-trivially different magnitude
+could produce a different aggregate; the protocol does not first-
+principle-derive the jitter range from a model of natural agent-
+instance variation. Flagged for reviewer.
+
+*Stability commit: pending in both repos.*
 
 ---
 
