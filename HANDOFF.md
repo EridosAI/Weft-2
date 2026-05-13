@@ -73,7 +73,43 @@ autonomous.
 
 ## Next immediate action
 
-**STOP for experiment-chat review.** Session 2 hit a STOP at the shuffle interpretation issue; session 3 (this entry) re-implemented shuffle per spec §10.1, re-ran training and gate analysis, and now hands back the result for the reviewer to assign gate verdicts and decide whether Phase 2 begins. Three open decisions:
+**STOP for experiment-chat review.** Session 4 implemented the continuous-motion substrate per the session-3 reviewer directive, ran a 5-loop calibration, and ran DINOv2 motion-continuity diagnostics. Two findings to review before the full Phase 2 collection begins:
+
+1. **Within-loop motion-continuity PASSES.** All 255 consecutive close_up→close_up pairs and all 1,275 consecutive transit→transit pairs are non-bit-identical (cos < 0.9999 throughout). Mean consecutive cosine across the full 1,579-pair stream is 0.92. The 30-frame static dwell pattern is eliminated.
+
+2. **Cross-loop apex comparison FAILS for 4 of 5 items** at the bit-identical level. Apex frames at items 1 (Bed), 2 (DiningTable), 3 (Dresser), and 4 (Sofa) have **cosine = 1.0000** across all 10 pairs (5 loops × choose 2). The reason is structural: the apex pose for each item is the same `viewing_position + heading=viewing_heading`, repeated each loop; AI2-THOR's frame rendering is deterministic on this stack. Item 5 (Television) is the lone exception (mean cosine 0.97, std 0.015, no bit-identical pairs) — likely TV display dynamics rendered by AI2-THOR at some non-deterministic level. The continuous-motion substrate fixes within-loop targets but does not, by itself, break across-loop bit-identicity.
+
+This means the §2.2 "repetition tightens within-cluster representations" claim is *still* untestable on this substrate unless across-loop variation is introduced. **Proposed variation strategy (load-bearing decision the reviewer needs to sign off on before the full Phase 2 collection):** re-introduce per-frame pose jitter at a **smaller magnitude than the prior Stage 0b stability batch** (0.05 m position, 2° heading vs the prior 0.20 m / 10°). The motion now supplies the bulk of variation; jitter exists only to break the across-loop pose-determinism floor. Reviewer alternatives below.
+
+Until reviewer signs off on the variation strategy, the trajectory implementation and calibration are committed but the full Phase 2 collection does not start. After sign-off, run a second calibration (5 loops) with jitter to verify cross-loop apex variation is now non-degenerate (target: mean cosine 0.92-0.98 across loops at the apex), then launch the full 65k-frame Phase 2 collection.
+
+---
+
+### (Historical) Earlier session-3 STOP — superseded by session 4 substrate change
+
+The session-3 STOP listed three open decisions on G1.3 / G1.4 / S4. These are largely **superseded** by the session-4 substrate change:
+
+- The Phase 1 substrate is now declared **substrate-degenerate** (per reviewer directive); its specific G1.3 / G1.4 / S4 results are not inherited as findings about the architecture and the v0 evidence base restarts at Phase 2 on the new substrate.
+- The verified-working items from Phase 1 — predictor scaffolding works (no NaN/Inf, loss decreased monotonically, 21.5M params well within tolerance, gradient flow healthy), encoder pipeline works (DINOv2 deterministic, 100k frames all L2-normed), and cross-cluster discriminability rises with training (M3 trajectory 0.008 → 0.325) — remain valid.
+- Phase 1 is not being re-run with the new substrate. The v0 evidence base starts at Phase 2.
+
+For audit, the session-3 G1.3 / G1.4 / S4 disaggregations stay in `results/inner_pam_v0/phase1_main/gate_report.json` and the session-3 HANDOFF entry below documents them. They are not subject to a pending verdict any longer.
+
+---
+
+### Open decisions / proposals for the reviewer (session 4)
+
+1. **Variation strategy.** Three candidate forms; recommend (a):
+   - **(a) Per-frame independent jitter at 0.05 m / 2°** drawn fresh each frame. Simplest. Breaks across-loop bit-identicity directly: apex poses across loops would differ by ~0.05 m position and ~2° heading. ContinuousMotionExplorer needs a jitter parameter added; ~30 lines of code.
+   - **(b) Per-loop pose offset.** One small `(dx, dz, dh)` offset drawn per loop, applied as a constant shift to all frames in that loop. More principled (whole loop traverses a slightly different path) but requires per-loop state in the explorer.
+   - **(c) Hybrid (per-loop base + per-frame micro-noise).** Both signals.
+2. **Acceptable jitter magnitude.** 0.05 m / 2° is a starting proposal. The prior stability batch (Stage 0b) used 0.20 m / 10°, but that was the only variation source. Now motion provides most of the variation; jitter only breaks the floor. The reviewer may want it even smaller (0.02 m / 1°) or larger (0.10 m / 5°).
+3. **Television-item anomaly.** Item 5 shows non-zero across-loop variation (mean 0.97, std 0.015) without any explicit pose jitter — likely the AI2-THOR Television's rendered display has internal variation. Reviewer may want this investigated separately, or accept it as an item-specific quirk and treat it as another known property of the substrate.
+4. **`transit → close_up` boundary frame duplication.** 8 of 24 transit→close_up consecutive pairs have cosine > 0.9999. This is because the final corner-rotation step in transit lands at exactly close_up_start with heading exactly viewing_heading, which is also the first close_up frame's pose — a 1-frame duplication at each phase boundary. Cosmetic; affects 0.5% of consecutive pairs. Fix candidates: drop the last transit-rotation step, or start the close-up one densification step further along. Reviewer call on whether to fix in session 4 or accept for now.
+5. **Phase 2 frame budget.** 65k stays valid for the 316-frame loop: 65k/316 ≈ 205 collected loops, 195 trained loops (minus 10 held-out), comfortably into the 100+ rep bin with 95 reps inside. **Item 1 in the held-out region.** The last loop may end partial (depending on where 65k lands), giving (1,2) ~10 cue probes and the other four transitions ~9 each (same partial-loop pattern as Phase 1, plus or minus 1 depending on truncation point); resolves under the same not-a-bug logic as session 2.
+6. **Checkpoint cadence for §4.6 recomputed against the 316-frame loop length** (table in the session-4 outcomes entry below). All five rep bins covered, 100+ bin gets 3 checkpoints inside.
+
+Reviewer-action gate: when the variation strategy and magnitude are decided, I'll implement, re-run the 5-loop calibration with jitter, verify cross-loop apex variation is non-degenerate, then launch the full 65k Phase 2 collection.
 
 1. **G1.4 verdict at the gated horizon (k=8).** Main wins at k=1 (mean_diff +0.039, p=1.7e-05) and at k=16 by rank (Wilcoxon p=0.004 even though mean_diff is −0.020). **Main loses at k=8** (mean_diff −0.132, Wilcoxon p=1.0). The mid-horizon failure is real, not an artefact of v1's wrong-shuffle. Diagnosis below points to **rank-512 limited predictor architecture** as a candidate: cosine at the cluster boundary is bounded by the output projection's column space, while squared-error (which the loss actually optimises) shows main beating shuffle decisively. Reviewer call: declare FAIL @ k=8 and pause to investigate, accept the rank-limited reading and recalibrate the gate to squared-error or a different cosine threshold, or proceed with a documented caveat.
 
@@ -87,14 +123,163 @@ autonomous.
 
 ---
 
-## Operational state (end of session 3)
+## Operational state (end of session 4)
 
-- Working tree: clean modulo this HANDOFF entry. 20 commits on `main` (12 from sessions 1-2 + 4 new from session 3: shuffle fix, gate report G1.3 augmentation, Phase 1 v2 results, this HANDOFF entry).
+- Working tree: clean modulo this HANDOFF entry + the session-4 commits (continuous-motion explorer, env wrapper, calibration script, analysis script, calibration data + report, doc updates). 25 commits expected on `main` after this session lands.
 - Push hold: in effect.
 - No running jobs.
-- Phase 1 main: unchanged from session 2. 10 checkpoints + bank state at `results/inner_pam_v0/phase1_main/ckpt_{step}.{pt,/}` (gitignored).
-- Phase 1 shuffle: **REPLACED** with spec-correct implementation. 10 new checkpoints + bank state at `results/inner_pam_v0/phase1_shuffle/ckpt_{step}.{pt,/}` (gitignored; bank-state dirs added to .gitignore this session).
-- All result JSONs committed.
+- Phase 1 artefacts: unchanged from session 3 (substrate-degenerate baseline; not being re-run).
+- Phase 2 substrate: new continuous-motion explorer + env wrapper at `src/env/continuous_motion_*.py`. 5-loop calibration data at `data/phase2_calibration/` (frames gitignored; annotations + embeddings gitignored per .gitignore rules; report committed). Full Phase 2 collection has NOT begun and will not begin until reviewer signs off on the variation strategy.
+
+---
+
+## Session 4 outcomes — 2026-05-13
+
+**Goal.** Implement the continuous-motion substrate per the session-3 reviewer directive ("the agent moves through each loop as one continuous trajectory with no zero-velocity frames"), run a 5-loop calibration, verify motion-continuity with DINOv2 diagnostics, propose a variation strategy informed by the empirical findings, update the spec and instructions to lock the new substrate in, and STOP for review before any full Phase 2 collection.
+
+### Trajectory design — `ContinuousMotionExplorer`
+
+New explorer at `src/env/continuous_motion_explorer.py` replaces `FurnitureRouteExplorer`. State machine has two phases per item: `close_up` (continuous motion through the item) and `transit` (continuous motion between items).
+
+**Close-up segment** (per item N):
+- Direction: perpendicular to `viewing_heading_N` (CCW from forward in the top-down screen sense, consistent across all 5 items so the item visually slides in a consistent direction).
+- Endpoints: `viewing_position_N ± (close_up_length_m / 2) * perpendicular_unit_ccw`. With `close_up_length_m = 2.0 m` (SCAFFOLDING), endpoints are at ±1.0 m from the viewing position.
+- Heading: locked at `viewing_heading_N` throughout the close-up (so the item enters from one side of the frame, centres at the apex, slides out the other side).
+- Densification: 0.20 m steps (SCAFFOLDING), yielding ~10-12 frames per close-up.
+- Apex frame: the densified step closest to `viewing_position_N` is tagged `close_up_apex_flag = True`.
+
+**Transit segment** (item N → N+1):
+- NavMesh-planned path from `close_up_end_N` to `close_up_start_{N+1}` (different from the old explorer's viewing_position → viewing_position transit).
+- Densified at 0.20 m steps + corner rotations at 5° step. Same mechanism as the prior FurnitureRouteExplorer.
+- Heading: along walking direction within each NavMesh segment; rotates at corners; final rotation aligns to next item's viewing_heading.
+
+**No static dwell at any pose.** Every consecutive frame pair has a non-zero pose delta.
+
+### 5-loop calibration
+
+`scripts/run_phase2_calibration_collect.py` ran 5 loops with the new explorer; no perturbation, no jitter.
+
+| metric | value |
+|---|---:|
+| frames collected | **1,580** |
+| loops | **5** |
+| **frames per loop** | **316** |
+| wall-clock | 89.5 s (~17.7 fps) |
+| close-up frames per item per loop | 11, 12, 11, 11, 11 (avg ~11) |
+| transit frames per loop | 260 |
+| transitions planned (5 loops × 5 transitions) | 25 |
+| transitions using NavMesh fallback | 10 of 25 (40 %) |
+| teleport failures | 0 |
+
+**316 frames/loop** is higher than the 200-250 target the reviewer flagged as a starting point, but the rep-bin coverage arithmetic (below) still works at the 65k Phase 2 budget with comfortable margin. Tunable in the v0 SCAFFOLDING inventory; the close-up length (2 m) or density (0.20 m) can be reduced if the reviewer wants the loop shorter.
+
+### DINOv2 motion-continuity diagnostic
+
+`scripts/run_phase2_calibration_analyse.py` encoded all 1,580 frames via the verified DINOv2 protocol and computed consecutive-frame cosines, disaggregated by phase, plus same-item cross-loop apex comparisons.
+
+**Embedding sanity:** all 1,580 frames have L2 norms in [1−1e-5, 1+1e-5]. ✓
+
+**Consecutive-frame cosines (1,579 pairs):**
+
+| phase pair | n | mean | std | min | max | bit-identical (>0.9999) |
+|---|---:|---:|---:|---:|---:|---:|
+| close_up → close_up | 255 | **0.9304** | 0.126 | 0.315 | 0.991 | **0** ✓ |
+| transit → transit | 1,275 | **0.9202** | 0.106 | 0.107 | 0.992 | **0** ✓ |
+| close_up → transit | 25 | 0.8034 | 0.151 | 0.616 | 0.985 | 0 |
+| transit → close_up | 24 | 0.9232 | 0.075 | 0.802 | 1.000 | **8** ⚠ |
+| **aggregate** | 1,579 | 0.9201 | 0.111 | 0.107 | 1.000 | **8** |
+
+The 8 bit-identical pairs are all `transit → close_up`, at the boundary between transit and close-up: the final corner-rotation step of transit lands at exactly `close_up_start` with heading exactly `viewing_heading`, which is also the first close-up frame's pose. **Cosmetic 1-frame duplication at the boundary; 0.5 % of all pairs.** Open decision (4) above proposes a fix.
+
+**Within-loop continuity verdict: PASS.** Zero bit-identical pairs in close_up→close_up or transit→transit (the two "during motion" categories). The 30-frame static-dwell pattern is eliminated.
+
+**Cross-loop apex comparison (5 apex frames per item × 10 pairs = 10 per item):**
+
+| item | object | n pairs | mean cosine | std | bit-identical (>0.9999) |
+|---:|---|---:|---:|---:|---:|
+| 1 | Bed | 10 | **1.0000** | 0.000 | **10/10** ✗ |
+| 2 | DiningTable | 10 | **1.0000** | 0.000 | **10/10** ✗ |
+| 3 | Dresser | 10 | **1.0000** | 0.000 | **10/10** ✗ |
+| 4 | Sofa | 10 | **1.0000** | 0.000 | **10/10** ✗ |
+| 5 | Television | 10 | 0.9695 | 0.016 | **0/10** ✓ |
+
+**Cross-loop apex verdict: FAIL on items 1-4.** Apex poses across loops are bit-identical, because each loop visits the same `viewing_position + viewing_heading` and AI2-THOR renders deterministically on this stack (confirmed by the substrate-verification batch's session-1 consistency check). Item 5 is the lone exception with non-zero across-loop variation, likely because the Television's rendered display has internal dynamics that AI2-THOR doesn't make deterministic — an item-specific quirk, not a designed feature.
+
+**Implication.** The continuous-motion substrate fixes within-loop static dwell (the original session-3 finding) but does NOT, by itself, break across-loop pose-determinism. Any M3 cluster-sharpness measurement that compares predictor outputs across loops at the same pose (the way Phase 1's M3 worked) will still be substrate-floored at cosine = 1.0 within-cluster.
+
+This is a partial substrate fix. Full resolution requires re-introducing across-loop variation, per the variation-strategy proposal above.
+
+### Proposed variation strategy
+
+**Recommendation: per-frame independent jitter at 0.05 m / 2°** (option (a) above). Rationale:
+
+- **0.05 m position jitter** is much smaller than the 0.20 m densification step, so it doesn't dominate consecutive-frame motion; it just adds enough offset to break the across-loop pose-determinism floor.
+- **2° heading jitter** is small enough not to swing the item out of frame at the apex (where the item is ~1.75 m from the agent).
+- **Per-frame independent draws** (each frame's jitter is fresh, seeded RNG) means every frame has a unique offset. Cross-loop apex frames at item N would differ by ~0.05 m / 2° drawn from independent distributions, producing non-bit-identical embeddings.
+
+Implementation cost: ~30 lines in `ContinuousMotionExplorer` (analogous to the prior `_apply_jittered_teleport` in `FurnitureRouteExplorer`, but no fallback ladder needed at the smaller magnitude — NavMesh tolerance should accept ±0.05 m at most poses).
+
+Alternative options were considered (per-loop offset, hybrid); recorded in the "Open decisions" list above. The reviewer chooses.
+
+### Recomputed checkpoint cadence — §4.6 update for 316-frame loop
+
+The prior §4.6 cadence was derived from a 458-frame loop. The new substrate has 316-frame loops, so the phase-relative-step → rep-count map shifts:
+
+| bin (perturbed-shape rep count) | first frame into phase | last frame into phase |
+|---|---:|---:|
+| 1–5 | 316 | 1,580 |
+| 6–19 | 1,896 | 6,004 |
+| 20–50 | 6,320 | 15,800 |
+| 51–99 | 16,116 | 31,284 |
+| 100+ | 31,600 | (end at ~61,840) |
+
+**Proposed new checkpoint schedule** (phase-relative steps): **1,000 / 2,000 / 4,000 / 6,500 / 10,000 / 15,000 / 20,000 / 30,000 / 40,000 / 55,000 / end** — 10 checkpoints plus end-of-phase. Coverage:
+
+| step | loops elapsed | bin |
+|---:|---:|---|
+| 1,000 | 3.2 | 1-5 ✓ |
+| 2,000 | 6.3 | 6-19 ✓ |
+| 4,000 | 12.7 | 6-19 |
+| 6,500 | 20.6 | 20-50 ✓ |
+| 10,000 | 31.6 | 20-50 |
+| 15,000 | 47.5 | 20-50 |
+| 20,000 | 63.3 | 51-99 ✓ |
+| 30,000 | 94.9 | 51-99 |
+| 40,000 | 126.6 | 100+ ✓ |
+| 55,000 | 174.1 | 100+ |
+| end | 195.7 | 100+ |
+
+All five bins covered; 100+ bin gets three checkpoints. Cadence updated in instr §4.6 in the same commit as the substrate change.
+
+### Frame budget — §8.3 / §9.3 update
+
+Phase 2/3 budgets stay at 65k each. At 316 frames/loop:
+
+| budget | collected loops | trained loops (−10 held-out) | last bin reached |
+|---|---:|---:|---|
+| 65k | ~205.7 | ~195 | 100+ with 95 reps inside |
+
+Comfortable margin. Updated §8.3 / §9.3 derivation tables in the same commit.
+
+### Phase 1 disposition
+
+Per reviewer directive: Phase 1's substrate is declared substrate-degenerate. Its findings — predictor scaffolding works, encoder pipeline works, parameter counts within tolerance, gradient flow healthy, M3 cross-cluster discriminability rises with training — are kept as substrate-pipeline-validation evidence. Its substrate-degenerate results (G1.3 inversion, G1.4 k=8 dip, S1-S4 sanity check verdicts, variance-saturation patterns) are not inherited as findings about the architecture and are not used as priors for Phase 2 interpretation. **Phase 1 is not being re-run with the new substrate.** The v0 evidence base starts at Phase 2.
+
+### Drift-detection note added to research_operations_v1.md §15
+
+The 30-frame static dwell survived three drafts of the v0 experiment instructions, an adversarial review pass, and session-1's CC pre-flight before the session-3 reviewer asked "what is dwell?" and the substrate-architecture mismatch surfaced. Added as a universal drift check:
+
+> Re-read foundational substrate assumptions whenever the architectural framing shifts. Inherited collection parameters from prior projects are SCAFFOLDING by default and require explicit re-justification against the current architecture's claims.
+
+### Working-tree contents committed this session
+
+| commit | scope | files |
+|---|---|---|
+| `feat(env): continuous-motion explorer + env wrapper` | new substrate | `src/env/continuous_motion_explorer.py`, `src/env/continuous_motion_env.py`, `src/env/procthor_house.py` (copy from previous repo) |
+| `feat(scripts): phase2 calibration collect + analyse` | calibration tooling | `scripts/run_phase2_calibration_collect.py`, `scripts/run_phase2_calibration_analyse.py` |
+| `exp(calibration): 5-loop continuous-motion calibration + DINOv2 continuity report` | calibration data | `results/phase2_calibration/calibration_summary.json`, `results/phase2_calibration/continuity_report.json` |
+| `docs(spec/instructions): continuous-motion substrate change` | doc updates | spec §1.3, §2.3; instructions §0/§1.3, §1.5, §4.6, §8.3, §9.3; research_operations_v1.md §15 |
+| `docs(handoff): session 4 outcomes — STOP for review` | this entry | `HANDOFF.md` |
 
 ---
 
