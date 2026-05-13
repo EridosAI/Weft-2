@@ -87,6 +87,22 @@ class TrainerConfig:
     log_every: int = 100               # tensorboard granularity
     tau_calib_callback: Optional[Callable[["OnlineTrainer"], None]] = None
 
+    # ---- Phase 2 in-flight transition diagnostic (instr §8.7a). ----
+    # When enabled, the trainer accumulates per-loop loss + per-(loop, item)
+    # mean log_var, writes per-loop stats to `transition_diagnostic_path` as
+    # each loop completes, and at the end of `transition_post_onset_loops[1]`
+    # evaluates the three SCAFFOLDING gates. If any trips, the trainer writes
+    # `transition_diagnostic_TRIPPED.txt` under `output_dir` and stops the loop.
+    transition_diagnostic_enabled: bool = False
+    transition_diagnostic_path: Optional[Path] = None
+    transition_perturbed_items: tuple[int, ...] = ()      # vp_ids of perturbed items
+    transition_control_items: tuple[int, ...] = ()        # vp_ids of control items
+    transition_baseline_loops: tuple[int, int] = (0, 0)   # (lo, hi) inclusive
+    transition_post_onset_loops: tuple[int, int] = (0, 0) # (lo, hi) inclusive
+    transition_loss_spike_ratio: float = 3.0              # G2.T1
+    transition_log_var_widening_min: float = 0.5          # G2.T2
+    transition_control_drift_max: float = 0.3             # G2.T3
+
 
 class OnlineTrainer:
     """Single-pass continuous-time trainer wiring predictor, bank, optimiser, logger."""
@@ -147,6 +163,19 @@ class OnlineTrainer:
         self._mean_log_var_log: list[float] = []
         self._grad_norm_log: list[float] = []
         self._step_indices_log: list[int] = []
+
+        # ---- Transition diagnostic state (instr §8.7a). ----
+        # Aggregates loss and (item, mean log_var) per loop_index. Flushed and
+        # evaluated against the three SCAFFOLDING gates at the end of the
+        # transition_post_onset_loops window.
+        self._per_loop_loss_sum: dict[int, float] = {}
+        self._per_loop_loss_count: dict[int, int] = {}
+        self._per_loop_item_log_var_sum: dict[tuple[int, int], float] = {}
+        self._per_loop_item_log_var_count: dict[tuple[int, int], int] = {}
+        self._last_loop_seen: int = -1
+        self._diag_gate_tripped: bool = False
+        self._diag_trip_record: Optional[dict[str, Any]] = None
+        self._diag_per_loop_summary: list[dict[str, Any]] = []
 
     # ---- init-time checks (instr §4.7) -----------------------------------
 
@@ -267,6 +296,49 @@ class OnlineTrainer:
                 self._tb.add_scalar("train/grad_norm", grad_norm, ordered_pos)
                 self._tb.add_scalar("train/confidence", conf_val, ordered_pos)
 
+            # ---- Transition diagnostic accumulation (instr §8.7a). ----
+            if self.cfg.transition_diagnostic_enabled:
+                ann_t = self._annotations[t]
+                loop_t = int(ann_t.get("loop_index", -1))
+                if loop_t >= 0:
+                    # Loss aggregation, per loop.
+                    self._per_loop_loss_sum[loop_t] = (
+                        self._per_loop_loss_sum.get(loop_t, 0.0) + float(loss.item())
+                    )
+                    self._per_loop_loss_count[loop_t] = (
+                        self._per_loop_loss_count.get(loop_t, 0) + 1
+                    )
+                    # Per-(loop, item) log_var aggregation for close-up predictions only.
+                    seg = ann_t.get("phase_segment") or ann_t.get("phase") or "?"
+                    vp = int(ann_t.get("viewing_position_id", -1))
+                    if seg == "close_up" and vp > 0:
+                        key = (loop_t, vp)
+                        self._per_loop_item_log_var_sum[key] = (
+                            self._per_loop_item_log_var_sum.get(key, 0.0)
+                            + float(mean_log_var)
+                        )
+                        self._per_loop_item_log_var_count[key] = (
+                            self._per_loop_item_log_var_count.get(key, 0) + 1
+                        )
+                    # Loop completion -> flush + maybe evaluate gates.
+                    if loop_t != self._last_loop_seen:
+                        if self._last_loop_seen >= 0:
+                            self._flush_loop_to_diagnostic(self._last_loop_seen)
+                        self._last_loop_seen = loop_t
+                        post_end = int(self.cfg.transition_post_onset_loops[1])
+                        if (
+                            post_end > 0
+                            and self._last_loop_seen > post_end
+                            and not self._diag_gate_tripped
+                        ):
+                            trip = self._evaluate_transition_gates()
+                            if trip is not None:
+                                self._diag_gate_tripped = True
+                                self._diag_trip_record = trip
+                                self._write_diagnostic_trip_marker(trip)
+                                # Halt training cleanly per instr §8.7a.
+                                break
+
             if ordered_pos in ckpt_set:
                 self._write_checkpoint(ordered_pos)
                 if (
@@ -279,12 +351,207 @@ class OnlineTrainer:
             if ordered_pos >= self.cfg.final_step:
                 break
 
+        # Final flush of any in-progress loop (so the JSON reflects the last loop).
+        if (
+            self.cfg.transition_diagnostic_enabled
+            and self._last_loop_seen >= 0
+        ):
+            self._flush_loop_to_diagnostic(self._last_loop_seen)
+
         elapsed = time.time() - t0
         return {
             "elapsed_seconds": float(elapsed),
             "final_step": int(self.cfg.final_step),
             "n_gradient_steps_actual": int(len(self._losses_log)),
+            "transition_diagnostic_gate_tripped": bool(self._diag_gate_tripped),
+            "transition_diagnostic_trip_record": self._diag_trip_record,
         }
+
+    # ---- Transition diagnostic helpers (instr §8.7a) -------------------
+
+    def _flush_loop_to_diagnostic(self, loop_idx: int) -> None:
+        """Compute and persist per-loop stats for `loop_idx`."""
+        n_steps = int(self._per_loop_loss_count.get(loop_idx, 0))
+        if n_steps == 0:
+            return
+        mean_loss = float(self._per_loop_loss_sum[loop_idx] / n_steps)
+        per_item: dict[str, float] = {}
+        for vp in tuple(self.cfg.transition_perturbed_items) + tuple(
+            self.cfg.transition_control_items
+        ):
+            key = (loop_idx, int(vp))
+            c = int(self._per_loop_item_log_var_count.get(key, 0))
+            if c > 0:
+                per_item[str(int(vp))] = float(
+                    self._per_loop_item_log_var_sum[key] / c
+                )
+        record = {
+            "loop_index": int(loop_idx),
+            "n_train_steps_attributed": n_steps,
+            "mean_loss": mean_loss,
+            "mean_log_var_by_viewing_position_id": per_item,
+        }
+        # Append to in-memory log, persist whole list as we go.
+        self._diag_per_loop_summary.append(record)
+        self._write_diagnostic_json(gate_tripped=False, trip=None)
+
+    def _evaluate_transition_gates(self) -> Optional[dict[str, Any]]:
+        """Evaluate G2.T1 / G2.T2 / G2.T3 against accumulated loops.
+
+        Returns None if all gates pass; otherwise returns a trip-record dict.
+        """
+        baseline_lo, baseline_hi = self.cfg.transition_baseline_loops
+        post_lo, post_hi = self.cfg.transition_post_onset_loops
+        records_by_loop = {int(r["loop_index"]): r for r in self._diag_per_loop_summary}
+
+        # G2.T1 — loss spike check.
+        baseline_losses = [
+            records_by_loop[k]["mean_loss"]
+            for k in range(int(baseline_lo), int(baseline_hi) + 1)
+            if k in records_by_loop
+        ]
+        post_losses = [
+            records_by_loop[k]["mean_loss"]
+            for k in range(int(post_lo), int(post_hi) + 1)
+            if k in records_by_loop
+        ]
+        if not baseline_losses or not post_losses:
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T_data_missing",
+                "reason": (
+                    f"baseline_losses n={len(baseline_losses)} "
+                    f"post_losses n={len(post_losses)} "
+                    "— at least one loop did not produce any training-step records"
+                ),
+            }
+        baseline_loss_mean = float(np.mean(baseline_losses))
+        post_loss_max = float(np.max(post_losses))
+        # Sign-safe form of the user-specified "3× spike": for positive
+        # baselines this is identical to `> spike_ratio * baseline_mean`;
+        # for non-positive baselines (high-confidence regime where Gaussian
+        # NLL can go negative) it becomes "exceeds baseline by spike_ratio
+        # multiples of |baseline|", preserving the directionally-correct
+        # meaning of "loss spiked upward by a large fraction of its scale".
+        scale = max(abs(baseline_loss_mean), 1.0)
+        spike_threshold = baseline_loss_mean + (
+            float(self.cfg.transition_loss_spike_ratio) - 1.0
+        ) * scale
+        if post_loss_max > spike_threshold:
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T1_loss_spike",
+                "baseline_loss_mean_loops": [int(baseline_lo), int(baseline_hi)],
+                "baseline_loss_mean": baseline_loss_mean,
+                "post_onset_loops": [int(post_lo), int(post_hi)],
+                "post_loss_max": post_loss_max,
+                "spike_threshold": spike_threshold,
+                "ratio_threshold": float(self.cfg.transition_loss_spike_ratio),
+            }
+
+        # G2.T2 — perturbed-item log_var widening.
+        def _agg_log_var_at_loop(loop_idx: int, items: tuple[int, ...]) -> Optional[float]:
+            if loop_idx not in records_by_loop:
+                return None
+            d = records_by_loop[loop_idx]["mean_log_var_by_viewing_position_id"]
+            vals = [d[str(int(it))] for it in items if str(int(it)) in d]
+            if not vals:
+                return None
+            return float(np.mean(vals))
+
+        lv_end_baseline_pert = _agg_log_var_at_loop(
+            int(baseline_hi), self.cfg.transition_perturbed_items
+        )
+        lv_end_post_pert = _agg_log_var_at_loop(
+            int(post_hi), self.cfg.transition_perturbed_items
+        )
+        if lv_end_baseline_pert is None or lv_end_post_pert is None:
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T_log_var_data_missing",
+                "reason": (
+                    f"perturbed-item log_var aggregates unavailable: "
+                    f"baseline={lv_end_baseline_pert} post={lv_end_post_pert}"
+                ),
+            }
+        delta_pert = lv_end_post_pert - lv_end_baseline_pert
+        if delta_pert < float(self.cfg.transition_log_var_widening_min):
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T2_perturbed_widening_insufficient",
+                "perturbed_items_vp_ids": list(self.cfg.transition_perturbed_items),
+                "log_var_at_baseline_end_loop": int(baseline_hi),
+                "log_var_baseline_end": lv_end_baseline_pert,
+                "log_var_at_post_end_loop": int(post_hi),
+                "log_var_post_end": lv_end_post_pert,
+                "delta_observed": delta_pert,
+                "delta_required_min": float(self.cfg.transition_log_var_widening_min),
+            }
+
+        # G2.T3 — control-item drift.
+        control_drifts: dict[str, float] = {}
+        max_abs_drift = 0.0
+        worst_item: Optional[int] = None
+        for it in self.cfg.transition_control_items:
+            lv_base = _agg_log_var_at_loop(int(baseline_hi), (int(it),))
+            lv_post = _agg_log_var_at_loop(int(post_hi), (int(it),))
+            if lv_base is None or lv_post is None:
+                control_drifts[str(int(it))] = float("nan")
+                continue
+            drift = lv_post - lv_base
+            control_drifts[str(int(it))] = float(drift)
+            if abs(drift) > max_abs_drift:
+                max_abs_drift = abs(drift)
+                worst_item = int(it)
+        if max_abs_drift > float(self.cfg.transition_control_drift_max):
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T3_control_drift",
+                "control_items_vp_ids": list(self.cfg.transition_control_items),
+                "log_var_at_baseline_end_loop": int(baseline_hi),
+                "log_var_at_post_end_loop": int(post_hi),
+                "per_item_delta_log_var": control_drifts,
+                "max_abs_drift_observed": max_abs_drift,
+                "worst_item_vp_id": worst_item,
+                "drift_threshold_max": float(self.cfg.transition_control_drift_max),
+            }
+
+        # All three pass; record summary for HANDOFF (None signifies no trip).
+        return None
+
+    def _write_diagnostic_json(
+        self,
+        gate_tripped: bool,
+        trip: Optional[dict[str, Any]],
+    ) -> None:
+        if not self.cfg.transition_diagnostic_path:
+            return
+        path = Path(self.cfg.transition_diagnostic_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "phase_name": str(self.cfg.phase_name),
+            "perturbation_tag": str(self.cfg.perturbation_tag),
+            "baseline_loops": list(self.cfg.transition_baseline_loops),
+            "post_onset_loops": list(self.cfg.transition_post_onset_loops),
+            "perturbed_items_vp_ids": list(self.cfg.transition_perturbed_items),
+            "control_items_vp_ids": list(self.cfg.transition_control_items),
+            "thresholds": {
+                "loss_spike_ratio": float(self.cfg.transition_loss_spike_ratio),
+                "log_var_widening_min": float(self.cfg.transition_log_var_widening_min),
+                "control_drift_max": float(self.cfg.transition_control_drift_max),
+            },
+            "per_loop": list(self._diag_per_loop_summary),
+            "gate_tripped": bool(gate_tripped),
+            "trip_record": trip,
+            "git_commit": self.cfg.git_commit,
+        }
+        path.write_text(json.dumps(payload, indent=2))
+
+    def _write_diagnostic_trip_marker(self, trip: dict[str, Any]) -> None:
+        marker_path = self.cfg.output_dir / "transition_diagnostic_TRIPPED.txt"
+        marker_path.write_text(json.dumps(trip, indent=2))
+        # And rewrite the diagnostic JSON one more time with the trip recorded.
+        self._write_diagnostic_json(gate_tripped=True, trip=trip)
 
     # ---- bank ingest ----------------------------------------------------
 
