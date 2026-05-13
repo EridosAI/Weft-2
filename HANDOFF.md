@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 4 (2026-05-13):** v0 code scaffolding complete; Phase 1 ran on substrate-degenerate baseline (kept for audit, not re-run); continuous-motion substrate implemented + calibrated; full Phase 2 collection blocked pending reviewer sign-off on the variation-strategy proposal. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Curriculum framing locked (Stage A → Stage B → Stage C; no jitter); spec/instructions/ops docs updated; Phase 2 wrapper + preflight + collect + encode + train scripts implemented and committed; in-flight transition diagnostic landed in OnlineTrainer (G2.T1 / G2.T2 / G2.T3 SCAFFOLDING gates). Phase 2 preflight ran to completion and reports FAIL at three of five checks, but the empirical numbers show the RandomizeMaterials mechanism is working — the failures are threshold-calibration artefacts (pixel-RGB cosines on 300×300 images compress into a tight dynamic range; my session-5 preflight thresholds were too aggressive for that scale). STOP for review of the preflight threshold recalibration before launching the 65k Phase 2 collection. Working tree clean; push hold in effect.
 
 ---
 
@@ -76,7 +76,58 @@ autonomous.
 
 ## Next immediate action
 
-**STOP for experiment-chat review.** Session 4 implemented the continuous-motion substrate per the session-3 reviewer directive, ran a 5-loop calibration, and ran DINOv2 motion-continuity diagnostics. Two findings to review before the full Phase 2 collection begins:
+**STOP for experiment-chat review.** Session 5 implemented the curriculum framing the experiment chat approved on 2026-05-14 — spec/instructions/ops docs updated, Phase 2 wrapper + preflight + collect + encode + train scripts written, in-flight transition diagnostic added to the trainer. The Phase 2 preflight ran to completion and reports FAIL at three of five checks. The empirical numbers (Phase 2 preflight section in the Session 5 outcomes entry below) show the `RandomizeMaterials` mechanism is working correctly — the failures are threshold-calibration artefacts on flat-RGB cosines, not a mechanism failure. The Phase 2 collection has NOT been launched; one reviewer decision is needed before it can be.
+
+The session-5 reviewer decision needed:
+
+**Preflight threshold recalibration.** My session-5 preflight thresholds (Check 2: per-loop cosine `< 0.95`; Check 3: Bedroom locality cosine `≥ 0.999`; Check 4: LivingRoom change cosine `< 0.9`) were inherited from §8.2's text + a new "per-loop change" criterion I picked, and they were calibrated for a much larger pixel-space delta than `RandomizeMaterials` actually produces at 300×300 resolution. Empirical cosines:
+
+| check | item set | observed | criterion |
+|---|---|---|---|
+| 2 per-loop change | Dresser call1↔call2 | 0.974 | < 0.95 ✗ |
+|   | Sofa call1↔call2 | 0.982 | < 0.95 ✗ |
+|   | Dresser call2↔call3 | 0.981 | < 0.95 ✗ |
+|   | Sofa call2↔call3 | **0.996** | < 0.95 ✗ |
+| 3 Bedroom locality | Bed before↔after | 0.996 | ≥ 0.999 ✗ |
+|   | DiningTable before↔after | 0.983 | ≥ 0.999 ✗ |
+|   | Television before↔after | 0.995 | ≥ 0.999 ✗ |
+| 4 LivingRoom change | Dresser before↔after | 0.969 | < 0.9 ✗ |
+|   | Sofa before↔after | 0.947 | < 0.9 ✗ |
+
+The signal is real: LivingRoom items show mean before-after cosine **0.958** vs Bedroom items at **0.991**. Locality contrast = **+0.033** — LivingRoom items move ~3.3% more in pixel cosine than Bedroom items, in the right direction. Materials are per-run (Check 5 confirmed); the per-run materials get recorded by the collection script.
+
+What's actually happening: `RandomizeMaterials` swaps textures on the targeted LivingRoom furniture, but most of each frame's pixels are unchanged geometry, lighting, walls, and background — texture swaps occupy a small fraction of the visible area, so the flat-RGB cosine moves only a few percent. The §8.4 perturbation-effect check at encoding time (DINOv2 embedding distance, not pixel cosine) is the load-bearing verification; the preflight is just an early-warning sanity check that the API behaves at all.
+
+Three options for the reviewer:
+
+(a) **Recalibrate the preflight thresholds against the empirical scale.** Adopt a *contrast* criterion that directly tests what we care about: LivingRoom mean before-after cosine must be lower than Bedroom mean before-after cosine by a margin of at least 0.02 (the current contrast is 0.033, so this passes). The per-loop change criterion (Check 2) becomes: Dresser+Sofa pairwise cosines across consecutive calls must all be ≤ 0.999 (rules out a hard-cached materials cycle while accepting the actual small magnitude of the change). Bedroom locality (Check 3): ≥ 0.97 (well above the LivingRoom item changes; still catches a meaningful Bedroom-side leak). Recommend this option.
+
+(b) **Switch the preflight to DINOv2-embedding-distance checks.** Replace flat-RGB cosines with DINOv2-encoded cosines on the same paired frames. This is the same metric the load-bearing §8.4 check uses, so the preflight becomes a true early-warning version of the actual verification. Higher implementation cost (the preflight script gets a DINOv2 forward pass dependency) but the metric scale becomes properly calibrated to the downstream pipeline.
+
+(c) **Accept the preflight FAIL as cosmetic and proceed to collection.** The §8.4 check on the actual collected stream is the load-bearing verification; if the preflight's mechanism is empirically working (which the numbers say it is), the preflight gate is a sanity check that can be overridden in writing per `research_operations_v1.md` §8.10. Riskiest of the three because it bypasses a gate explicitly designed to catch this class of issue.
+
+I'd recommend (a) — it's lowest cost, preserves the preflight as a gate, and the contrast criterion directly tests the architectural property (perturbation is scoped, not global). After the reviewer chooses, I update the preflight criteria with explicit justification per `research_operations_v1.md` §15 / instructions §16, re-run the preflight to verify a PASS, then launch the 65k Phase 2 collection per the user's session-5 directive.
+
+The originally-planned session-5 STOP point (end of Phase 2 collection + encoding) is still where we land if the reviewer signs off on (a) or (b) and the recalibrated preflight passes. Phase 2 training remains deferred to a follow-on session.
+
+---
+
+### (Earlier session-4 STOP) — superseded by 2026-05-14 experiment-chat directive
+
+Session 4's STOP listed a session-5 reviewer-action gate on variation strategy and three other open decisions. All four were resolved by the experiment chat on 2026-05-14:
+
+1. **Variation strategy form** — jitter withdrawn entirely; phase structure is the variation source.
+2. **Variation magnitude** — N/A (no jitter).
+3. **Television-item anomaly** — accepted as item-specific quirk; recorded in known-substrate-properties.
+4. **`transit → close_up` 1-frame duplication** — accepted as cosmetic (not blocking Phase 2 launch); fix in a polish commit at convenience or carry as documented quirk.
+
+The full decision text is in the user's 2026-05-14 message that opened session 5. Session 5 implemented the resulting curriculum framing and the in-flight transition diagnostic.
+
+---
+
+### (Historical) Earlier session-4 STOP text follows below for the audit trail.
+
+Session 4 implemented the continuous-motion substrate per the session-3 reviewer directive, ran a 5-loop calibration, and ran DINOv2 motion-continuity diagnostics. Two findings to review before the full Phase 2 collection begins:
 
 1. **Within-loop motion-continuity PASSES.** All 255 consecutive close_up→close_up pairs and all 1,275 consecutive transit→transit pairs are non-bit-identical (cos < 0.9999 throughout). Mean consecutive cosine across the full 1,579-pair stream is 0.92. The 30-frame static dwell pattern is eliminated.
 
@@ -133,6 +184,85 @@ Reviewer-action gate: when the variation strategy and magnitude are decided, I'l
 - No running jobs.
 - Phase 1 artefacts: unchanged from session 3 (substrate-degenerate baseline; not being re-run).
 - Phase 2 substrate: new continuous-motion explorer + env wrapper at `src/env/continuous_motion_*.py`. 5-loop calibration data at `data/phase2_calibration/` (frames gitignored; annotations + embeddings gitignored per .gitignore rules; report committed). Full Phase 2 collection has NOT begun and will not begin until reviewer signs off on the variation strategy.
+
+---
+
+## Session 5 outcomes — 2026-05-14
+
+**Goal.** Implement the curriculum framing the experiment chat approved on 2026-05-14 (phase structure as the variation source; no jitter; Stage A baseline in Phase 2 loops 1–30, Stage B from loop 31 onward; in-flight transition diagnostic with three SCAFFOLDING gates), commit the doc and code changes, run the Phase 2 preflight, then launch the 65k Phase 2 collection and DINOv2 encoding, STOP at the end of collection+encoding for review (training deferred). Encountered preflight FAIL on threshold-calibration grounds and stopped early instead.
+
+### Documentation updates committed (commit `5104811`)
+
+- **Spec §2.3** extended: continuous-training commitment carries across phase boundaries (predictor + bank not re-initialised at Phase 2 → Phase 3). The original user directive referenced "Spec §1.4" but the spec has no §1.4 (phase structure lives in the instructions); the carry-across-phases reaffirmation went into §2.3 where it fits the existing online-single-pass framing.
+- **Instructions §1.3** cross-loop variation framing replaced. Jitter is ruled out; bit-identical Stage A apex frames are the curriculum's baseline state, not a substrate degeneracy.
+- **Instructions §1.4** four locked decisions updated with the Stage A → Stage B → Stage C curriculum framing. Phase 2 internal structure recorded: loops 1–30 unperturbed (Stage A), loops 31+ with per-loop `RandomizeMaterials(inRoomTypes=["LivingRoom"])` (Stage B). Phase 2 starts from a freshly-initialised predictor (Phase 1 discarded); Phase 3 resumes from Phase 2's final checkpoint and bank state without reset.
+- **Instructions §1.5** "no jitter, no per-frame perturbation, no Stage A inside Phase 3, predictor + bank carry across Phase 2 → Phase 3" added to the "What NOT to change" list.
+- **Instructions §8.2** the persistence check (capture loop 1, run loop, capture loop 2 → expect identical) replaced with a per-loop re-application check that mirrors the new Phase 2 collection pattern (call N+1 produces fresh textures, including a third call to rule out a 2-state cycle).
+- **Instructions §8.3** collection script takes `--perturbation_start_loop` (default 31); annotations carry `perturbation_active`. Frame budget table re-derived against the Stage A/B split (30 Stage A loops + ~165 Stage B trained loops, ~65 reps of margin past the 100+ bin).
+- **Instructions §8.4** perturbation-effect check reframed: Stage B vs Stage A apex embeddings within Phase 2, NOT vs Phase 1 (which is on the substrate-degenerate baseline).
+- **Instructions §8.5** Phase 2 training starts from a freshly-initialised predictor (Phase 1 discarded). Stale 458-frame-loop cadence corrected to the 316-frame schedule (1k / 2k / 4k / 6.5k / 10k / 15k / 20k / 30k / 40k / 55k / end).
+- **Instructions §8.7** G2.2 and G2.3 reframed against the Stage A baseline inside Phase 2.
+- **Instructions §8.7a** new: in-flight Stage A → Stage B transition diagnostic with three SCAFFOLDING gates:
+  - **G2.T1** loss spike check: `max(post_loss[31..35]) > baseline_mean[25..30] * 3.0` (sign-safe form documented in the trainer; for non-positive baselines uses `+ (ratio - 1) * |baseline_mean|` so the directional meaning of "loss spiked upward" is preserved in the high-confidence regime).
+  - **G2.T2** perturbed-item log_var widening: Dresser + Sofa mean log_var at end of loop 35 minus end of loop 30 must be ≥ 0.5.
+  - **G2.T3** control-item log_var drift: Bed, DiningTable, Television each must have `|loop35 - loop30| ≤ 0.3` (any single item over the bound trips).
+
+  Trip behaviour: trainer writes `transition_diagnostic_TRIPPED.txt`, sets `gate_tripped: true` in the JSON, exits non-zero, halts training. Pass behaviour: training continues, per-loop records keep appending to the diagnostic JSON through end of phase as record-only.
+- **Instructions §9.1** Phase 3 starts immediately with perturbation active from loop 1; no internal Stage A baseline (would dilute the Stage C signal). Phase 3 resumes from Phase 2's final predictor checkpoint and bank state per spec §2.3.
+- **Instructions §12 (scaffolding inventory)** stale "0.2 m / 10°" stability-batch jitter entry removed; new entries for `PHASE_2_PERTURBATION_START_LOOP = 31` and the three transition-diagnostic SCAFFOLDING thresholds.
+- **research_operations_v1.md §15** strengthened with the "every inherited mechanism needs re-justification when the framing shifts" rule, capturing the 5-catch pattern across the v0 batch (Python version, embeddings coverage, static dwell, cross-loop apex determinism, jitter necessity).
+
+### Code committed
+
+- **`src/config.py`** (commit `08cce4f`). Added `PHASE_2_PERTURBATION_START_LOOP = 31`, the three transition-diagnostic SCAFFOLDING thresholds, perturbed-item and control-item vp_id tuples, baseline + post-onset loop windows. Removed `JITTER_POSITION_M` / `JITTER_HEADING_DEG`. `PhaseConfig.loop_length_estimate` default now 316 (continuous-motion substrate). `PHASE2.loaded_from_phase = None` (Phase 2 starts fresh).
+- **`src/env/explorer_phase2.py`** (commit `08cce4f`). `Phase2RetextureEnv` wraps `ContinuousMotionEnv` and fires `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)` once at the start of every loop with `loop_index >= start_loop`. Records per-loop applied materials for the audit trail. Per-frame `perturbation_active_for_current_frame()` returns True from loop 31 onward. No jitter logic.
+- **`src/trainer/online_trainer.py`** (commit `f94410e`). `TrainerConfig` gains seven new optional fields for the transition diagnostic. `OnlineTrainer.__init__` initialises per-loop aggregator dicts. The training loop accumulates per-loop loss and per-(loop, viewing_position_id) mean log_var (close-up frames only); flushes per-loop stats to `transition_diagnostic.json` as each loop completes; at the end of loop 35 evaluates the three gates; trips write a marker file and break out of the training loop with non-zero exit. Smoke-tested end-to-end on a synthetic 5-loop stream. 21 unit tests still pass.
+- **`scripts/run_phase2_preflight.py`** (commit `057e711`). Five-check preflight per §8.2 against the seed-7 house. Writes a preflight report + JSON + side-by-side before/after frame captures.
+- **`scripts/run_phase2_collect.py`** (commit `057e711`). 65k-frame Phase 2 collection on the continuous-motion substrate, wrapping `ContinuousMotionEnv` in `Phase2RetextureEnv`. Annotations carry `phase: "phase2"`, `perturbation: "livingroom_retexture"`, `perturbation_active: bool`. Per-loop materials written to `data/phase2_collection_metadata.json`.
+- **`scripts/run_phase2_encode.py`** (commit `057e711`). DINOv2 encoding of the Phase 2 stream. §8.4 perturbation-effect check: Stage B vs Stage A Dresser-apex (and Sofa-apex) embeddings; within - cross cosine gap must exceed 0.05.
+- **`scripts/run_phase2_train.py`** (commit `057e711`). Phase 2 main training entry point. Wires the in-flight transition diagnostic with the SCAFFOLDING thresholds. Committed but NOT launched this session (per the session-5 STOP point).
+
+### Phase 2 preflight outcome — FAIL (threshold calibration)
+
+Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_052627.log`. Process completed cleanly, all five checks ran, three reported FAIL against my chosen thresholds. Empirical numbers are in `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`; side-by-side frame captures at `results/inner_pam_v0/phase2_preflight/frames/`.
+
+**Verdicts and observed cosines:**
+
+| check | verdict | observed | criterion |
+|---|---|---|---|
+| 1 action_exists | PASS | RandomizeMaterials returns success | API verified |
+| 2 per_loop_re_application | FAIL | 0.974 / 0.982 / 0.981 / 0.996 | all four < 0.95 |
+| 3 perturbation_locality | FAIL | Bed=0.996, DiningTable=0.983, TV=0.995 | all ≥ 0.999 |
+| 4 livingroom_visually_changed | FAIL | Dresser=0.969, Sofa=0.947 | both < 0.9 |
+| 5 session_determinism | PASS (per-run) | sessions A↔B cosine 0.984 / 0.988 | accept per-run |
+
+**Reading.** The mechanism is working — LivingRoom items move ~3.3% more in pixel cosine than Bedroom items (LivingRoom mean 0.958 vs Bedroom mean 0.991), the right direction. Per-loop re-application produces visibly different textures (cosines drop to 0.974, not 1.0). My thresholds were calibrated for a "big" pixel-space change; the actual change `RandomizeMaterials` produces at 300×300 resolution is smaller because most of each frame's pixels are unchanged geometry, walls, lighting, and background. The §8.4 perturbation-effect check on DINOv2 embeddings (run at encoding time, not preflight time) is the load-bearing verification; pixel cosines are just an early-warning sanity check.
+
+**Stopped before launching the Phase 2 collection** per `CODING_STANDARDS.md` §9.4 ("identify a substantially cleaner approach — don't implement silently"). The clean recalibration of the preflight thresholds (whether by contrast-criterion or by switching the preflight to DINOv2-embedding cosines) is the reviewer's call.
+
+### Working-tree contents committed this session
+
+| commit | scope | files |
+|---|---|---|
+| `5104811` | curriculum framing across docs | spec §2.3; instructions §1.3, §1.4, §1.5, §8.2, §8.3, §8.4, §8.5, §8.7, §8.7a, §9.1, §12; research_operations_v1.md §15 |
+| `08cce4f` | phase 2 env wrapper + config | `src/config.py`, `src/env/explorer_phase2.py` |
+| `f94410e` | trainer transition diagnostic | `src/trainer/online_trainer.py` |
+| `057e711` | phase 2 scripts | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_collect.py`, `scripts/run_phase2_encode.py`, `scripts/run_phase2_train.py` |
+| pending this entry | session-5 HANDOFF + preflight artefacts | `HANDOFF.md`, `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`, 14 side-by-side preflight frames |
+
+### Reviewer-action items before session 6
+
+1. Choose between options (a) / (b) / (c) for the preflight threshold recalibration (see the Next-immediate-action section above; (a) is my recommendation).
+2. After sign-off, the preflight is re-run with recalibrated criteria and the result is verified to PASS.
+3. Then the 65k Phase 2 collection launches (nohup), followed by encoding + §8.4 effect check, then STOP at the original session-5 STOP point before training.
+
+### Operational state (end of session 5)
+
+- Working tree: clean modulo this HANDOFF entry + the preflight artefact commit. 25 commits on `main` after this session lands (4 new commits + pending HANDOFF/artefacts).
+- Push hold: in effect.
+- No running jobs.
+- Phase 1 artefacts: unchanged from session 4 (substrate-degenerate baseline; not re-run).
+- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) added this session. Full Phase 2 collection has NOT begun.
 
 ---
 
