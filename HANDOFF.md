@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status:** Fresh repo, bootstrapped. No code yet. Awaiting encoder substrate verification.
+**Status as of session 4 (2026-05-13):** v0 code scaffolding complete; Phase 1 ran on substrate-degenerate baseline (kept for audit, not re-run); continuous-motion substrate implemented + calibrated; full Phase 2 collection blocked pending reviewer sign-off on the variation-strategy proposal. Working tree clean; push hold in effect.
 
 ---
 
@@ -10,15 +10,18 @@
 
 This is a fresh repository for the Weft project, built around the architecture articulated in `WEFT_INNER_PAM_v0_Spec.md`. The previous repo at `/mnt/c/Users/Jason/Desktop/Eridos/Weft/` contains four iterations of negative results that established the previous architecture (next-frame prediction with cosine retrieval) was building the wrong thing. The new architecture is path-prediction with Gaussian negative-log-likelihood loss, learning trajectory shapes through repetition. See the spec for full claims.
 
-The previous repo stays in place as historical record. This repo does not edit it or share state with it.
+The previous repo stays in place as historical record. This repo does not edit it or share state with it. The previous repo is referenced once at runtime via Python sys.path for the AI2-THOR explorer's `route.json` (the seed-7 furniture metadata, which is data, not code); the explorer + env wrapper themselves were copied into `src/env/` per CODING_STANDARDS §2.3 one-source-of-truth.
 
 ---
 
-## What's been done
+## What's been done (end of session 4)
 
-- Repo bootstrapped per `instructions/` setup batch.
-- `CODING_STANDARDS.md`, `research_operations_v1.md`, `WEFT_INNER_PAM_v0_Spec.md` carried forward.
-- Encoder substrate verification (per `instructions/ENCODER_SUBSTRATE_VERIFICATION.md`) **complete — verdict FAIL.**
+- **v0 code scaffolding:** predictor, online trainer, memory bank, recall mixer, eval probes/metrics/controls, DINOv2 encoder wrapper, continuous-motion explorer + env wrapper, Phase 1 train/shuffle scripts, run_eval (with `--developmental` flag), gate report analysis. 21 unit tests passing.
+- **Encoder substrate verification:** DINOv2 ViT-L/14 CLS PASS on the §5 protocol (Check 1 = 0.9260, Check 2 = 0.4422, gap = 0.4838). Approved by reviewer 2026-05-12 as the v0 encoder.
+- **DINOv2 full-stream encoding:** `data/dinov2_embeddings/embeddings.npy` is 100,000 × 1024 fp32, all rows L2-normalised (consistency cosine = 1.000000 vs the verified dwell-only archive on 50 sampled frames).
+- **Phase 1 main + shuffle (substrate-degenerate baseline):** trained, evaluated, gates reported. G1.1 PASS, G1.2 PASS, G1.5 PASS @ scaffolding; G1.3 FAIL @ absolute scaffolding (treated as substrate artefact); G1.4 FAIL @ k=8 (treated as rank-512-architecture-limit candidate diagnosis; substrate-degenerate baseline anyway). Per session-3 reviewer directive: Phase 1 substrate declared substrate-degenerate; v0 evidence base restarts at Phase 2 on the new continuous-motion substrate.
+- **Continuous-motion substrate implemented + 5-loop calibrated.** Trajectory: per-item "close-up" segment (2 m perpendicular pass through viewing_position, heading locked at viewing_heading), NavMesh-densified transit between items. 316 frames/loop empirical. Within-loop motion-continuity PASSES the DINOv2 spot-check (0 bit-identical consecutive pairs in 255 close_up→close_up + 1,275 transit→transit). Cross-loop apex bit-identicity FAILS on 4 of 5 items (item 5 is the lone non-deterministic-render exception); variation strategy needed to break across-loop pose-determinism floor.
+- **All spec / instructions / research_operations docs updated** to lock the substrate change in. §0 Python-version corrections. §1.3 substrate revision. §1.5 "dwell as pause is not part of the architecture." §4.6 cadence recomputed for the 316-frame loop. §8.3 / §9.3 frame budget tables. research_operations_v1.md §15 substrate-assumption drift check added.
 
 ---
 
