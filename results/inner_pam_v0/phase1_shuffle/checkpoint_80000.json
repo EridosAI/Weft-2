@@ -1,9 +1,9 @@
 {
   "step": 80000,
-  "mean_loss_last_1k": -68574.35345117188,
-  "mean_log_var_last_1k": -9.390389925003051,
-  "predictor_weight_l2_norm_total": 1042.2056366606855,
-  "bank_size": 79961,
-  "timestamp": "2026-05-13T03:32:38Z",
-  "git_commit": "a7d79a51aa6cd3aaa02a6e0e08ca43e91c7625e3"
+  "mean_loss_last_1k": -53529.42996484375,
+  "mean_log_var_last_1k": -7.531149585723877,
+  "predictor_weight_l2_norm_total": 1160.477034921228,
+  "bank_size": 79986,
+  "timestamp": "2026-05-13T05:23:57Z",
+  "git_commit": "11cc3804b86daa9b7f59fb90846a7bca0d2d636c"
 }

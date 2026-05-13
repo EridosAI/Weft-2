@@ -1,13 +1,22 @@
 {
   "phase": "phase1_shuffle",
+  "shuffle_kind": "embedding_stream_permutation_at_source",
+  "spec_section": "\u00a710.1, \u00a76.3 (temporal structure destroyed)",
   "final_step": 95721,
   "n_train": 95722,
   "held_out_region": [
     95722,
     100000
   ],
-  "elapsed_seconds": 862.6511280536652,
-  "n_gradient_steps_actual": 95660,
+  "elapsed_seconds": 871.356048822403,
+  "n_gradient_steps_actual": 95691,
   "shuffle_seed": 0,
-  "git_commit": "a7d79a51aa6cd3aaa02a6e0e08ca43e91c7625e3"
+  "first_5_perm_indices": [
+    62740,
+    36416,
+    33605,
+    36404,
+    55777
+  ],
+  "git_commit": "11cc3804b86daa9b7f59fb90846a7bca0d2d636c"
 }
