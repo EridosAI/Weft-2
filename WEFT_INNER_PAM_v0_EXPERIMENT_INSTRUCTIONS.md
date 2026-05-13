@@ -113,18 +113,22 @@ These are settled. They do not get re-litigated in this batch.
 - **Trajectory: continuous motion throughout.** No held-pose dwell. Each item gets a "close-up" segment: a straight 2 m densified path (0.20 m step → ~10-12 frames) passing through the item's viewing position perpendicular to the item-facing heading, with heading locked at the item-facing bearing so the item enters the frame from one side, centres at the apex, slides out the other side. Transit between items is NavMesh-densified at 0.20 m with corner rotations at 5° (mechanism unchanged from prior explorer).
 - **Loop length:** ~316 frames per loop empirically (5-loop calibration, 2026-05-13). Verified non-bit-identical at the consecutive-frame level inside motion phases (close_up→close_up and transit→transit both have 0 / >1500 bit-identical pairs).
 - **Tempo:** consistent across loops (spec §6.9). The motion is deterministic given seeds; cross-loop pose variation is supplied by the variation mechanism specified below.
-- **Cross-loop pose variation.** Continuous motion within a loop is necessary but not sufficient — apex poses across loops are bit-identical absent some perturbation (AI2-THOR renders deterministically at a fixed pose). The variation mechanism (per-frame jitter at 0.05 m / 2°, or per-loop pose offset, or hybrid) is selected by the reviewer based on the calibration findings; see HANDOFF session-4 for the proposal and pending sign-off.
+- **Cross-loop variation.** Continuous motion within a loop is necessary but not sufficient on its own — apex poses across loops at the same item are bit-identical absent some perturbation (AI2-THOR renders deterministically at a fixed pose). **Variation comes from the phase structure itself, not from pose jitter.** Phase 1's Stage A loops are intentionally identical (the baseline state of the curriculum); Stage B onward introduces per-loop variation via `RandomizeMaterials` on the LivingRoom items (Dresser + Sofa); Stage C adds the Phase 3 perturbation on top. Across-loop apex bit-identicity at items 1–5 in Stage A is the curriculum working correctly, not a substrate degeneracy. The Phase 1 within-loop static dwell that needed fixing (a §2.3 violation) is fixed by continuous motion; across-loop pose-determinism is not a separate violation and does not need agent-pose, furniture-position, or per-frame jitter to break it. (Decision recorded 2026-05-14 by experiment-chat review of the session-4 calibration findings, superseding the session-4 jitter proposal. See HANDOFF session-5 entry.)
 - **Room composition** (verified from the seed-7 annotations): **LivingRoom** contains Dresser and Sofa; **Bedroom** contains Bed, DiningTable, and Television.
 
-### 1.4 Phase structure (the four locked decisions, with perturbation revised for API constraints)
+### 1.4 Phase structure (the four locked decisions, with the curriculum framing recorded 2026-05-14)
 
-- **Continuous training**: training runs without pausing across all three phases at the level of the *training loop*. Evaluation pauses training at checkpoint boundaries (§6.4 below); it does not run in parallel.
+The v0 experiment is a **Stage A → Stage B → Stage C curriculum on a single continuously-trained predictor**. The architectural claim is that the predictor learns each item's trajectory as a structure in embedding space (Stage A: line → Stage B: tube around the line → Stage C: manifold around the line) and that recall remains coherent as the structure widens. The phase structure already supplies the variation gradient; no additional jitter or per-frame perturbation is needed.
 
-- **Phase 2 perturbation — room-scope material re-texturisation in LivingRoom.** Uses `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)` applied once at scene initialisation per Phase 2 controller session. Re-textures Dresser and Sofa together. The original design (single-item texture swap on Dresser only) is not cleanly supported in the standard iTHOR API; the revised mechanism is the closest single-axis perturbation that is documented and reproducible. **Two items are perturbed, not one** — this is a deliberate concession to API constraints.
+- **Continuous training**: training runs without pausing across all three phases at the level of the *training loop*. Evaluation pauses training at checkpoint boundaries (§6.4 below); it does not run in parallel. Predictor weights and memory bank carry across phase boundaries without reset (spec §2.3). Phase 1 is discarded as the substrate-degenerate baseline (session-4 disposition), so Phase 2 starts from a *freshly-initialised* predictor; Phase 3 then resumes from Phase 2's end checkpoint.
 
-- **Phase 3 perturbation — additive: Phase 2's LivingRoom retexturisation retained, plus a stronger perturbation.** Preferred mechanism: Television asset replacement-in-place at the same teleport coordinates (e.g., replace Television with ArmChair via `RemoveFromScene` + `PlaceObjectAtPoint` or equivalent procedural placement). Fallback (if asset replacement does not pass preflight verification in §9.2): full-house `RandomizeMaterials()` so that all 5 items are re-textured. The asset-replacement path is preferred because it tests "is the shape the route or the visuals" at a qualitatively different level than texture variation; the fallback preserves the load progression (more positions perturbed) but loses the qualitative distinction.
+- **Phase 2 internal structure — Stage A baseline before Stage B perturbation begins.** The first **30 loops** of Phase 2 run with `RandomizeMaterials` **disabled** (Stage A within Phase 2 — pure continuous-motion trajectory through an unperturbed environment; this is the architectural baseline for "identical loops produce identical trajectories", and the bit-identicity observed in session-4 calibration is Stage A working correctly). From **loop 31 onward**, `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)` is applied at the start of every loop, supplying fresh LivingRoom textures per loop (Stage B). Two items are perturbed (Dresser + Sofa together) per the LivingRoom scope; Bed, DiningTable, and Television remain unperturbed in-phase as within-experiment control items. The single-item axis originally intended for Phase 2 is weaker than planned (§8.7 records the joint-perturbation framing).
 
-- **Frame reuse**: Phase 1 trains on the existing 100k DINOv2 embeddings at `data/dinov2_embeddings/embeddings.npy`. Phase 2 and Phase 3 require fresh collection and encoding.
+- **Phase 3 internal structure — no separate Stage A baseline.** Phase 3 starts immediately with the Phase 3 perturbation active from loop 1. The Phase 2 → Phase 3 transition is itself the Stage B → Stage C step in the curriculum; an internal Stage A within Phase 3 would dilute the Stage C signal without diagnostic value. Phase 2's LivingRoom perturbation remains active throughout Phase 3 (in the preferred asset-replacement mechanism) or is overwritten by full-house retexturisation (in the fallback).
+
+- **Phase 3 perturbation — additive over Phase 2.** Preferred mechanism: Television asset replacement-in-place at the same teleport coordinates (e.g., replace Television with ArmChair via `RemoveFromScene` + `PlaceObjectAtPoint` or equivalent procedural placement). Fallback (if asset replacement does not pass preflight verification in §9.2): full-house `RandomizeMaterials()` so that all 5 items are re-textured. The asset-replacement path is preferred because it tests "is the shape the route or the visuals" at a qualitatively different level than texture variation; the fallback preserves the load progression (more positions perturbed) but loses the qualitative distinction.
+
+- **Frame reuse**: Phase 1 trains on the existing 100k DINOv2 embeddings at `data/dinov2_embeddings/embeddings.npy` (substrate-degenerate baseline; kept for audit; not re-run). Phase 2 and Phase 3 require fresh collection and encoding on the continuous-motion substrate.
 
 The original ordering rationale (weak-then-strong) survives the revision: Phase 2 is the weaker visual perturbation (texture change on 2 items), Phase 3 is the stronger (texture change on 2 items + asset change on a third, or texture change on all 5 in the fallback case).
 
@@ -139,6 +143,9 @@ The original ordering rationale (weak-then-strong) survives the revision: Phase 
 - Per-shape / per-position / repetition-stratified disaggregations before aggregate metrics.
 - Numbers trace to files. No remembered numbers. No mental arithmetic on metrics.
 - **Dwell as pause is not part of the architecture. The agent moves continuously.** Any session that re-introduces a held-pose dwell, a "stand still and look at X" segment, or any other zero-velocity frame is reverting the session-4 substrate change and re-creating the substrate-degenerate baseline. (Added 2026-05-13 after the inherited 30-frame static dwell was caught in session 3. See `HANDOFF.md` session-4 entry and the drift-detection note in `research_operations_v1.md` §15.)
+- **No agent-pose jitter, no furniture-position jitter, no per-frame perturbation of any kind.** Variation comes from the phase structure itself (Stage A → Stage B → Stage C curriculum, §1.4). The bit-identical across-loop apex frames observed in session-4 calibration are Stage A working correctly, not a substrate degeneracy. A jitter parameter, a noise term in the explorer's pose computation, or a stochastic offset added inside the env wrapper would re-introduce a variation source the curriculum is explicitly designed not to need. (Added 2026-05-14 after the session-4 jitter proposal was withdrawn by the experiment chat in favour of the phase-structure-as-variation framing. See `HANDOFF.md` session-5 entry.)
+- **No Stage A baseline inside Phase 3.** Phase 3 starts immediately with the Phase 3 perturbation active from loop 1; the Phase 2 → Phase 3 transition itself is the Stage B → Stage C step in the curriculum. Inserting an unperturbed segment at the start of Phase 3 would dilute the Stage C signal. (Added 2026-05-14 with the curriculum framing.)
+- **Predictor and bank carry across phase boundaries without reset** (spec §2.3). Phase 3 resumes from Phase 2's final checkpoint and final bank state; weights and bank are not re-initialised at the boundary. (Phase 1 → Phase 2 is the exception: Phase 1 is discarded as substrate-degenerate, so Phase 2 starts from a freshly-initialised predictor with an empty bank.)
 
 ### 1.6 What is deferred
 All items in spec §6 (variable tempo, multi-scale operation, depth modulation beyond recency, sleep-phase consolidation, bi-hemispheric retrieval, action/reward, outer-JEPA mediation logic, etc.). If implementing v0 surfaces a "we'd want this" instinct that touches any of those, write a note in `HANDOFF.md` for the v1 conversation and continue with v0.
@@ -217,7 +224,7 @@ Weft 2/
 ```
 
 The previous repo provides:
-- The AI2-THOR explorer (`Weft/src/env/furniture_route_explorer.py`) with jitter logic and densified-Teleport mechanism — reused by reference for Phase 2/3 collection. CC may copy this file into `Weft 2/src/env/` and modify it for the perturbation wrappers; **do not edit the file in the previous repo**.
+- The AI2-THOR explorer (`Weft/src/env/furniture_route_explorer.py`) with densified-Teleport mechanism — superseded for Phase 2/3 by `src/env/continuous_motion_explorer.py` (session 4). The previous repo's explorer also carries jitter logic from the Stage 0b stability batch; that logic is *not* ported forward — v0 uses no per-frame jitter (see §1.5).
 - The frame annotation format (`Weft/results/stage_0b_furniture/main/frame_annotations.jsonl`) — Phase 2/3 collections produce JSONL in the same schema, with additional `phase` and `perturbation` fields.
 
 ---
@@ -598,10 +605,10 @@ Rationale for trajectory-over-threshold: the original G1.5 (`M3 > 0.10` at final
 
 ---
 
-## 8. Phase 2 — LivingRoom Material Re-texturisation
+## 8. Phase 2 — Stage A Baseline + LivingRoom Material Re-texturisation
 
 ### 8.1 Goal
-Introduce a deterministic, controlled visual variation at the LivingRoom (Dresser + Sofa); observe whether existing learned shape representations accommodate the new variation as repetition of the perturbed shapes accumulates.
+Run a Stage A baseline (loops 1–30, unperturbed) followed by a Stage B perturbation segment (loops 31+, `RandomizeMaterials` fired per loop on the LivingRoom). The Stage A → Stage B transition within Phase 2 is observed by the in-flight transition diagnostic (§8.7a). The architectural prediction is that Dresser and Sofa trajectories widen from sharp lines (Stage A) into tubes (Stage B) around their Stage A means, while Bed, DiningTable, and Television trajectories remain on their Stage A lines as within-experiment controls.
 
 ### 8.2 Phase 2 preflight (run before collection)
 
@@ -615,12 +622,12 @@ Introduce a deterministic, controlled visual variation at the LivingRoom (Dresse
    - Verify the action returns success (event.metadata["lastActionSuccess"] is True).
    - If the action fails or `inRoomTypes` is unrecognised, stop and report.
 
-2. **Verify perturbation persistence across loops.**
+2. **Verify per-loop re-application produces fresh textures.**
    - After step 1, capture an RGB frame at the Dresser viewing position (item 3, position from seed-7 metadata).
-   - Run the explorer through one full route loop without re-calling `RandomizeMaterials`.
-   - On loop 2, capture another RGB frame at the Dresser viewing position.
-   - Verify the two frames are pixel-similar (cosine of flattened RGB > 0.99 or visually identical inspection).
-   - If frames differ, materials are not persistent — stop and report.
+   - Call `RandomizeMaterials` again with the same parameters (the per-loop pattern Phase 2 uses from loop 31 onward).
+   - Capture another RGB frame at the Dresser viewing position.
+   - Verify the two frames differ measurably (cosine of flattened RGB < 0.95). If identical, `RandomizeMaterials` is not actually re-randomising per call — stop and report.
+   - Also call `RandomizeMaterials` a third time and verify the second→third capture also differs (rules out a two-state cycle).
 
 3. **Verify perturbation locality (does not affect Bedroom items).**
    - Capture frames at Bed and Television viewing positions before and after the LivingRoom RandomizeMaterials call.
@@ -645,25 +652,25 @@ Preflight output: `results/inner_pam_v0/phase2_preflight/preflight_report.md` wi
 ### 8.3 Frame collection
 
 `src/env/explorer_phase2.py` wraps the **continuous-motion** explorer (`src/env/continuous_motion_explorer.py`, session 4):
-- At scene initialisation, after the controller is ready and before the explorer starts, call `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)`.
-- Materials applied in this call are documented in the per-run output: read `event.metadata["lastActionSuccess"]` and any returned material identifiers, write to `data/phase2_collection_metadata.json`.
-- The explorer then runs the continuous-motion 5-item route (close-up motion through each item + NavMesh-densified transit between items, per §1.3). The cross-loop pose variation mechanism is the reviewer-selected option from the session-4 HANDOFF (default proposal: per-frame jitter at 0.05 m / 2°, applied inside the explorer).
+- The collection script accepts a `--perturbation_start_loop` argument (default **31**). Loops with `loop_index < perturbation_start_loop` run as the Stage A baseline: pure continuous-motion route with **no `RandomizeMaterials` call**. From the start of every loop with `loop_index >= perturbation_start_loop`, the wrapper calls `controller.step(action="RandomizeMaterials", inRoomTypes=["LivingRoom"], useTrainMaterials=True)` *once at the start of that loop*, supplying fresh LivingRoom textures for that loop. The call returns success metadata plus material identifiers; these are appended per loop to `data/phase2_collection_metadata.json` (`{loop_index: [material_id, ...], ...}`) for reproducibility.
+- Per-frame annotations carry a `perturbation_active: bool` field — `False` for all frames in Stage A loops (loops 1 to `perturbation_start_loop - 1`), `True` for all frames in Stage B loops onward. Downstream analysis disaggregates Stage A vs Stage B frames via this field.
+- No pose jitter of any kind. The cross-loop pose-determinism observed in session-4 calibration on Bed, DiningTable, Sofa, and Dresser apex frames is preserved in Stage A — that is the curriculum's baseline state. The variation in Stage B comes from `RandomizeMaterials` re-texturing the LivingRoom items (Dresser, Sofa) per loop; Bed, DiningTable, and Television remain visually constant across loops as within-experiment controls.
 
-**Frame budget:** **65,000 frames ≈ 205 loops** (at ~316 frames/loop, calibration 2026-05-13). Minus 10 held-out loops, the model trains on **~195 loops** of the perturbed shape — comfortably into the 100+ rep bin with ~95 reps inside.
+**Frame budget:** **65,000 frames ≈ 205 loops** (at ~316 frames/loop, calibration 2026-05-13). Minus 10 held-out loops, the model trains on **~195 loops** total: **~30 Stage A baseline loops** plus **~165 Stage B perturbed loops** (Dresser + Sofa with fresh LivingRoom textures per loop). Stage B's perturbed-shape rep count at the final eval checkpoint is ~165 — comfortably into the 100+ rep bin with 65+ reps of margin.
 
-Derivation: M4 stratifies perturbed-shape recall by repetition count into bins {1–5, 6–19, 20–50, 51–99, 100+}. At the final eval checkpoint, the maximum rep count of the perturbed shape equals `trained_loops` (every training loop visits each item exactly once). The 100+ bin is the strongest single test of spec §2.2 (repetition-as-learning-signal — the architecture predicts its tightest representations at the highest rep counts), so the budget must put `trained_loops` comfortably above 100.
+Derivation: M4 stratifies perturbed-shape recall by repetition count into bins {1–5, 6–19, 20–50, 51–99, 100+}. With the Stage A baseline occupying loops 1–30 (perturbation_active = False), the *perturbed-shape* rep count for Dresser and Sofa accumulates only from loop 31 onward. At the final eval checkpoint, the perturbed-shape rep count equals `trained_loops − (perturbation_start_loop − 1)`. With 195 trained loops and Stage A spanning loops 1–30, Stage B contributes ~165 perturbed-shape reps — comfortably into the 100+ bin with ~65 reps of margin.
 
-| budget choice | substrate | collected loops | trained loops (− 10 held-out) | bin reached at final eval |
-|---|---|---:|---:|---|
-| 65k | prior (458 frames/loop) | 142 | 132 | ~32 reps into 100+ |
-| 65k | new (316 frames/loop, continuous motion) | ~205 | ~195 | **~95 reps into 100+** ✓ |
-| 50k (rejected) | prior (458 frames/loop) | 109 | 99 | upper edge of 51-99; 100+ never reached |
+| budget choice | substrate | collected loops | Stage A loops | Stage B trained loops | bin reached at final eval |
+|---|---|---:|---:|---:|---|
+| 65k | new (316 frames/loop, continuous motion) | ~205 | 30 | ~165 (after 10 held-out) | **~65 reps into 100+** ✓ |
 
-The prior draft's claim that 50k "comfortably populates 51–99 while just entering 100+" was wrong on the second clause: 99 trained loops cannot enter the 100+ bin, so the 100+ bin would have been empty at every Phase 2 / Phase 3 eval checkpoint. The 65k budget is the lowest round number that gives meaningful margin past the 100-rep boundary; smaller margins risk a near-empty 100+ bin if the held-out is later widened or the loop length is slightly longer than the 458-frame estimate. The remaining bins are populated as before: 1–5 at loop 5 (~2.3k frames in), 6–19 at loops 6–19, 20–50 at loops 20–50, 51–99 at loops 51–99, and 100+ from loop 100 onward (~45.8k frames in to the perturbed phase) through the final trained loop at ~132.
+The held-out region is the last 10 *collected* loops, all Stage B. Stage A frames are not held out — the Stage A baseline is fully trained on.
 
-*Robustness:* CC re-computes the budget from the collected `phase2_annotations.jsonl` before Phase 2 training begins. If actual loop length exceeds 470 frames (≥2.6% above the 458-frame estimate), or if held-out is ever widened beyond 10 loops, the trained-loop count is re-checked against the 100+ boundary; budget is increased to preserve ≥20 reps of margin past 100, with the new value documented in HANDOFF.md.
+The remaining bins are populated within Stage B as before: 1–5 at phase-relative loops 31–35 (~316–1,580 Stage-B frames after the 30-loop Stage A offset of ~9,500 frames), 6–19 at loops 36–49, 20–50 at loops 50–80, 51–99 at loops 81–129, and 100+ from loop 130 onward through the final trained Stage B loop at ~195.
 
-Output: `data/phase2_frames/` (PNG, gitignored) + `data/phase2_annotations.jsonl`. Annotations carry an additional `phase: "phase2"` and `perturbation: "livingroom_retexture"` field.
+*Robustness:* CC re-computes the budget from the collected `phase2_annotations.jsonl` before Phase 2 training begins. If actual loop length exceeds 340 frames (≥7.5% above the 316-frame estimate), or if held-out is ever widened beyond 10 loops, the trained-loop count is re-checked against the 100+ boundary; budget is increased to preserve ≥20 reps of margin past 100, with the new value documented in HANDOFF.md.
+
+Output: `data/phase2_frames/` (PNG, gitignored) + `data/phase2_annotations.jsonl`. Annotations carry `phase: "phase2"`, `perturbation: "livingroom_retexture"`, and `perturbation_active: bool` (False for Stage A loops, True for Stage B). Per-loop applied materials in `data/phase2_collection_metadata.json`.
 
 Script: `scripts/run_phase2_collect.py`. nohup, log to `logs/phase2_collect_*.log`.
 
@@ -674,15 +681,15 @@ Script: `scripts/run_phase2_collect.py`. nohup, log to `logs/phase2_collect_*.lo
 CC verifies post-encoding:
 - Shape: `(65000, 1024)`.
 - Norms in `[1.0 - 1e-5, 1.0 + 1e-5]`.
-- **Perturbation effect check:** mean cosine between 50 randomly sampled Phase 2 Dresser-dwell embeddings and 50 Phase 1 Dresser-dwell embeddings *vs* mean cosine within each set. If the cross-set mean is similar to the within-set means (< 0.05 separation), the perturbation had no detectable effect on the encoder representation — flag and stop. Repeat for Sofa.
+- **Perturbation effect check (Stage B vs Stage A within Phase 2).** Mean cosine between 50 randomly sampled Phase 2 *Stage-B* Dresser-apex embeddings (`perturbation_active = True`, viewing_position_id = 3) and 50 randomly sampled Phase 2 *Stage-A* Dresser-apex embeddings (`perturbation_active = False`, same item) *vs* mean cosine within each set. If the cross-set mean is similar to the within-set means (< 0.05 separation), the per-loop `RandomizeMaterials` did not produce a measurable encoder-level perturbation — flag and stop. Repeat for Sofa. (Phase 1 embeddings are *not* used as the unperturbed reference: Phase 1 is on the substrate-degenerate baseline, the encoder-level comparison would conflate substrate effects with perturbation effects. The Stage A loops *inside* Phase 2 are the right reference: same substrate, same continuous-motion trajectory, only the LivingRoom textures differ.)
 
 ### 8.5 Continued training
 
-Phase 1's final checkpoint is loaded; training resumes on the Phase 2 stream with the same optimizer state, same predictor weights, same bank state. No re-initialisation.
+**Phase 2 starts from a freshly-initialised predictor** (Phase 1 is discarded as substrate-degenerate; session-4 disposition). Bank is also fresh (empty at the start of Phase 2). Phase 3 will resume from Phase 2's final checkpoint and final bank state (spec §2.3); Phase 2 → Phase 3 is the only resumption boundary in v0.
 
-Held-out: last 10 loops of Phase 2 reserved.
+Held-out: last 10 loops of Phase 2 reserved (all Stage B, since Stage A is the early phase).
 
-Same training loop, denser checkpoint cadence per §4.6 (phase-relative steps 1k, 2.5k, 5k, 9k, 12k, 16k, 23k, 34k, 46k, 55k, end). Output: `results/inner_pam_v0/phase2_main/`.
+Same training loop, denser checkpoint cadence per §4.6 (phase-relative steps **1k / 2k / 4k / 6.5k / 10k / 15k / 20k / 30k / 40k / 55k / end**, 316-frame-loop substrate). Output: `results/inner_pam_v0/phase2_main/`.
 
 ### 8.6 Phase 2 evaluation
 Phase 1's metric suite plus M6 (cluster accommodation). Evaluated at each Phase 2 checkpoint.
@@ -691,11 +698,35 @@ Phase 1's metric suite plus M6 (cluster accommodation). Evaluated at each Phase 
 
 **G2.1 — Training continued without NaN/Inf.** Same as G1.1 at Phase 2 endpoint.
 
-**G2.2 — Phase 1 cluster preserved.** M3 cluster sharpness on Phase 1 held-out probes does not collapse during Phase 2: cluster sharpness at end of Phase 2 ≥ 70% of cluster sharpness at end of Phase 1. (SCAFFOLDING threshold; recalibrate after empirical distribution is observed.)
+**G2.2 — Stage A cluster preserved through Stage B.** With Phase 1 discarded as substrate-degenerate, the within-experiment cluster-preservation reference is the *Stage A* segment of Phase 2 itself. M3 cluster sharpness on Bed / DiningTable / Television (the unperturbed control items) measured at end of Phase 2 (Stage B trained) ≥ 70% of cluster sharpness measured at end of Stage A (loop 30, before the perturbation begins). The unperturbed-item M3 trajectory is logged at every Phase 2 checkpoint to support this evaluation. (SCAFFOLDING threshold; recalibrate after empirical distribution is observed.)
 
-**G2.3 — Variance responded to perturbation.** Mean predicted variance on perturbed-LivingRoom (Dresser, Sofa) probes is higher than on un-perturbed (Phase 1 held-out, same item) probes at the *start* of Phase 2, and decreases over Phase 2 training. Statistical form: paired t-test on per-probe variance, start-of-Phase-2 vs Phase 1 final; gate passes if start-of-Phase-2 is significantly higher (p < 0.01). **Normality fallback:** if Shapiro-Wilk on the per-probe difference distribution rejects normality at `p < 0.05`, use `scipy.stats.wilcoxon` with `alternative='greater'`; same `p < 0.01` threshold.
+**G2.3 — Variance responded to perturbation.** Mean predicted variance on perturbed-LivingRoom (Dresser, Sofa) probes is higher at the *start of Stage B* (loops 31–35) than at the *end of Stage A* (loops 26–30) within Phase 2, and decreases over the remainder of Stage B training. Statistical form: paired t-test on per-probe variance, end-of-Stage-A vs start-of-Stage-B; gate passes if start-of-Stage-B is significantly higher (p < 0.01). **Normality fallback:** if Shapiro-Wilk on the per-probe difference distribution rejects normality at `p < 0.05`, use `scipy.stats.wilcoxon` with `alternative='greater'`; same `p < 0.01` threshold. The same comparison run on Bed / DiningTable / Television probes must *not* show a significant variance change across the transition — those are the within-experiment controls (§8.7a in-flight diagnostic carries the same logic at per-loop granularity).
 
 **Joint-perturbation framing (applies to G2.2, G2.3, and M6).** The Phase 2 perturbation affects two items (Dresser + Sofa) simultaneously via the LivingRoom `RandomizeMaterials` scope. Accommodation is therefore measured against a *joint* perturbation, not the single-item axis originally intended. This is a deliberate concession to AI2-THOR API constraints (§1.4). The architectural claim — shape representations widen but survive under visual variation — remains testable; the single-axis isolation is weaker than originally planned. When reporting G2.3 and M6, the perturbed-shape result aggregates over Dresser and Sofa unless reported per-item; per-item disaggregation is logged but the gate is computed on the joint set.
+
+### 8.7a In-flight transition diagnostic (Stage A → Stage B)
+
+The Stage A → Stage B transition inside Phase 2 (loop 30 → loop 31) is observed in flight during training, not just at the end-of-phase checkpoint. The trainer maintains per-loop running aggregates of training-time loss and predicted log-variance, disaggregated by `viewing_position_id`, and writes them to `results/inner_pam_v0/phase2_main/transition_diagnostic.json` after each loop completes. Coverage is at minimum loops 25–40 (the transition window); the implementation logs every loop for completeness.
+
+**Three SCAFFOLDING gates** evaluated at the end of loop 35 (the first point where the post-transition window is fully populated). Thresholds recalibratable after observing the empirical loop-level distribution; record empirical values in HANDOFF whether or not the gates trigger.
+
+**G2.T1 — Loss spike check (training stability across the perturbation onset).** Compute `max_loss = max(mean_loss[loop=31..35])` and `baseline_loss = mean(mean_loss[loop=25..30])`. Gate trips if `max_loss > 3.0 * baseline_loss`. A trip indicates the perturbation has produced a training instability the architecture cannot absorb within 5 loops; flag in HANDOFF and pause for experiment-chat review before letting Phase 2 training continue.
+
+**G2.T2 — Perturbed-item variance widening (Dresser + Sofa).** Compute `log_var_loop30 = mean(log_var[loop=30, viewing_position_id ∈ {3, 4}])` and `log_var_loop35 = mean(log_var[loop=35, viewing_position_id ∈ {3, 4}])`. Gate trips if `log_var_loop35 - log_var_loop30 < 0.5` (in natural-log units). A trip indicates the predictor's variance is not absorbing the new perturbation within 5 loops; flag and pause.
+
+**G2.T3 — Control-item variance stability (Bed + DiningTable + Television).** Compute per-item `delta_log_var = log_var[loop=35] - log_var[loop=30]` for each of viewing_position_id ∈ {1, 2, 5}. Gate trips if any item's `|delta_log_var| > 0.3`. A trip indicates cross-item interference — the perturbation on Dresser/Sofa is leaking into the predictor's representation of items the perturbation does not visually affect, which the architecture's per-item representations should not produce. Flag and pause.
+
+**Trip behaviour.** If any of G2.T1 / G2.T2 / G2.T3 trips, the trainer:
+1. Writes the trip verdict and the values to `transition_diagnostic.json` with `gate_tripped: true` and the specific gate name.
+2. Writes a marker file `results/inner_pam_v0/phase2_main/transition_diagnostic_TRIPPED.txt` for easy detection by the launching shell.
+3. Exits non-zero (status 3).
+4. Does *not* continue training past loop 35.
+
+The launching session then updates HANDOFF and pauses for experiment-chat review per `research_operations_v1.md` §8.10.
+
+**Pass behaviour.** All three gates pass (loss within 3×, perturbed-item widening ≥ 0.5, control-item drift ≤ 0.3). Training continues to end of phase; the diagnostic JSON is updated per-loop through the rest of training as record-only.
+
+Thresholds (3.0× loss, 0.5 log_var widening, 0.3 control drift) are SCAFFOLDING and recalibratable from the empirical distribution observed in the first run — recalibration requires explicit justification in HANDOFF per §16.
 
 Gate failures stop the batch; do not proceed to Phase 3.
 
@@ -705,6 +736,8 @@ Gate failures stop the batch; do not proceed to Phase 3.
 
 ### 9.1 Goal
 Add a second variation on top of Phase 2's perturbation. Test whether shape representations accommodate compounding perturbation. Preferred mechanism: a *qualitatively different* perturbation type (asset replacement) at a different position. Fallback: a *quantitatively larger* perturbation of the same type (full-house retexturisation).
+
+**No internal Stage A baseline.** Phase 3 starts immediately with the Phase 3 perturbation active from loop 1; the Phase 2 → Phase 3 transition is itself the Stage B → Stage C step in the curriculum. By the time Phase 3 starts the predictor has 195 trained loops of Stage A + B experience and a memory bank populated with the same; an internal Stage A within Phase 3 would dilute the Stage C signal without diagnostic value (§1.5). Phase 3 resumes from Phase 2's final predictor checkpoint and final bank state (spec §2.3); weights and bank are *not* re-initialised at the boundary.
 
 ### 9.2 Phase 3 preflight (run before collection)
 
@@ -828,7 +861,8 @@ The v0 experiment produces one of three named verdicts at endpoint. CC reports t
 | SCAFFOLDING | S4 quantitative thresholds: `||μ_shuffle||₂ < 0.15` AND `mean log σ²_shuffle > 0.4` for "collapse-to-mean (expected)" | this doc §6.5 | recalibrate from empirical shuffle distribution at end of Phase 1 |
 | SCAFFOLDING | Phase 2 perturbation = LivingRoom RandomizeMaterials | this doc §1.4, §8 | per-object material setting in v1 if API supports |
 | SCAFFOLDING | Phase 3 preferred = Television asset replacement; fallback = full-house RandomizeMaterials | this doc §1.4, §9 | preflight selects mechanism per run |
-| SCAFFOLDING | Jitter magnitudes (`0.2 m`, `10°`) carried from stability batch | this doc §1.3 | first-principle derivation is v1 |
+| SCAFFOLDING | Phase 2 Stage A baseline length: `perturbation_start_loop = 31` (30 unperturbed loops before Stage B begins) | this doc §1.4, §8.3 | recalibrate if 30 loops produces inadequate Stage A baseline density; v1 may explore curriculum-length sensitivity |
+| SCAFFOLDING | In-flight transition gate thresholds: G2.T1 `3.0×` loss spike, G2.T2 `≥ 0.5` log_var widening on perturbed items, G2.T3 `≤ 0.3` log_var drift on control items | this doc §8.7a | recalibrate from empirical per-loop distribution observed during the first run; v1: derive thresholds from loop-level variance of each metric in Stage A |
 | SCAFFOLDING | Dense early-phase checkpointing schedule (§4.6) | this doc §4.6 | revisit if checkpoint cost > 10 min each |
 
 Inventory reviewed at start and end of each phase per `research_operations_v1.md` §7.2.
