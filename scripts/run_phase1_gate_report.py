@@ -270,19 +270,21 @@ def main() -> int:
 
     # ---- G1.3 — variance learned structure --------------------------------
     final_lv = log_var_trajectory[-1]
-    sep = final_lv["cue"]["mean"] - final_lv["steady"]["mean"]
+    sep_main = final_lv["cue"]["mean"] - final_lv["steady"]["mean"]
     g1_3 = {
         "final_step": final_step,
-        "steady_mean_log_var": final_lv["steady"]["mean"],
-        "cue_mean_log_var": final_lv["cue"]["mean"],
-        "separation_cue_minus_steady": sep,
-        "scaffolding_threshold": G1_3_LOG_VAR_SEPARATION,
-        "verdict_against_scaffolding_threshold": (
-            "PASS" if sep > G1_3_LOG_VAR_SEPARATION else "FAIL"
+        "main": {
+            "steady_mean_log_var": final_lv["steady"]["mean"],
+            "cue_mean_log_var": final_lv["cue"]["mean"],
+            "separation_cue_minus_steady": sep_main,
+        },
+        "scaffolding_threshold_absolute": G1_3_LOG_VAR_SEPARATION,
+        "verdict_against_scaffolding_threshold_absolute": (
+            "PASS" if sep_main > G1_3_LOG_VAR_SEPARATION else "FAIL"
         ),
         "note": (
-            "SCAFFOLDING threshold (+0.3 separation). Pause for experiment-chat "
-            "review per session-2 protocol."
+            "SCAFFOLDING threshold (+0.3 absolute separation, cue > steady). "
+            "Pause for experiment-chat review per session-2 protocol."
         ),
     }
 
@@ -304,6 +306,26 @@ def main() -> int:
         shuffle_results = _run_predictor_on_probes(
             sh_ckpt, embeddings, all_probes, device
         )
+        # Augment G1.3 with main-vs-shuffle log_var comparison: does the main
+        # predictor's variance structure differ from a temporally-destroyed
+        # shuffle's? This is more interpretable than the absolute cue-steady
+        # separation when the substrate (un-jittered dwell) is degenerate.
+        sh_lv = _per_probe_log_var_summary(shuffle_results)
+        g1_3["shuffle"] = {
+            "steady_mean_log_var": sh_lv["steady"]["mean"],
+            "cue_mean_log_var": sh_lv["cue"]["mean"],
+            "separation_cue_minus_steady": (
+                sh_lv["cue"]["mean"] - sh_lv["steady"]["mean"]
+            ),
+        }
+        g1_3["main_minus_shuffle_log_var"] = {
+            "steady": (
+                final_lv["steady"]["mean"] - sh_lv["steady"]["mean"]
+            ),
+            "cue": (
+                final_lv["cue"]["mean"] - sh_lv["cue"]["mean"]
+            ),
+        }
         # All horizons we report (k=1, 8, 16 in 1-indexed; convert to 0-indexed).
         for k1 in (1, 8, 16):
             k0 = k1 - 1
