@@ -1,0 +1,42 @@
+# Weft Inner PAM v0 — pinned dependencies.
+# Environment: WSL2 (Ubuntu 22.04), system Python 3.12.3, CUDA 12.8 via WSL2
+# passthrough. Carries forward the substrate-verification batch's pinned stack
+# from the previous repo (`Weft/requirements.txt`) plus `scipy` (used by the
+# G1.4 / G2.3 / G3.3 paired t-test and Wilcoxon fallback in instr §7.7 / §8.7 / §9.7).
+#
+# Install: pip install -r requirements.txt
+# v0 uses the system Python directly (matches the substrate-verification batch's
+# verified-working environment); a venv may be added later if isolation is needed.
+
+# PyTorch — cu128 build via WSL2 CUDA passthrough.
+torch==2.10.0
+torchvision==0.25.0
+
+# Numerics / IO
+numpy==2.4.2
+pillow==12.1.1
+opencv-python==4.13.0.92
+scipy==1.17.1                # paired t-test + Wilcoxon + Shapiro-Wilk
+
+# FAISS — CPU variant (memory bank is on CPU per spec §3.4 device placement).
+faiss-cpu==1.13.2
+
+# AI2-THOR (Phase 2/3 collection only; not loaded during Phase 1 training).
+ai2thor==5.0.0
+prior==1.0.3
+
+# DINOv2 loading
+transformers==5.3.0
+
+# Logging and experiment tracking
+tensorboard==2.20.0
+PyYAML==6.0.1
+tqdm==4.67.3
+
+# Analysis / plotting
+scikit-learn==1.8.0
+matplotlib==3.10.8
+pandas==2.3.3
+
+# Test runner
+pytest==9.0.3

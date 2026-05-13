@@ -6,11 +6,20 @@ __pycache__/
 .Python
 *.egg-info/
 .eggs/
+.pytest_cache/
 
 # Virtual environments
 .venv/
 venv/
-env/
+# (top-level `env/` was historically ignored; removed to allow src/env/ — the
+#  phase-2/3 explorer wrapper package — into the tree. Re-add as /env/ at the
+#  repo root if a top-level venv named env/ is ever created.)
+
+# Env snapshot from pip freeze (not part of pinned reqs).
+.env_snapshot.txt
+
+# Tensorboard runs inside results/
+results/**/tb/
 
 # Checkpoints and large artifacts
 checkpoints/
@@ -25,6 +34,7 @@ logs/*.pid
 # IDE / editor
 .vscode/
 .idea/
+.claude/
 *.swp
 .DS_Store
 
