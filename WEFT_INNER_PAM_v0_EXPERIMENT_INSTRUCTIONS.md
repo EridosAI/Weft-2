@@ -105,11 +105,16 @@ These are settled. They do not get re-litigated in this batch.
 - The encoder is not re-trained, re-tuned, or replaced in this batch.
 
 ### 1.3 Environment and trajectory
-- AI2-THOR seed-7 furniture house with the densified-Teleport explorer from the previous repo.
-- Five-item route: `Bed → DiningTable → Dresser → Sofa → Television → Bed → ...` (matching the existing seed-7 furniture run).
-- Dwell mechanism: 30 frames at the same teleport-pose per visit, with per-frame jitter for collected data (position `0.2 m` / heading `10°`, fallback ladder per stability batch).
-- Tempo: consistent across loops (spec §6.9).
-- Room composition (verified from the existing seed-7 annotations): **LivingRoom** contains Dresser and Sofa; **Bedroom** contains Bed, DiningTable, and Television.
+
+**Substrate revised in session 4** (per `HANDOFF.md` session-4 entry). The original entry inherited a 30-frame static-dwell pattern from the prior Stage-0b experiment; that pattern violates spec §2.3's "no zero-velocity frames" commitment (and the architectural claim that the predictor learns path-shaped targets, not identity targets repeated K times). The session-3 reviewer surfaced the substrate-architecture mismatch and authorised the redesign. Current entry reflects the new substrate:
+
+- AI2-THOR seed-7 furniture house, driven by `src/env/continuous_motion_explorer.py`.
+- Five-item route: `Bed → DiningTable → Dresser → Sofa → Television → Bed → ...` (item identities unchanged from the prior Stage-0b run).
+- **Trajectory: continuous motion throughout.** No held-pose dwell. Each item gets a "close-up" segment: a straight 2 m densified path (0.20 m step → ~10-12 frames) passing through the item's viewing position perpendicular to the item-facing heading, with heading locked at the item-facing bearing so the item enters the frame from one side, centres at the apex, slides out the other side. Transit between items is NavMesh-densified at 0.20 m with corner rotations at 5° (mechanism unchanged from prior explorer).
+- **Loop length:** ~316 frames per loop empirically (5-loop calibration, 2026-05-13). Verified non-bit-identical at the consecutive-frame level inside motion phases (close_up→close_up and transit→transit both have 0 / >1500 bit-identical pairs).
+- **Tempo:** consistent across loops (spec §6.9). The motion is deterministic given seeds; cross-loop pose variation is supplied by the variation mechanism specified below.
+- **Cross-loop pose variation.** Continuous motion within a loop is necessary but not sufficient — apex poses across loops are bit-identical absent some perturbation (AI2-THOR renders deterministically at a fixed pose). The variation mechanism (per-frame jitter at 0.05 m / 2°, or per-loop pose offset, or hybrid) is selected by the reviewer based on the calibration findings; see HANDOFF session-4 for the proposal and pending sign-off.
+- **Room composition** (verified from the seed-7 annotations): **LivingRoom** contains Dresser and Sofa; **Bedroom** contains Bed, DiningTable, and Television.
 
 ### 1.4 Phase structure (the four locked decisions, with perturbation revised for API constraints)
 
@@ -133,6 +138,7 @@ The original ordering rationale (weak-then-strong) survives the revision: Phase 
 - The cosine and shuffle controls (both required, both run per phase; shuffle has an explicit sanity-check diagnostic in §6.5).
 - Per-shape / per-position / repetition-stratified disaggregations before aggregate metrics.
 - Numbers trace to files. No remembered numbers. No mental arithmetic on metrics.
+- **Dwell as pause is not part of the architecture. The agent moves continuously.** Any session that re-introduces a held-pose dwell, a "stand still and look at X" segment, or any other zero-velocity frame is reverting the session-4 substrate change and re-creating the substrate-degenerate baseline. (Added 2026-05-13 after the inherited 30-frame static dwell was caught in session 3. See `HANDOFF.md` session-4 entry and the drift-detection note in `research_operations_v1.md` §15.)
 
 ### 1.6 What is deferred
 All items in spec §6 (variable tempo, multi-scale operation, depth modulation beyond recency, sleep-phase consolidation, bi-hemispheric retrieval, action/reward, outer-JEPA mediation logic, etc.). If implementing v0 surfaces a "we'd want this" instinct that touches any of those, write a note in `HANDOFF.md` for the v1 conversation and continue with v0.
@@ -332,21 +338,39 @@ Per `CODING_STANDARDS.md` §5.4. A checkpoint that can't be reproduced from its 
 
 ### 4.6 Checkpoint cadence (derived from repetition-bin coverage)
 
-The repetition-stratified metric (spec §10.2, this doc §6.2 M4) requires evaluation at training points where the perturbed shape has been observed at counts spanning {1–5, 6–19, 20–50, 51–99, 100+}. Loop length ≈ 458 frames (30 dwell × 5 items + 308 transit, verified from the seed-7 stability batch). For perturbed shapes in Phase 2 and Phase 3, the bins map to training-step ranges as follows:
+The repetition-stratified metric (spec §10.2, this doc §6.2 M4) requires evaluation at training points where the perturbed shape has been observed at counts spanning {1–5, 6–19, 20–50, 51–99, 100+}.
+
+**Loop length: ~316 frames** for the continuous-motion substrate (5-loop calibration, 2026-05-13: 1,580 frames / 5 = 316 frames per loop, comprising ~57 close-up + ~260 transit + corner-rotation frames). The prior 458-frame estimate was inherited from the 30-frame-static-dwell Stage-0b substrate and is no longer applicable; see §1.3 and the session-4 HANDOFF entry. For perturbed shapes in Phase 2 and Phase 3, the bins map to training-step ranges as follows:
 
 | bin | loops within phase | frames into phase |
 |---|---:|---|
-| 1–5 | 1–5 | 458–2290 |
-| 6–19 | 6–19 | 2748–8702 |
-| 20–50 | 20–50 | 9160–22900 |
-| 51–99 | 51–99 | 23358–45342 |
-| 100+ | 100+ | 45800+ |
+| 1–5 | 1–5 | 316–1,580 |
+| 6–19 | 6–19 | 1,896–6,004 |
+| 20–50 | 20–50 | 6,320–15,800 |
+| 51–99 | 51–99 | 16,116–31,284 |
+| 100+ | 100+ | 31,600+ |
 
 Checkpoint cadence is therefore:
 
-- **Phase 1 (existing 100k embeddings, ~218 loops):** every 10,000 steps. All un-perturbed shapes are already in the 100+ bin throughout Phase 1; the rep-stratification metric does not require denser checkpointing for Phase 1.
+- **Phase 1 (existing 100k embeddings, ~218 loops on the *prior* substrate):** every 10,000 steps. Substrate-degenerate baseline per session-4 disposition; not re-run. Cadence preserved for the audit trail.
 
-- **Phase 2 and Phase 3 (perturbed shapes start at 0 reps):** denser checkpointing in early phase to cover the 1–5 and 6–19 bins. Specifically: at phase start, then at phase-relative steps 1k, 2.5k, 5k, 9k, 12k, 16k, 23k, 34k, 46k, 55k, end. This yields at least one checkpoint in each rep bin, with two checkpoints inside the 100+ bin (46k just enters; 55k and end sit ~20 and ~32 reps inside).
+- **Phase 2 and Phase 3 (perturbed shapes start at 0 reps, new 316-frame substrate):** denser checkpointing in early phase to cover the 1–5 and 6–19 bins. Phase-relative steps: **1,000 / 2,000 / 4,000 / 6,500 / 10,000 / 15,000 / 20,000 / 30,000 / 40,000 / 55,000 / end** — 10 checkpoints plus end-of-phase. Coverage:
+
+  | step | loops elapsed | bin |
+  |---:|---:|---|
+  | 1,000 | 3.2 | 1-5 ✓ |
+  | 2,000 | 6.3 | 6-19 ✓ |
+  | 4,000 | 12.7 | 6-19 |
+  | 6,500 | 20.6 | 20-50 ✓ |
+  | 10,000 | 31.6 | 20-50 |
+  | 15,000 | 47.5 | 20-50 |
+  | 20,000 | 63.3 | 51-99 ✓ |
+  | 30,000 | 94.9 | 51-99 |
+  | 40,000 | 126.6 | 100+ ✓ |
+  | 55,000 | 174.1 | 100+ |
+  | end (~61.8k) | ~195.7 | 100+ |
+
+  All five bins covered; 100+ bin gets three checkpoints (40k, 55k, end). Old cadence (1k / 2.5k / 5k / 9k / 12k / 16k / 23k / 34k / 46k / 55k / end) preserved in `src/config.py` `PHASE_2_3_CKPT_STEPS` for the audit trail; the new schedule replaces it for v0 work post-session-4.
 
 CC verifies this schedule produces non-empty bins by computing the rep count from the annotations at each checkpoint.
 
@@ -620,19 +644,20 @@ Preflight output: `results/inner_pam_v0/phase2_preflight/preflight_report.md` wi
 
 ### 8.3 Frame collection
 
-`src/env/explorer_phase2.py` wraps the seed-7 furniture explorer:
+`src/env/explorer_phase2.py` wraps the **continuous-motion** explorer (`src/env/continuous_motion_explorer.py`, session 4):
 - At scene initialisation, after the controller is ready and before the explorer starts, call `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)`.
 - Materials applied in this call are documented in the per-run output: read `event.metadata["lastActionSuccess"]` and any returned material identifiers, write to `data/phase2_collection_metadata.json`.
-- The explorer then runs the normal seed-7 route with per-frame jitter (same parameters as the stability batch: `0.2 m`, `10°`, fallback ladder).
+- The explorer then runs the continuous-motion 5-item route (close-up motion through each item + NavMesh-densified transit between items, per §1.3). The cross-loop pose variation mechanism is the reviewer-selected option from the session-4 HANDOFF (default proposal: per-frame jitter at 0.05 m / 2°, applied inside the explorer).
 
-**Frame budget:** **65,000 frames ≈ 142 loops** (at ~458 frames/loop). Minus 10 held-out loops, the model trains on **132 loops** of the perturbed shape.
+**Frame budget:** **65,000 frames ≈ 205 loops** (at ~316 frames/loop, calibration 2026-05-13). Minus 10 held-out loops, the model trains on **~195 loops** of the perturbed shape — comfortably into the 100+ rep bin with ~95 reps inside.
 
-Derivation: M4 stratifies perturbed-shape recall by repetition count into bins {1–5, 6–19, 20–50, 51–99, 100+}. At the final eval checkpoint, the maximum rep count of the perturbed shape equals `trained_loops` (because every training loop visits each item exactly once). The 100+ bin is the strongest single test of spec §2.2 (repetition-as-learning-signal — the architecture predicts its tightest representations at the highest rep counts), so the budget must put `trained_loops` comfortably above 100, not just at the boundary.
+Derivation: M4 stratifies perturbed-shape recall by repetition count into bins {1–5, 6–19, 20–50, 51–99, 100+}. At the final eval checkpoint, the maximum rep count of the perturbed shape equals `trained_loops` (every training loop visits each item exactly once). The 100+ bin is the strongest single test of spec §2.2 (repetition-as-learning-signal — the architecture predicts its tightest representations at the highest rep counts), so the budget must put `trained_loops` comfortably above 100.
 
-| budget choice | collected loops | trained loops (− 10 held-out) | bin reached at final eval |
-|---|---:|---:|---|
-| 50k (prior draft) | 109 | 99 | upper edge of 51–99; **100+ never reached** |
-| 65k (this draft) | 142 | 132 | ~32 reps into 100+ |
+| budget choice | substrate | collected loops | trained loops (− 10 held-out) | bin reached at final eval |
+|---|---|---:|---:|---|
+| 65k | prior (458 frames/loop) | 142 | 132 | ~32 reps into 100+ |
+| 65k | new (316 frames/loop, continuous motion) | ~205 | ~195 | **~95 reps into 100+** ✓ |
+| 50k (rejected) | prior (458 frames/loop) | 109 | 99 | upper edge of 51-99; 100+ never reached |
 
 The prior draft's claim that 50k "comfortably populates 51–99 while just entering 100+" was wrong on the second clause: 99 trained loops cannot enter the 100+ bin, so the 100+ bin would have been empty at every Phase 2 / Phase 3 eval checkpoint. The 65k budget is the lowest round number that gives meaningful margin past the 100-rep boundary; smaller margins risk a near-empty 100+ bin if the held-out is later widened or the loop length is slightly longer than the 458-frame estimate. The remaining bins are populated as before: 1–5 at loop 5 (~2.3k frames in), 6–19 at loops 6–19, 20–50 at loops 20–50, 51–99 at loops 51–99, and 100+ from loop 100 onward (~45.8k frames in to the perturbed phase) through the final trained loop at ~132.
 
@@ -713,11 +738,11 @@ Preflight output: `results/inner_pam_v0/phase3_preflight/preflight_report.md` do
 
 ### 9.3 Frame collection
 
-`src/env/explorer_phase3.py` wraps the explorer:
+`src/env/explorer_phase3.py` wraps the **continuous-motion** explorer (`src/env/continuous_motion_explorer.py`, session 4):
 - At scene initialisation: apply Phase 2's RandomizeMaterials (LivingRoom), then apply Phase 3's perturbation (asset replacement or full-house retexture, per preflight).
-- Standard explorer route with per-frame jitter.
+- Standard continuous-motion route with the variation mechanism selected per §1.3.
 
-**Frame budget:** **65,000 frames ≈ 142 loops** (same derivation as §8.3 — 132 trained loops puts the final eval ~32 reps into the 100+ bin). Output: `data/phase3_frames/` + `data/phase3_annotations.jsonl`. Annotations carry `phase: "phase3"` and `perturbation: <selected_mechanism>` fields.
+**Frame budget:** **65,000 frames ≈ 205 loops** (same derivation as §8.3 — ~195 trained loops puts the final eval ~95 reps into the 100+ bin). Output: `data/phase3_frames/` + `data/phase3_annotations.jsonl`. Annotations carry `phase: "phase3"` and `perturbation: <selected_mechanism>` fields.
 
 ### 9.4 Encoding
 Same as Phase 2. Cross-check: 50 sampled Phase 3 Television-position embeddings vs 50 Phase 1 Television-position embeddings — cross-mean cosine should be substantially lower than within-mean cosine. If similar, the perturbation was visually too close to the original; flag and report.

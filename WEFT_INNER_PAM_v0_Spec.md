@@ -18,6 +18,8 @@ Inner PAM is *always on*. Every tick of the agent's experience, Inner PAM is que
 
 Inner PAM's output is *modality-agnostic*. It produces a trajectory shape signal in the shared embedding space. Downstream systems (motor cortex, visual cortex, auditory cortex, in their eventual full forms) co-develop with Inner PAM and learn to interpret this signal in their own modality-specific terms. Inner PAM does not produce motor commands or sensory predictions; it produces shape patterns that other systems read.
 
+The collection trajectory that produces this stream is **continuous motion throughout**. The agent moves through each loop as one connected trajectory with no held-pose segments — items in the environment enter view, fill view, and slide out of view as the agent approaches, passes through, and departs. The agent never holds a fixed pose. This is a load-bearing commitment of the architecture: a path-prediction system requires path-shaped targets, and any zero-velocity segment turns the K-step prediction problem into an identity-prediction problem repeated K times. (The session-3 reviewer surfaced an inherited 30-frame static-dwell pattern from a prior Stage-0b experiment that survived multiple draft reviews; corrected in session 4. The substrate-vs-architecture mismatch is recorded in `HANDOFF.md`.)
+
 ---
 
 ## 2. Core architectural commitments
@@ -29,6 +31,8 @@ These are the load-bearing claims. Implementation choices in later sections must
 **2.2 Repetition is the learning signal.** Shape formation requires repeated exposure to trajectories with the same underlying pattern but variation in surface details. A trajectory experienced once is an episode; a trajectory pattern experienced many times is a shape. The architecture must support the developmental gradient from episodic to shape-level representation as repetition accumulates.
 
 **2.3 Continuous time, single-pass.** Inner PAM trains on the agent's experience as it unfolds, in temporal order, single-pass. There is no epoch-based training, no frame-pair sampling, no contrastive-batch construction from arbitrary positive/negative selections. The temporal structure of experience itself is the learning signal.
+
+The agent's experience stream consists of genuine motion: no zero-velocity segments, no held-pose dwell, no frames that are bit-identical to their immediate predecessors at the rendering layer. Every consecutive frame pair has a non-trivial pose delta. A 30-frame static dwell, or any segment in which the agent observes from a fixed pose, violates §2.2 (turning the K-step prediction problem into an identity-prediction problem repeated K times) and therefore violates the architecture's distinctive claim — the predictor cannot learn trajectory shapes from non-trajectory targets. This is a load-bearing substrate commitment, not a collection-side parameter choice.
 
 **2.4 Always on.** Inner PAM runs every tick. It does not require an external trigger to activate. Its output is consumed (or ignored) by downstream systems based on prediction confidence, error signals, or other modulators that are themselves part of the larger system, not part of Inner PAM's internal logic.
 

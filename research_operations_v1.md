@@ -358,6 +358,7 @@ These checks apply to any research line. Architecture-specific drift checks live
 - [ ] Is a downstream component (evaluation metric, grounding module, generator, etc.) becoming the thing everything else serves? That's a dependency inversion — the foundation should serve the research claim, not the other way around.
 - [ ] Does the design give the model an easy path that bypasses the mechanism being tested? Shortcuts (residual connections in contrastive paths, identity mappings, geometric proxies for temporal structure) can make the model succeed without actually learning the intended thing.
 - [ ] Could a simple baseline achieve the same result through a shortcut the system inadvertently exposes? If yes, the system's claimed contribution is not what it appears to be.
+- [ ] **Re-read foundational substrate assumptions whenever the architectural framing shifts.** Inherited collection parameters from prior projects are SCAFFOLDING by default and require explicit re-justification against the current architecture's claims. Added 2026-05-13 after the 30-frame static dwell from a prior Stage-0b experiment survived three drafts of v0 instructions, an adversarial review, and a session-1 CC pre-flight before being caught in session 3 by literal scrutiny of what each collection step was actually doing. Pattern: substrate assumptions can survive abstract reading and only surface under "what is this step actually producing?" questioning when the upstream architecture changes.
 
 ---
 
