@@ -107,9 +107,26 @@ S4_MEAN_LOG_VAR_MIN: float = 0.4
 PHASE_2_FRAME_BUDGET: int = 65_000
 PHASE_3_FRAME_BUDGET: int = 65_000
 
-# Jitter magnitudes (instr §1.3, carried from stability batch).
-JITTER_POSITION_M: float = 0.2
-JITTER_HEADING_DEG: float = 10.0
+# Phase 2 Stage A → Stage B curriculum split (instr §1.4, §8.3).
+# Loops with loop_index < PHASE_2_PERTURBATION_START_LOOP run unperturbed (Stage A).
+# Loops with loop_index >= PHASE_2_PERTURBATION_START_LOOP fire
+# RandomizeMaterials(inRoomTypes=["LivingRoom"]) at loop start (Stage B).
+PHASE_2_PERTURBATION_START_LOOP: int = 31
+
+# In-flight transition diagnostic thresholds (instr §8.7a). SCAFFOLDING:
+# recalibrate from empirical per-loop distribution observed during the first run.
+TRANSITION_LOSS_SPIKE_RATIO: float = 3.0      # G2.T1
+TRANSITION_LOG_VAR_WIDENING_MIN: float = 0.5  # G2.T2 (perturbed items)
+TRANSITION_CONTROL_DRIFT_MAX: float = 0.3     # G2.T3 (control items)
+
+# Item-set identifiers for the transition diagnostic.
+TRANSITION_PERTURBED_ITEMS: tuple[int, ...] = (3, 4)        # Dresser, Sofa
+TRANSITION_CONTROL_ITEMS: tuple[int, ...] = (1, 2, 5)       # Bed, DiningTable, Television
+
+# Transition diagnostic evaluation window (instr §8.7a).
+# Gates evaluate at end of loop 35 over loops 25-30 (baseline) and loops 31-35 (post-onset).
+TRANSITION_BASELINE_LOOPS: tuple[int, int] = (25, 30)   # inclusive
+TRANSITION_POST_ONSET_LOOPS: tuple[int, int] = (31, 35) # inclusive
 
 
 # ---------- File-system paths (configurable; defaults at REPO_ROOT) --------
@@ -160,9 +177,8 @@ class PhaseConfig:
     ckpt_every: Optional[int] = None  # used by Phase 1 only
     perturbation_tag: str = "none"
     loaded_from_phase: Optional[str] = None  # name of phase to resume from
-    # Phase 1: ~218 loops; Phase 2/3: ~142 loops. Loop length 458 frames.
     expected_loops: Optional[int] = None
-    loop_length_estimate: int = 458
+    loop_length_estimate: int = 316    # continuous-motion substrate (session-4 calibration)
 
 
 PHASE1 = PhaseConfig(
@@ -176,8 +192,11 @@ PHASE1 = PhaseConfig(
     perturbation_tag="none",
     loaded_from_phase=None,
     expected_loops=218,
+    loop_length_estimate=458,  # Phase 1 substrate (substrate-degenerate baseline)
 )
 
+# Phase 2 starts from a freshly-initialised predictor (Phase 1 discarded as
+# substrate-degenerate; session-4 disposition). Phase 3 resumes from Phase 2.
 PHASE2 = PhaseConfig(
     name="phase2",
     embeddings=PATHS.phase2_embeddings,
@@ -187,8 +206,8 @@ PHASE2 = PhaseConfig(
     ckpt_phase_relative_steps=PHASE_2_3_CKPT_STEPS,
     ckpt_every=None,
     perturbation_tag="livingroom_retexture",
-    loaded_from_phase="phase1",
-    expected_loops=142,
+    loaded_from_phase=None,
+    expected_loops=205,
 )
 
 PHASE3 = PhaseConfig(
@@ -201,7 +220,7 @@ PHASE3 = PhaseConfig(
     ckpt_every=None,
     perturbation_tag="phase3_preflight_selected",  # asset_replacement | full_house_retexture
     loaded_from_phase="phase2",
-    expected_loops=142,
+    expected_loops=205,
 )
 
 
