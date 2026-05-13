@@ -132,15 +132,16 @@ def build_cue_probes(
             continue
         if not all(_annotation_phase(a) == "transit" for a in second_half):
             continue
-        # Determine "toward" by inspecting the target frames (the next K frames).
-        target_anns = annotations[window_end + 1 : window_end + 1 + PREDICT_K]
+        # Determine "toward" by scanning forward through the stream until the
+        # next dwell frame appears. Transit segments are typically 60+ frames
+        # while PREDICT_K is 16, so an earlier version of this loop that
+        # peeked only K frames ahead skipped almost every candidate.
         to_vp = None
-        for a in target_anns:
-            if _annotation_phase(a) == "dwell":
-                to_vp = _viewing_position(a)
+        for j in range(window_end + 1, len(annotations)):
+            if _annotation_phase(annotations[j]) == "dwell":
+                to_vp = _viewing_position(annotations[j])
                 break
         if to_vp is None:
-            # Couldn't identify destination in next K frames; skip rather than guess.
             continue
         pair = (int(from_vp), int(to_vp))
         if pair not in candidates_by_pair:
