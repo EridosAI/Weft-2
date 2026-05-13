@@ -73,21 +73,215 @@ autonomous.
 
 ## Next immediate action
 
-**Session 2: launch Phase 1 main training run.** Code scaffolding is complete and unit-tested; precomputed embeddings file is full-stream and verified; reviewer has approved DINOv2 as the v0 encoder (see Session-1 outcomes below). Before launching:
+**STOP for experiment-chat review.** Session 2 ran Phase 1 main + shuffle + per-checkpoint eval + full gate analysis. Two findings need reviewer judgement before Phase 2:
 
-1. **Host-protection prerequisites (carryover from session 1 — user-side actions).** Two items must be set on the Windows host before training launches:
-   - **Disk sleep:** Settings → Power → Additional power settings → Change plan settings → Change advanced power settings → Hard disk → "Turn off hard disk after" → set to **0 (Never)** on AC. Current state at end of session 1 was 20 min on AC (`0x000004b0`), which would interrupt a ~30-90-min Phase 1 run.
-   - **Windows Update pause:** Settings → Windows Update → Pause updates for at least the planned batch window. No pause was active at end of session 1.
-   - The screen-sleep setting was already "Never" — no action needed.
-2. **tmux decision.** Optional for session 2 (training launches with `nohup` so it survives shell death anyway). Recommended if you plan to watch live: `tmux new -s weft` before launching the CC session.
-3. **Launch:** `nohup python3.12 -u scripts/run_phase1_train.py > logs/phase1_main_$(date +%Y%m%d_%H%M%S).log 2>&1 &` then poll the log per CODING_STANDARDS §5.3. Expected wall-clock ≈ 27-30 min on RTX 4080 Super (smoke run measured 60 grad steps/sec, ~95.7k training steps).
-4. **Shuffle control runs sequentially after main** (per instr §7.5, VRAM contention). Same script with `run_phase1_shuffle.py`.
-5. **Per-checkpoint eval** with `scripts/run_eval.py --checkpoint ... --probes phase1 --output ...` paused-for-training per instr §6.4.
-6. **End of session 2:** evaluate G1.1-G1.5 gates, update HANDOFF with results, do not proceed to Phase 2 without explicit gate review.
+1. **G1.4 is HELD pending shuffle re-design.** Per instr §6.5: "The PAM-vs-shuffle gates in §7.7 / §8.7 / §9.7 are only interpretable if the sanity check returns 'expected.' If 'unexpected,' the gate is flagged for re-design in HANDOFF and the experiment chat consults Grok before proceeding." S1-S4 all returned "unexpected" — shuffle outperformed main on every dimension. Diagnosis below points to a literal-vs-rationale split between instr §7.5 and spec §10.1 over what "shuffle" means; the current implementation matches the literal §7.5 wording ("permutation of training indices") but contradicts the spec's "destroy temporal structure" rationale. Recommended re-design and re-run before Phase 2.
+
+2. **G1.3 FAILED against the scaffolding threshold** (cue mean log_var = −8.40 is *lower* than steady mean log_var = −8.26, i.e., predictor is MORE confident at cue probes than steady probes — opposite of the spec's "low variance at well-grooved regions, high variance at divergence points" expectation). Whether this is a real surprising finding about the architecture or an artefact of the un-jittered Phase 1 substrate (bit-identical dwell frames produce trivial / overconfident predictions in unexpected ways) is a judgement call. Disaggregated numbers in `results/inner_pam_v0/phase1_main/gate_report.json` and `log_var_trajectory.json`.
+
+**Mechanical gates passed.** G1.1 (no NaN/Inf) PASS, G1.2 (loss decreased) PASS. **G1.5 trajectory PASS against scaffolding** (sharpness 0.008 → 0.325, 8 of 9 checkpoint transitions non-decreasing, floor 0.10 cleared).
+
+Reviewer options for the shuffle (load-bearing):
+
+- **(a) Re-implement shuffle to permute the embedding stream itself, not the visit order.** Spec-correct. ~15 min re-train + ~2 min re-analysis. Recommended.
+- **(b) Accept current shuffle (literal §7.5) and document G1.4 as a different control than the spec intends.** Faster but the experiment loses its principled discrimination test.
+- **(c) Replace the shuffle control entirely** with a different mechanism more aligned to "destroy temporal structure" (e.g., target-replaced-by-random-frame shuffle, or random-window shuffle).
+
+After resolution, G1.3 also needs a verdict (either accept the surprising finding for now and continue to Phase 2, or pause to diagnose the cue-more-confident-than-steady inversion first).
+
+---
+
+## Operational state (end of session 2)
+
+- Working tree: clean. 16 commits on `main` (11 from session 1 + 5 from session 2: cue-probe fix, gate-report script, Phase 1 results JSONs, this HANDOFF update, and one to come for this entry).
+- Push hold: in effect.
+- No running jobs.
+- Phase 1 main: 10 checkpoints + bank state at `results/inner_pam_v0/phase1_main/ckpt_{step}.{pt,/}` (gitignored, ~2.5 GB total).
+- Phase 1 shuffle: 10 checkpoints + bank state at `results/inner_pam_v0/phase1_shuffle/ckpt_{step}.{pt,/}` (gitignored).
+- All result JSONs committed (see commit log).
+
+---
+
+## Session 2 outcomes — 2026-05-13
+
+**Goal.** Launch Phase 1 main training, sequentially launch shuffle control, run per-checkpoint eval, compute G1.1–G1.5 + S1–S4 disaggregations, STOP for review. Mechanical gates auto-declared; SCAFFOLDING-threshold gates pause for review per reviewer protocol.
+
+### Phase 1 main training
+
+| metric | value |
+|---|---|
+| wall-clock | 869.9 s (~14.5 min) on RTX 4080 Super, fp16 |
+| gradient steps | 95,691 (≈ 110 steps/sec, faster than session-1 smoke's 60 steps/sec) |
+| n_train | 95,722 (last 10 of 218 loops held out) |
+| held-out region | frames [95,722, 100,000) |
+| τ (calibrated at step 10k from steps 5k–10k median) | **8.125** |
+| final mean_loss_last_1k | −62,606.72 |
+| first mean_loss_last_1k (ckpt 10k) | −59,541.71 |
+| final mean_log_var | −8.66 (predictor confidence rising over training, as expected) |
+| final predictor weight L2 norm | 1,270.53 |
+| final bank size | 95,707 |
+| NaN/Inf | none |
+
+Checkpoints at steps 10k, 20k, …, 90k, 95721; predictor + optimizer + bank state at each.
+
+### Phase 1 shuffle control training
+
+| metric | value |
+|---|---|
+| wall-clock | 862.7 s (~14.4 min) |
+| gradient steps | 95,660 |
+| shuffle_seed | 0 |
+| final mean_loss_last_1k | **−69,540.23** (more negative than main's −62,607; load-bearing finding — see below) |
+| final mean_log_var | **−9.48** (predictor MORE confident than main, opposite of S1 expectation) |
+| final predictor weight L2 norm | 1,116.51 |
+
+### Cue-probe construction bug found and fixed mid-session
+
+Initial Phase 1 main eval produced only **9 cue probes** (expected ~50). Root cause in `src/eval/probes.py:build_cue_probes`: the destination-item label was identified by scanning only the next K=16 frames after the window, but seed-7 transit segments are typically 60+ frames long, so the next dwell almost never appeared inside the window and almost every cue candidate was skipped.
+
+Fix (commit `ea84df1`): scan forward through the stream until the next dwell frame appears, regardless of distance. The to_item field is metadata only (which transition the probe tags); the K=16 target frames are unchanged.
+
+After fix: 46 cue probes constructed (10 held-out loops × 5 transitions = 50 max, minus 4 that fail other constraints). Probe tests still pass. Main eval re-run after the fix. Shuffle training was launched only after the fix was verified.
+
+### Gate verdicts
+
+The reviewer protocol: G1.1 / G1.2 are MECHANICAL (auto pass/fail); G1.3 / G1.4 / G1.5 carry SCAFFOLDING thresholds and the script does not autonomously declare pass. Verdicts below are reported "against the documented scaffolding threshold" — recalibration is the reviewer's call.
+
+| gate | criterion | result | verdict (vs scaffolding) |
+|---|---|---|---|
+| G1.1 | No NaN/Inf in predictor weights + final loss finite | no non-finite parameters; loss = −62,606.72 | **PASS** (mechanical) |
+| G1.2 | Final mean_loss_last_1k < first mean_loss_last_1k | −62,606.72 < −59,541.71 (decreased by 3,065.0) | **PASS** (mechanical) |
+| G1.3 | mean(log_var, steady) + 0.3 < mean(log_var, cue) | steady: −8.256, cue: −8.399, sep: **−0.14** | **FAIL** at scaffolding +0.3 threshold |
+| G1.4 | Paired t-test main > shuffle at k=8 steady (p<0.01) | Shapiro-Wilk p=3.3e-8 → Wilcoxon, p_value=1.0, mean_diff=−0.359 | **HELD** (S1–S4 unexpected per §6.5) |
+| G1.5 | M3 trajectory rises across Phase 1, floor > 0.10 | sharpness 0.008 → 0.325, 8 of 9 transitions non-decreasing, floor cleared | **PASS** at scaffolding |
+
+#### G1.5 trajectory detail
+
+| step | cluster sharpness | non-dec from prev? |
+|---:|---:|---|
+| 10,000 | 0.0084 | — |
+| 20,000 | 0.0225 | ✓ |
+| 30,000 | 0.0252 | ✓ |
+| 40,000 | 0.0669 | ✓ |
+| 50,000 | 0.0857 | ✓ |
+| 60,000 | 0.1841 | ✓ |
+| 70,000 | 0.2335 | ✓ |
+| 80,000 | 0.3587 | ✓ |
+| 90,000 | 0.2966 | ✗ (dip) |
+| 95,721 | 0.3249 | ✓ |
+
+Criterion (≥ 7 of last 9 non-decreasing, allowing 2 dips): **8 / 9 satisfied**. Floor 0.10 cleared comfortably at 0.325. Trajectory and floor both pass.
+
+**Determinism caveat that affects M3 interpretation.** Phase 1 trains on the un-jittered rerender stream (per session-1 HANDOFF). Dwell frames at the same viewing position are bit-identical across loops (confirmed by the substrate verification Check 1 degenerate result and by the 1.000000 consistency cosines in the session-1 re-encode). Therefore, the predictor's outputs at steady-state probes within the same viewing position are bit-identical → within-cluster cosine = 1.0 (deterministic). The M3 cluster sharpness then becomes `1.0 − cross_cluster_mean`, i.e., it is functionally measuring **cross-cluster discriminability** (how different the predictor's outputs are at different items) rather than within-cluster tightening over training. The rising trajectory is still a valid signal — it shows the predictor learning to discriminate items over training — but it does not test §2.2's "repetition tightens clusters" claim in the strong form intended. That test will become meaningful in Phases 2/3, where perturbed-shape rep counts start at 0 and accumulate, and where the jittered collection introduces actual within-cluster variance.
+
+#### G1.3 detail
+
+Across the 10 main checkpoints, the steady-vs-cue mean-log-var separation evolved as follows (steady mean − cue mean per checkpoint):
+
+| step | steady mean log_var | cue mean log_var | sep (cue − steady) |
+|---:|---:|---:|---:|
+| 10,000 | −8.1811 | −8.0978 | +0.0832 |
+| 20,000 | −8.1089 | −8.0956 | +0.0132 |
+| 30,000 | −8.6761 | −8.8524 | −0.1762 |
+| 40,000 | −8.2375 | −8.5147 | −0.2772 |
+| 50,000 | −8.5113 | −8.7847 | −0.2734 |
+| 60,000 | −7.9887 | −8.2547 | −0.2660 |
+| 70,000 | −8.3213 | −8.6742 | −0.3529 |
+| 80,000 | −8.2402 | −8.3690 | −0.1287 |
+| 90,000 | −8.7949 | −8.9601 | −0.1651 |
+| 95,721 | −8.2561 | −8.3987 | −0.1426 |
+
+(Verified against `results/inner_pam_v0/phase1_main/log_var_trajectory.json`.)
+
+The separation evolves in the **wrong direction** for the gate (towards cue being more confident than steady). The expectation in instr §7.7 G1.3 was `cue_log_var − steady_log_var > 0.3` (cue more variance = less confident). The empirical pattern is `cue_log_var − steady_log_var < 0` (cue less variance = more confident). At early checkpoints (10k, 20k) the separation is small and positive (steady marginally noisier than cue); by 30k it has already flipped negative and stays negative through 95,721. Magnitude bounces in the −0.13 to −0.35 range — the final value of −0.14 is not a steady-state value, it's where the trajectory happens to land at the last checkpoint.
+
+Possible reasons (informational only, not for autonomous recalibration):
+
+- *Substrate artefact.* With un-jittered Phase 1 data, steady probes have bit-identical inputs across loops but the predictor's bias terms may produce a non-zero residual error. With "trivial" target, the optimum log_var goes very low — but if there's a constant tiny error, log_var settles where the gradient balances. Cue probes have less trivial targets but smooth predictable transit-frame trajectories; their convergence might be sharper.
+- *Architecture / loss artefact.* The loss formulation may permit / reward an unintended local minimum at cue probes.
+- *Calibration mis-specification.* The +0.3 threshold may simply not be the right number; reviewer recalibration is on the table per §12 SCAFFOLDING discipline.
+
+Disaggregated per-step k log_var values are in `log_var_trajectory.json`. The numbers are reported; the verdict is the reviewer's.
+
+#### G1.4 detail — shuffle re-design candidate
+
+The S1-S4 shuffle sanity check returns **"unexpected" on all four individual checks**:
+
+| check | expectation | observed (final ckpt) | direction |
+|---|---|---|---|
+| S1 | shuffle log_var > main log_var (less confident) | shuffle −9.48 < main −8.66 | inverted |
+| S2 | shuffle M1 < main M1 (lower centreline accuracy) | shuffle 0.97+ > main 0.97-ε | inverted |
+| S3 | shuffle |sharpness| << main |sharpness| | shuffle similar/higher than main | inverted |
+| S4 | quantitative collapse-to-mean | shuffle did not collapse | inverted |
+
+Paired Wilcoxon at three horizons (250 steady-state probes, one-sided main > shuffle, Shapiro-Wilk rejected normality at p < 0.05 → Wilcoxon used):
+
+| horizon k | mean_diff (main − shuffle) | shapiro p | test | p_value | pass at p < 0.01? |
+|---:|---:|---:|---|---:|---|
+| 1 | −0.302 | 6.6e-20 | Wilcoxon | 1.000 | no |
+| 8 (gated) | −0.359 | 3.3e-08 | Wilcoxon | 1.000 | **no** |
+| 16 | −0.250 | 2.9e-10 | Wilcoxon | 1.000 | no |
+
+Across all three horizons, **shuffle predicts the held-out continuation better than main**, with mean cosine differences of 0.25–0.36. This is a HUGE divergence in the wrong direction, not noise.
+
+**Root-cause diagnosis (load-bearing for the re-design decision).** The current shuffle implementation matches the literal wording of instr §7.5 — "applies `np.random.default_rng(0).permutation(N_train)` to the training indices" — interpreted as permuting the **visit order** of (window, target) pairs during training. Each pair, however, is still a real coherent W=16-frame window followed by a real K=16-frame continuation drawn from consecutive stream positions. Temporal structure within each pair is preserved.
+
+This contradicts the spec rationale at §10.1 ("Should fail because the temporal structure required for shape learning is destroyed") and §6.3 C2 ("temporally-shuffled version of the same stream"). My current implementation is just SGD-with-random-batches, which is the standard ML optimization heuristic — and in fact it *helps* convergence relative to sequential SGD (consecutive sequential batches are highly correlated because of overlapping windows; random ordering decorrelates them). So shuffle ended up being a *better-optimized* version of main, not a worse one.
+
+Per the `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md` preamble — "If this document and the spec disagree, the spec wins and this document is wrong — flag in `HANDOFF.md` and stop" — the spec wins. The shuffle should be re-implemented to actually destroy temporal structure (e.g., permute the embeddings themselves *before* building windows, so each window's contents are random unrelated frames). Cost: ~15 min re-train + ~2 min re-analysis.
+
+If the reviewer agrees, I'll fix the shuffle (preferred path), re-run both shuffle training and the gate analysis, and re-write the §G1.4 section. The G1.4 verdict-as-computed stands at "HELD" pending this re-design.
+
+### S1-S4 sanity check verdict
+
+`results/inner_pam_v0/phase1_shuffle/sanity_check.json`:
+- S1 (log_var distribution): shuffle mean −9.48, main mean −8.66. Shuffle MORE confident. **unexpected**.
+- S2 (M1 distribution): shuffle aggregate cosine higher than main. **unexpected**.
+- S3 (cluster sharpness): shuffle sharpness comparable to main; not zero. **unexpected**.
+- S4 (quantitative collapse-to-mean): shuffle ||μ|| not below 0.15 floor; log σ² not above 0.4 floor. **non-collapse**, **unexpected**.
+
+Aggregate verdict: **unexpected**. Per instr §6.5, the gate G1.4 is held; this entry is the documented flag.
+
+### What's in the working tree
+
+All Phase 1 result JSONs are committed in `results/inner_pam_v0/phase1_{main,shuffle}/`:
+- `training_summary.json`, `init_report.json`, `tau_calibration.json` (main only).
+- `checkpoint_{step}.json` (×10 each in main + shuffle).
+- `eval_{step}.json` (×10 in main; shuffle eval was not run separately — the gate-report script computed shuffle predictions directly).
+- `m3_trajectory.json`, `log_var_trajectory.json`, `gate_report.json` (main).
+- `sanity_check.json` (shuffle).
+
+Predictor checkpoints (`ckpt_*.pt`, ~258 MB each = ~2.5 GB / phase) and bank state dirs (`ckpt_*/`) are gitignored.
+
+### Reviewer-action items before session 3
+
+1. **Resolve the shuffle interpretation** (recommend: re-implement spec-correctly).
+2. **Decide G1.3 verdict** (accept the surprising cue-more-confident-than-steady finding for now, or pause to diagnose the inversion). Recalibration of the +0.3 threshold is on the table per §12 SCAFFOLDING discipline.
+3. **G1.5 PASS confirmation** at the scaffolding threshold (the trajectory criterion is the primary content; the 0.10 floor is met).
+4. **If both shuffle and G1.3 are resolved as PASS / acceptable**: proceed to Phase 2 (LivingRoom RandomizeMaterials wrapper, preflight verification per §8.2). Session 3 setup.
+
+### Host-protection decision recorded
+
+Reviewer empirically confirmed the device stays up indefinitely (10 days of uninterrupted uptime under the current power-plan configuration). Settings verified by my probes:
+
+| item | spec'd | actual | note |
+|---|---|---|---|
+| AC device sleep | Never | Never | ✓ confirmed by UI screenshot |
+| AC screen sleep | (not load-bearing) | 10 min | does not affect WSL2 / training |
+| AC hard-disk sleep | Never | **20 min** | not changed; low practical risk given continuous log/checkpoint writes resetting the idle timer |
+| WU pause | active | **no pause keys** | low practical risk given active-hours [3, 21) defers reboots |
+
+Recorded as a **deliberate deviation from §0.1** with the reviewer's empirical-evidence rationale. Both items proved out: the ~30-min training runs completed without disk-sleep interruption, and no forced reboot occurred during the session. The §0.1 wording is overspecified for this workload profile; if a future phase ran sub-process-idle (e.g., long pure-Python data loading without disk hits), the disk-sleep item would warrant revisiting.
+
+### DINOv2 determinism observation (carryover note from reviewer)
+
+The 1.000000 consistency cosine on the 50-frame re-encode sample in session 1 is strong evidence that DINOv2 in this environment (fp16 eval mode on RTX 4080 Super, transformers 5.3.0, ImageNet preprocessing pipeline) is genuinely bit-identical-deterministic on identical pixels. If Phase 2/3 substrate sanity-checks ever surface anomalies, re-running the §5 substrate verification (or a smaller spot-check) is a high-confidence first-line diagnostic — encoder behaviour is **not** a run-to-run noise source.
 
 ---
 
 ## Operational state (end of session 1)
+
+(Historical — preserved for audit.)
 
 - Working tree: clean. Eleven commits added in session 1 (see "Session 1 outcomes" below).
 - Push hold: in effect.
