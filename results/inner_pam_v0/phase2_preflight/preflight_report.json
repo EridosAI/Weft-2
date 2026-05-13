@@ -1,42 +1,83 @@
 {
-  "timestamp_utc": "2026-05-13T21:26:27Z",
+  "timestamp_utc": "2026-05-13T22:01:06Z",
   "house_seed": 7,
-  "checks": {
-    "1_action_exists": {
+  "gate": {
+    "G_M1_mechanism_fires": {
       "pass": true,
+      "criterion": "RandomizeMaterials(inRoomTypes=['LivingRoom']) lastActionSuccess == True",
       "action_return_snapshot_call1": "NoneType"
     },
-    "2_per_loop_re_application": {
-      "pass": false,
-      "criterion": "all four pairwise cosines < 0.95",
-      "cos_dresser_call1_call2": 0.9739882652134874,
-      "cos_dresser_call2_call3": 0.9806273313665728,
-      "cos_sofa_call1_call2": 0.9815498285301999,
-      "cos_sofa_call2_call3": 0.996158601203959
-    },
-    "3_perturbation_locality": {
-      "pass": false,
-      "criterion": "Bedroom items before-vs-after-LivingRoom-RandomizeMaterials cosine >= 0.999",
-      "bedroom_cosines": {
-        "Bed": 0.9955103403995501,
-        "DiningTable": 0.9830370902772648,
-        "Television": 0.9954017685831508
-      }
-    },
-    "4_livingroom_visually_changed": {
-      "pass": false,
-      "criterion": "LivingRoom items before-vs-after cosine < 0.9",
-      "livingroom_cosines": {
-        "Dresser": 0.9688528310932186,
-        "Sofa": 0.9472508107165718
-      }
-    },
-    "5_session_determinism": {
+    "G_M2_bedroom_scope_locality": {
       "pass": true,
+      "criterion": "mean Bedroom before-vs-after cosine > 0.97 (averaged across 3 random draws and 3 Bedroom items)",
+      "bedroom_per_item_mean_cosines": {
+        "Bed": 0.9947295559186943,
+        "DiningTable": 0.9760574480325297,
+        "Television": 0.9890220938407551
+      },
+      "bedroom_mean_cosine": 0.9866030325973263,
+      "threshold": 0.97
+    },
+    "G_M3_livingroom_bedroom_contrast": {
+      "pass": false,
+      "criterion": "(Bedroom mean before-vs-after) - (LivingRoom mean before-vs-after) >= 0.02, each side averaged across 3 random RandomizeMaterials draws",
+      "livingroom_per_item_mean_cosines": {
+        "Dresser": 0.9663611499842634,
+        "Sofa": 0.9906245696415196
+      },
+      "livingroom_mean_cosine": 0.9784928598128915,
+      "bedroom_mean_cosine": 0.9866030325973263,
+      "contrast": 0.008110172784434821,
+      "threshold": 0.02
+    }
+  },
+  "record_only": {
+    "per_loop_re_application_cosines": {
+      "criterion_note": "Not gated. Captures whether RandomizeMaterials genuinely re-randomises across consecutive calls; a value near 1.0 across all four pairs would indicate hard-cached materials.",
+      "cos_dresser_call1_call2": 0.9286815533600105,
+      "cos_dresser_call2_call3": 0.9622180436796011,
+      "cos_sofa_call1_call2": 0.9960044795939615,
+      "cos_sofa_call2_call3": 0.989406046566814
+    },
+    "per_item_before_vs_after_per_call": {
+      "Bed": {
+        "1": 0.995326877198989,
+        "2": 0.9936370762082954,
+        "3": 0.9952247143487984
+      },
+      "DiningTable": {
+        "1": 0.9610685068304924,
+        "2": 0.9792286114377647,
+        "3": 0.987875225829332
+      },
+      "Dresser": {
+        "1": 0.9379446729190325,
+        "2": 0.9973846274796729,
+        "3": 0.9637541495540848
+      },
+      "Sofa": {
+        "1": 0.9948163435852801,
+        "2": 0.9941491866348766,
+        "3": 0.982908178704402
+      },
+      "Television": {
+        "1": 0.992784088097194,
+        "2": 0.9877926608069069,
+        "3": 0.9864895326181646
+      }
+    },
+    "per_item_before_vs_after_3call_mean": {
+      "Bed": 0.9947295559186943,
+      "DiningTable": 0.9760574480325297,
+      "Dresser": 0.9663611499842634,
+      "Sofa": 0.9906245696415196,
+      "Television": 0.9890220938407551
+    },
+    "session_determinism": {
       "deterministic_across_sessions": false,
-      "cos_dresser_sessionA_sessionB": 0.9837878278179012,
-      "cos_sofa_sessionA_sessionB": 0.9880948293885979,
-      "note": "Materials are per-run; per-loop applied materials will be recorded in phase2_collection_metadata.json."
+      "cos_dresser_sessionA_sessionB": 0.9457827008279531,
+      "cos_sofa_sessionA_sessionB": 0.9385325830550233,
+      "note": "Materials are per-run; per-loop applied materials are recorded in phase2_collection_metadata.json."
     }
   },
   "overall_pass": false

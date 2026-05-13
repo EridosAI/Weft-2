@@ -5,13 +5,25 @@ DINOv2 protocol (frozen, fp16, 224 center crop, ImageNet mean/std,
 L2-normalised CLS), and writes the (N, 1024) float32 embedding matrix
 to `data/phase2_embeddings/embeddings.npy`.
 
-Performs §8.4 verification:
-  - Shape and norm check.
-  - Stage B vs Stage A perturbation-effect check on Dresser-apex and
-    Sofa-apex embeddings: cross-stage cosine must separate from within-
-    stage cosines by at least 0.05 (otherwise the per-loop
-    `RandomizeMaterials` did not produce a measurable encoder-level
-    perturbation and the script exits non-zero).
+Performs §8.4 verification with **both absolute and differential metrics**
+(per the 2026-05-14 experiment-chat directive):
+
+  Absolute (gated): for each perturbed item (Dresser, Sofa), report the
+    within-Stage-A and within-Stage-B mean apex-embedding cosines and the
+    cross-stage mean cosine. The gap (within_avg - cross) must exceed
+    0.05 — otherwise per-loop RandomizeMaterials did not produce a
+    measurable encoder-level perturbation and the script exits non-zero.
+
+  Differential (record-only, for reviewer assessment): the same Stage B
+    vs Stage A comparison applied to the **control items** (Bed,
+    DiningTable, Television). Bedroom items are not visually perturbed
+    by the LivingRoom-scoped call, so the expected pattern is gap ≈ 0
+    on control items. The "contrast" (perturbed_mean_gap - control_mean_gap)
+    is the load-bearing read for whether the perturbation is item-
+    specific rather than a global drift.
+
+The experiment chat reviews both metric families before authorising the
+launch of Phase 2 training.
 
 Usage:
   nohup python3.12 -u scripts/run_phase2_encode.py \\

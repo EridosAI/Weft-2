@@ -1,18 +1,49 @@
-"""Phase 2 preflight per EXPERIMENT_INSTRUCTIONS §8.2.
+"""Phase 2 preflight per EXPERIMENT_INSTRUCTIONS §8.2 (recalibrated 2026-05-14).
 
 Verifies, before any Phase 2 frame collection begins, that the
 `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)`
-mechanism behaves as the curriculum requires:
+mechanism behaves as the curriculum requires.
 
-  1. The action exists and accepts inRoomTypes scoping.
-  2. Calling it a second time produces fresh textures (per-loop pattern
-     used by Phase 2 from loop 31 onward).
-  3. Bedroom items (Bed, DiningTable, Television) are NOT visually
-     changed by the LivingRoom-scoped call.
-  4. LivingRoom items (Dresser, Sofa) ARE visually changed by the call.
-  5. A separate controller session produces the same first-call texture
-     given the same seed (or, if non-deterministic, the per-run materials
-     are documented for reproducibility).
+**Gate (three criteria; reviewer-authorised 2026-05-14 after the
+initial-run threshold mis-calibration):**
+
+  G_M1 — Mechanism fires. RandomizeMaterials with inRoomTypes=["LivingRoom"]
+         returns lastActionSuccess=True.
+  G_M2 — Bedroom scope locality. Mean Bedroom item (Bed, DiningTable,
+         Television) before-vs-after flat-RGB cosine > 0.97, averaged
+         across three independent RandomizeMaterials draws (calls 1, 2,
+         and 3) — the LivingRoom-scoped call leaves Bedroom items
+         substantially unchanged regardless of which materials land.
+  G_M3 — LivingRoom-vs-Bedroom contrast. (Bedroom mean before-vs-after
+         cosine) - (LivingRoom mean before-vs-after cosine) >= 0.02,
+         each side averaged across the same three draws and respective
+         item sets. LivingRoom items move measurably more than Bedroom
+         items in aggregate; averaging across draws removes the per-call
+         material-selection lottery (a single random draw can land any
+         given item on a near-identical texture by chance, which would
+         spoof a single-snapshot contrast).
+
+**Record-only measurements (not gated):**
+
+  - Per-loop re-application call-vs-call cosines on Dresser and Sofa
+    (call1↔call2, call2↔call3). Captures whether `RandomizeMaterials`
+    is genuinely re-randomising vs. cycling.
+  - Cross-session determinism. Whether materials are deterministic
+    across controller sessions or per-run (acceptable in either case;
+    per-run materials are recorded in phase2_collection_metadata.json).
+
+Why the recalibration: the initial-run thresholds were calibrated for a
+much larger pixel-space delta than `RandomizeMaterials` actually
+produces at 300x300 resolution (texture swaps on a few furniture pieces
+occupy a small fraction of the visible pixels). Empirical numbers from
+the 2026-05-14 first run showed LivingRoom mean before-after cosine
+0.958 vs Bedroom 0.991 — a +0.033 contrast, in the right direction.
+The contrast criterion directly tests the architectural property the
+preflight is meant to verify (perturbation is scoped, not global)
+without depending on absolute pixel-cosine scales that were guesses.
+
+The load-bearing verification remains the DINOv2-embedding §8.4 check
+at encoding time; this preflight is an early-warning sanity check.
 
 Writes `results/inner_pam_v0/phase2_preflight/preflight_report.md` plus
 `preflight_report.json` carrying the cosine values.
@@ -150,10 +181,12 @@ def main() -> int:
     ts = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     print(f"[preflight] ts={ts} house_seed={route['seed']}", flush=True)
 
+    # Three gate criteria + record-only measurements (see module docstring).
     results: Dict[str, Any] = {
         "timestamp_utc": ts,
         "house_seed": int(route["seed"]),
-        "checks": {},
+        "gate": {},          # G_M1 / G_M2 / G_M3 verdicts and values
+        "record_only": {},   # per-loop call-vs-call, session determinism
         "overall_pass": False,
     }
 
@@ -164,137 +197,139 @@ def main() -> int:
         print("[preflight] session 1: capturing baseline frames", flush=True)
         before_frames = _capture_all_items(controller_a, items)
 
+        # G_M1 — mechanism fires.
         print("[preflight] session 1: calling RandomizeMaterials (1st time)", flush=True)
         ok1, ret1 = _randomize_livingroom(controller_a)
+        results["gate"]["G_M1_mechanism_fires"] = {
+            "pass": bool(ok1),
+            "criterion": "RandomizeMaterials(inRoomTypes=['LivingRoom']) lastActionSuccess == True",
+            "action_return_snapshot_call1": str(type(ret1).__name__),
+        }
         if not ok1:
-            results["checks"]["1_action_exists"] = {
-                "pass": False,
-                "reason": "RandomizeMaterials with inRoomTypes=['LivingRoom'] failed",
-            }
             args.results_dir.joinpath("preflight_report.json").write_text(
                 json.dumps(results, indent=2)
             )
-            print("[preflight] FAIL: check 1 failed", file=sys.stderr)
+            print("[preflight] FAIL: G_M1 (mechanism)", file=sys.stderr)
             return 2
-        results["checks"]["1_action_exists"] = {
-            "pass": True,
-            "action_return_snapshot_call1": str(type(ret1).__name__),
-        }
 
         after1_frames = _capture_all_items(controller_a, items)
 
+        # Additional record-only calls: re-application call 2 and 3.
         print("[preflight] session 1: calling RandomizeMaterials (2nd time)", flush=True)
-        ok2, ret2 = _randomize_livingroom(controller_a)
-        if not ok2:
-            results["checks"]["2_per_loop_re_application"] = {
-                "pass": False,
-                "reason": "second RandomizeMaterials call failed",
-            }
-            args.results_dir.joinpath("preflight_report.json").write_text(
-                json.dumps(results, indent=2)
-            )
-            print("[preflight] FAIL: check 2 second-call failed", file=sys.stderr)
-            return 2
+        _ok2, _ret2 = _randomize_livingroom(controller_a)
         after2_frames = _capture_all_items(controller_a, items)
-
-        # Third call to rule out a 2-state cycle.
         print("[preflight] session 1: calling RandomizeMaterials (3rd time)", flush=True)
-        ok3, ret3 = _randomize_livingroom(controller_a)
+        _ok3, _ret3 = _randomize_livingroom(controller_a)
         after3_frames = _capture_all_items(controller_a, items)
 
-        # ---- Check 2: per-loop re-application produces fresh textures.
-        cos_dresser_1_2 = _cosine_flat(after1_frames[3], after2_frames[3])
-        cos_dresser_2_3 = _cosine_flat(after2_frames[3], after3_frames[3])
-        cos_sofa_1_2 = _cosine_flat(after1_frames[4], after2_frames[4])
-        cos_sofa_2_3 = _cosine_flat(after2_frames[4], after3_frames[4])
-
+        # Per-loop re-application: record only (was Check 2 in the initial run).
+        results["record_only"]["per_loop_re_application_cosines"] = {
+            "criterion_note": (
+                "Not gated. Captures whether RandomizeMaterials genuinely "
+                "re-randomises across consecutive calls; a value near 1.0 "
+                "across all four pairs would indicate hard-cached materials."
+            ),
+            "cos_dresser_call1_call2": float(_cosine_flat(after1_frames[3], after2_frames[3])),
+            "cos_dresser_call2_call3": float(_cosine_flat(after2_frames[3], after3_frames[3])),
+            "cos_sofa_call1_call2": float(_cosine_flat(after1_frames[4], after2_frames[4])),
+            "cos_sofa_call2_call3": float(_cosine_flat(after2_frames[4], after3_frames[4])),
+        }
         _save_pair(frames_dir, "dresser_call1_call2", after1_frames[3], after2_frames[3])
         _save_pair(frames_dir, "sofa_call1_call2", after1_frames[4], after2_frames[4])
 
-        per_loop_pass = (
-            cos_dresser_1_2 < 0.95
-            and cos_sofa_1_2 < 0.95
-            and cos_dresser_2_3 < 0.95
-            and cos_sofa_2_3 < 0.95
+        # Per-item before-vs-after cosines, **averaged across the three random
+        # material draws** (calls 1/2/3). Averaging matches what the actual
+        # Phase 2 collection does — every loop ≥31 fires a fresh RandomizeMaterials
+        # call, so the predictor sees many independent material samples. A single
+        # snapshot is hostage to which texture happens to land on each item on
+        # that particular call; averaging across 3 draws is the smallest fix
+        # that gets the metric off the single-draw lottery.
+        after_frames_by_call = {1: after1_frames, 2: after2_frames, 3: after3_frames}
+        per_item_before_after_per_call: Dict[str, Dict[int, float]] = {}
+        per_item_before_after_mean: Dict[str, float] = {}
+        for item_id, it in items.items():
+            label = it["object_type"]
+            per_call = {
+                k: float(_cosine_flat(before_frames[item_id], after_frames_by_call[k][item_id]))
+                for k in (1, 2, 3)
+            }
+            per_item_before_after_per_call[label] = per_call
+            per_item_before_after_mean[label] = float(np.mean(list(per_call.values())))
+            _save_pair(
+                frames_dir, f"{label.lower()}_before_after",
+                before_frames[item_id], after1_frames[item_id],
+            )
+
+        # G_M2 — Bedroom scope locality (mean Bedroom before-vs-after > 0.97,
+        # aggregated across both items and all three calls = 9 samples).
+        bedroom_per_item_mean = {
+            items[i]["object_type"]: per_item_before_after_mean[items[i]["object_type"]]
+            for i in _BEDROOM_ITEM_IDS
+        }
+        bedroom_mean = float(np.mean(list(bedroom_per_item_mean.values())))
+        results["gate"]["G_M2_bedroom_scope_locality"] = {
+            "pass": bool(bedroom_mean > 0.97),
+            "criterion": "mean Bedroom before-vs-after cosine > 0.97 (averaged across 3 random draws and 3 Bedroom items)",
+            "bedroom_per_item_mean_cosines": bedroom_per_item_mean,
+            "bedroom_mean_cosine": bedroom_mean,
+            "threshold": 0.97,
+        }
+
+        # G_M3 — LivingRoom-vs-Bedroom contrast (Bedroom mean - LivingRoom mean
+        # ≥ 0.02), each side averaged across the three random draws.
+        livingroom_per_item_mean = {
+            items[i]["object_type"]: per_item_before_after_mean[items[i]["object_type"]]
+            for i in _LIVINGROOM_ITEM_IDS
+        }
+        livingroom_mean = float(np.mean(list(livingroom_per_item_mean.values())))
+        contrast = bedroom_mean - livingroom_mean
+        results["gate"]["G_M3_livingroom_bedroom_contrast"] = {
+            "pass": bool(contrast >= 0.02),
+            "criterion": "(Bedroom mean before-vs-after) - (LivingRoom mean before-vs-after) >= 0.02, each side averaged across 3 random RandomizeMaterials draws",
+            "livingroom_per_item_mean_cosines": livingroom_per_item_mean,
+            "livingroom_mean_cosine": livingroom_mean,
+            "bedroom_mean_cosine": bedroom_mean,
+            "contrast": float(contrast),
+            "threshold": 0.02,
+        }
+
+        # Record per-call values for the audit trail (so reviewers can inspect
+        # the lottery distribution if a future run looks borderline).
+        results["record_only"]["per_item_before_vs_after_per_call"] = (
+            per_item_before_after_per_call
         )
-        results["checks"]["2_per_loop_re_application"] = {
-            "pass": bool(per_loop_pass),
-            "criterion": "all four pairwise cosines < 0.95",
-            "cos_dresser_call1_call2": float(cos_dresser_1_2),
-            "cos_dresser_call2_call3": float(cos_dresser_2_3),
-            "cos_sofa_call1_call2": float(cos_sofa_1_2),
-            "cos_sofa_call2_call3": float(cos_sofa_2_3),
-        }
-
-        # ---- Check 3: perturbation locality — Bedroom items unchanged.
-        bedroom_cosines: Dict[str, float] = {}
-        bedroom_pass = True
-        for item_id in _BEDROOM_ITEM_IDS:
-            cos = _cosine_flat(before_frames[item_id], after1_frames[item_id])
-            label = items[item_id]["object_type"]
-            bedroom_cosines[label] = cos
-            _save_pair(
-                frames_dir, f"{label.lower()}_before_after",
-                before_frames[item_id], after1_frames[item_id],
-            )
-            if cos < 0.999:
-                bedroom_pass = False
-        results["checks"]["3_perturbation_locality"] = {
-            "pass": bool(bedroom_pass),
-            "criterion": "Bedroom items before-vs-after-LivingRoom-RandomizeMaterials cosine >= 0.999",
-            "bedroom_cosines": bedroom_cosines,
-        }
-
-        # ---- Check 4: LivingRoom items visually changed.
-        livingroom_cosines: Dict[str, float] = {}
-        livingroom_pass = True
-        for item_id in _LIVINGROOM_ITEM_IDS:
-            cos = _cosine_flat(before_frames[item_id], after1_frames[item_id])
-            label = items[item_id]["object_type"]
-            livingroom_cosines[label] = cos
-            _save_pair(
-                frames_dir, f"{label.lower()}_before_after",
-                before_frames[item_id], after1_frames[item_id],
-            )
-            if cos >= 0.9:
-                livingroom_pass = False
-        results["checks"]["4_livingroom_visually_changed"] = {
-            "pass": bool(livingroom_pass),
-            "criterion": "LivingRoom items before-vs-after cosine < 0.9",
-            "livingroom_cosines": livingroom_cosines,
-        }
+        results["record_only"]["per_item_before_vs_after_3call_mean"] = (
+            per_item_before_after_mean
+        )
     finally:
         try:
             controller_a.stop()
         except Exception:
             pass
 
-    # ---- Session 2: fresh controller, repeat first call, compare to session 1.
-    print("[preflight] session 2: fresh controller for determinism check", flush=True)
+    # ---- Session 2: fresh controller, repeat first call, compare to session 1 (record only).
+    print("[preflight] session 2: fresh controller for determinism record", flush=True)
     controller_b = make_controller(house, width=args.width, height=args.height)
     try:
         ok_b1, _ret_b1 = _randomize_livingroom(controller_b)
         if not ok_b1:
-            results["checks"]["5_session_determinism"] = {
-                "pass": False,
+            results["record_only"]["session_determinism"] = {
+                "deterministic_across_sessions": None,
                 "reason": "RandomizeMaterials failed in second controller session",
             }
         else:
             session_b_frames = _capture_all_items(controller_b, items)
             cos_dresser_sessions = _cosine_flat(after1_frames[3], session_b_frames[3])
             cos_sofa_sessions = _cosine_flat(after1_frames[4], session_b_frames[4])
-            # Per §8.2 step 5: if identical -> determinism confirmed.
-            # If different -> per-run perturbation (acceptable; document materials).
-            determinism = cos_dresser_sessions > 0.999 and cos_sofa_sessions > 0.999
-            results["checks"]["5_session_determinism"] = {
-                "pass": True,  # both branches are acceptable per §8.2
-                "deterministic_across_sessions": bool(determinism),
+            determinism = bool(cos_dresser_sessions > 0.999 and cos_sofa_sessions > 0.999)
+            results["record_only"]["session_determinism"] = {
+                "deterministic_across_sessions": determinism,
                 "cos_dresser_sessionA_sessionB": float(cos_dresser_sessions),
                 "cos_sofa_sessionA_sessionB": float(cos_sofa_sessions),
                 "note": (
                     "Materials are deterministic across sessions."
                     if determinism
-                    else "Materials are per-run; per-loop applied materials will be recorded in phase2_collection_metadata.json."
+                    else "Materials are per-run; per-loop applied materials are recorded in phase2_collection_metadata.json."
                 ),
             }
     finally:
@@ -304,31 +339,42 @@ def main() -> int:
             pass
 
     # ---- Verdict.
-    must_pass = ["1_action_exists", "2_per_loop_re_application",
-                 "3_perturbation_locality", "4_livingroom_visually_changed"]
-    overall = all(results["checks"].get(k, {}).get("pass", False) for k in must_pass)
+    gate_keys = [
+        "G_M1_mechanism_fires",
+        "G_M2_bedroom_scope_locality",
+        "G_M3_livingroom_bedroom_contrast",
+    ]
+    overall = all(results["gate"].get(k, {}).get("pass", False) for k in gate_keys)
     results["overall_pass"] = bool(overall)
 
     args.results_dir.joinpath("preflight_report.json").write_text(
         json.dumps(results, indent=2)
     )
+
     md_lines = [
-        f"# Phase 2 Preflight Report",
-        f"",
+        "# Phase 2 Preflight Report (recalibrated 2026-05-14)",
+        "",
         f"Timestamp: {ts}",
         f"House seed: {route['seed']}",
-        f"",
+        "",
         f"## Verdict: {'PASS' if overall else 'FAIL'}",
-        f"",
+        "",
+        "## Gate criteria",
+        "",
     ]
-    for k in ["1_action_exists", "2_per_loop_re_application",
-              "3_perturbation_locality", "4_livingroom_visually_changed",
-              "5_session_determinism"]:
-        check = results["checks"].get(k, {"pass": False, "reason": "not run"})
+    for k in gate_keys:
+        check = results["gate"].get(k, {"pass": False, "reason": "not run"})
         md_lines.append(f"### {k}: {'PASS' if check.get('pass') else 'FAIL'}")
         for kk, vv in check.items():
             if kk == "pass":
                 continue
+            md_lines.append(f"- **{kk}**: {vv}")
+        md_lines.append("")
+    md_lines.append("## Record-only measurements")
+    md_lines.append("")
+    for k, v in results["record_only"].items():
+        md_lines.append(f"### {k}")
+        for kk, vv in v.items():
             md_lines.append(f"- **{kk}**: {vv}")
         md_lines.append("")
     args.results_dir.joinpath("preflight_report.md").write_text("\n".join(md_lines))
