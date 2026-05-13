@@ -531,7 +531,9 @@ nohup python -u scripts/run_phase1_shuffle.py \
     > logs/phase1_shuffle_$(date +%Y%m%d_%H%M%S).log 2>&1 &
 ```
 
-The shuffle script reads `embeddings.npy`, applies `np.random.default_rng(0).permutation(N_train)` to the training indices, and trains an otherwise-identical predictor. Held-out evaluation uses the *unshuffled* held-out region.
+The shuffle script reads `embeddings.npy`, applies `np.random.default_rng(0).permutation(N_train)` **to the training portion of the embedding stream itself** (rows `[0, N_train)`), and trains an otherwise-identical predictor on the permuted stream in sequential order. After permutation, when the trainer builds window `[t-W+1, ..., t]`, those W=16 contiguous positions in the permuted array hold W=16 *random unrelated* embeddings from the original stream — temporal structure within and across the (window, target) pair is destroyed at the source, as spec §10.1 / §6.3 require. Annotations are permuted in lockstep so bank-entry metadata reflects each embedding's original frame. Held-out evaluation uses the *unshuffled* held-out region.
+
+(Earlier drafts of this section permitted a literal reading where "permutation of training indices" meant the visit *order* of (window, target) pairs, leaving each pair's contents temporally coherent — that is standard SGD batch shuffling and does NOT test the spec's "temporal structure destroyed" claim. The wording above was tightened on 2026-05-13 after session 2's gate analysis found shuffle outperforming main under the visit-order interpretation; see HANDOFF session-2 entry.)
 
 ### 7.6 Evaluation
 At each Phase 1 checkpoint (paused training):

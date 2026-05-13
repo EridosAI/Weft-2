@@ -1,10 +1,23 @@
-"""Phase 1 shuffle control (C2 — instr §6.3, §7.5).
+"""Phase 1 shuffle control (C2 — instr §6.3, §7.5, spec §10.1).
 
-Same predictor architecture, same loss, same optimizer; the only change is
-that the *training-step order* is a seeded permutation of the unshuffled
-stream. The bank still ingests in true temporal order so the shuffle
-isolates training-signal shuffling, not bank-state shuffling. Held-out
-evaluation uses the unshuffled held-out region.
+Spec-correct version (replaces the prior visit-order-only permutation, which
+matched the literal §7.5 wording but contradicted spec §10.1's rationale —
+see HANDOFF session-2 entry).
+
+The training portion of the embedding stream (frames [0, n_train)) is permuted
+once at the start of training using `np.random.default_rng(SEED_SHUFFLE_PERMUTATION)`.
+After permutation, the trainer builds windows from contiguous positions in the
+permuted stream — but those contiguous positions now hold random unrelated
+frames, so the window has no temporal coherence and the K-step target is
+unrelated to the window. Temporal structure is destroyed at the source, as
+spec §10.1 requires. The predictor cannot learn path structure because there
+is no path.
+
+Annotations are permuted in lockstep so each bank entry's metadata reflects
+the original frame the embedding came from.
+
+The held-out region [n_train, N) is NOT permuted; held-out evaluation uses
+the unshuffled held-out region per instr §7.5.
 """
 
 from __future__ import annotations
@@ -56,6 +69,20 @@ def _load_annotations(path: Path) -> list[dict]:
     return out
 
 
+def _apply_permutation(
+    embeddings: np.ndarray, annotations: list[dict], n_train: int, seed: int,
+) -> tuple[np.ndarray, list[dict], np.ndarray]:
+    """Permute the first n_train rows in lockstep; held-out region untouched."""
+    rng = np.random.default_rng(int(seed))
+    perm = rng.permutation(n_train).astype(np.int64)
+    permuted_emb = embeddings.copy()
+    permuted_emb[:n_train] = embeddings[perm]
+    permuted_anns = list(annotations)
+    for new_pos, src_pos in enumerate(perm):
+        permuted_anns[new_pos] = annotations[int(src_pos)]
+    return permuted_emb, permuted_anns, perm
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", type=Path, default=PHASE1.results_shuffle)
@@ -74,6 +101,16 @@ def main() -> int:
     held_out_start, held_out_end = compute_held_out_boundary(annotations, HELD_OUT_LOOPS)
     n_train = held_out_start
 
+    # Spec-correct shuffle: permute the embedding+annotation stream at source.
+    permuted_emb, permuted_anns, perm = _apply_permutation(
+        embeddings, annotations, n_train, int(args.shuffle_seed),
+    )
+    print(f"[phase1_shuffle] permutation seed={args.shuffle_seed}, "
+          f"first 5 perm indices: {perm[:5].tolist()}", flush=True)
+    print(f"[phase1_shuffle] embeddings shape={permuted_emb.shape}; "
+          f"held-out region [{held_out_start}, {held_out_end}) preserved",
+          flush=True)
+
     torch.manual_seed(SEED_PREDICTOR_INIT)
     predictor = InnerPAM()
     bank = MemoryBank()
@@ -89,15 +126,14 @@ def main() -> int:
         output_dir=args.output_dir,
         checkpoint_steps=ckpt_schedule,
         final_step=final_step,
-        shuffle_seed=int(args.shuffle_seed),
         git_commit=git,
     )
 
     trainer = OnlineTrainer(
         predictor=predictor,
         bank=bank,
-        embeddings=embeddings,
-        annotations=annotations,
+        embeddings=permuted_emb,
+        annotations=permuted_anns,
         n_train=n_train,
         device=device,
         cfg=cfg,
@@ -113,12 +149,15 @@ def main() -> int:
         json.dumps(
             {
                 "phase": "phase1_shuffle",
+                "shuffle_kind": "embedding_stream_permutation_at_source",
+                "spec_section": "§10.1, §6.3 (temporal structure destroyed)",
                 "final_step": final_step,
                 "n_train": n_train,
                 "held_out_region": [held_out_start, held_out_end],
                 "elapsed_seconds": summary["elapsed_seconds"],
                 "n_gradient_steps_actual": summary["n_gradient_steps_actual"],
                 "shuffle_seed": int(args.shuffle_seed),
+                "first_5_perm_indices": perm[:5].tolist(),
                 "git_commit": git,
             },
             indent=2,

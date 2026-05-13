@@ -114,7 +114,6 @@ def main() -> int:
         output_dir=args.output_dir,
         checkpoint_steps=ckpt_schedule,
         final_step=final_step,
-        shuffle_seed=None,
         git_commit=git,
     )
 

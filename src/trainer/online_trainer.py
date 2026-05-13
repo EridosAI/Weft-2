@@ -83,7 +83,6 @@ class TrainerConfig:
     output_dir: Path
     checkpoint_steps: tuple[int, ...]
     final_step: int                   # last training step (inclusive); used for end-ckpt
-    shuffle_seed: Optional[int] = None  # if set, training-index permutation seed
     git_commit: Optional[str] = None
     log_every: int = 100               # tensorboard granularity
     tau_calib_callback: Optional[Callable[["OnlineTrainer"], None]] = None
@@ -119,15 +118,12 @@ class OnlineTrainer:
         self.cfg = cfg
         self.n_train = int(n_train)
 
-        # Training-order indices. Shuffle control permutes; main runs in stream order.
-        if cfg.shuffle_seed is None:
-            self._order = np.arange(self.n_train, dtype=np.int64)
-        else:
-            rng = np.random.default_rng(int(cfg.shuffle_seed))
-            self._order = rng.permutation(self.n_train).astype(np.int64)
-        # The bank still ingests the unshuffled (true temporal) stream so the
-        # shuffle control isolates the *training-signal* shuffling, not the
-        # bank-state shuffling. Instructions §6.3 C2 keeps held-out unshuffled.
+        # Training always traverses the input stream in order. The shuffle
+        # control passes a pre-permuted embedding+annotation stream so that
+        # window/target contents are randomised at the source, destroying
+        # temporal structure as spec §10.1 / §6.3 require. The trainer itself
+        # does not permute.
+        self._order = np.arange(self.n_train, dtype=np.int64)
 
         self._embeddings_np = embeddings
         self._annotations = annotations
@@ -231,8 +227,6 @@ class OnlineTrainer:
             window_end = target_end - PREDICT_K        # last frame of window
             window_start = window_end - WINDOW_W + 1
             if window_start < 0 or target_end >= self.n_train:
-                # Skip steps where the shuffle picks an index that puts the
-                # window or target outside the stream.
                 continue
 
             window = self._embeddings[window_start : window_end + 1].unsqueeze(0)  # (1, W, d)
