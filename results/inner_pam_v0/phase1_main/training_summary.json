@@ -1,0 +1,12 @@
+{
+  "phase": "phase1",
+  "final_step": 95721,
+  "n_train": 95722,
+  "held_out_region": [
+    95722,
+    100000
+  ],
+  "elapsed_seconds": 869.8762571811676,
+  "n_gradient_steps_actual": 95691,
+  "git_commit": "a7d79a51aa6cd3aaa02a6e0e08ca43e91c7625e3"
+}

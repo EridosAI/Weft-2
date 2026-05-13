@@ -1,0 +1,14 @@
+{
+  "trainable_params": 21555728,
+  "total_params": 21555728,
+  "param_count_target": 21000000,
+  "param_count_tolerance_frac": 0.1,
+  "param_count_within_tolerance": true,
+  "smoke_forward_pass": "ok",
+  "embedding_norm_check": {
+    "n_sampled": 1000,
+    "min": 0.9999999403953552,
+    "max": 1.0000001192092896,
+    "all_in_tolerance_1e_5": true
+  }
+}
