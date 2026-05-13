@@ -73,32 +73,182 @@ autonomous.
 
 ## Next immediate action
 
-**STOP for experiment-chat review.** Session 2 ran Phase 1 main + shuffle + per-checkpoint eval + full gate analysis. Two findings need reviewer judgement before Phase 2:
+**STOP for experiment-chat review.** Session 2 hit a STOP at the shuffle interpretation issue; session 3 (this entry) re-implemented shuffle per spec §10.1, re-ran training and gate analysis, and now hands back the result for the reviewer to assign gate verdicts and decide whether Phase 2 begins. Three open decisions:
 
-1. **G1.4 is HELD pending shuffle re-design.** Per instr §6.5: "The PAM-vs-shuffle gates in §7.7 / §8.7 / §9.7 are only interpretable if the sanity check returns 'expected.' If 'unexpected,' the gate is flagged for re-design in HANDOFF and the experiment chat consults Grok before proceeding." S1-S4 all returned "unexpected" — shuffle outperformed main on every dimension. Diagnosis below points to a literal-vs-rationale split between instr §7.5 and spec §10.1 over what "shuffle" means; the current implementation matches the literal §7.5 wording ("permutation of training indices") but contradicts the spec's "destroy temporal structure" rationale. Recommended re-design and re-run before Phase 2.
+1. **G1.4 verdict at the gated horizon (k=8).** Main wins at k=1 (mean_diff +0.039, p=1.7e-05) and at k=16 by rank (Wilcoxon p=0.004 even though mean_diff is −0.020). **Main loses at k=8** (mean_diff −0.132, Wilcoxon p=1.0). The mid-horizon failure is real, not an artefact of v1's wrong-shuffle. Diagnosis below points to **rank-512 limited predictor architecture** as a candidate: cosine at the cluster boundary is bounded by the output projection's column space, while squared-error (which the loss actually optimises) shows main beating shuffle decisively. Reviewer call: declare FAIL @ k=8 and pause to investigate, accept the rank-limited reading and recalibrate the gate to squared-error or a different cosine threshold, or proceed with a documented caveat.
 
-2. **G1.3 FAILED against the scaffolding threshold** (cue mean log_var = −8.40 is *lower* than steady mean log_var = −8.26, i.e., predictor is MORE confident at cue probes than steady probes — opposite of the spec's "low variance at well-grooved regions, high variance at divergence points" expectation). Whether this is a real surprising finding about the architecture or an artefact of the un-jittered Phase 1 substrate (bit-identical dwell frames produce trivial / overconfident predictions in unexpected ways) is a judgement call. Disaggregated numbers in `results/inner_pam_v0/phase1_main/gate_report.json` and `log_var_trajectory.json`.
+2. **G1.3 verdict.** FAIL against the +0.3 absolute scaffolding threshold (separation cue−steady = −0.14, i.e., the wrong direction). But **main has structure shuffle doesn't**: shuffle's separation is 0.0002 (≈ zero, as expected from a temporally-destroyed control), while main's is −0.14 in a stable consistent direction. Main is also ~0.8 log_var more confident than shuffle on both probe types. Substrate-artefact diagnostic is below. Reviewer call: FAIL @ absolute scaffolding stands; PASS-at-relative-baseline depending on how the reviewer weighs "wrong-direction separation but real structure" vs "absolute spec direction".
 
-**Mechanical gates passed.** G1.1 (no NaN/Inf) PASS, G1.2 (loss decreased) PASS. **G1.5 trajectory PASS against scaffolding** (sharpness 0.008 → 0.325, 8 of 9 checkpoint transitions non-decreasing, floor 0.10 cleared).
+3. **S4 quantitative thresholds need reviewer-authorised recalibration.** Shuffle did NOT collapse to the form S4 anticipated (`||μ|| < 0.15` AND `log σ² > 0.4`) but DID collapse to a different specific form: `||μ|| ≈ 0.75` AND `log σ² ≈ −7.48` — i.e., predicting the marginal-mean direction with low (calibrated-to-residual) variance. The empirical shuffle distribution is now visible; per instr §6.5 the thresholds are SCAFFOLDING explicitly subject to "recalibrate after observing the empirical shuffle distribution at end of Phase 1." Recommended new thresholds: `||μ|| > 0.6` OR `M3 sharpness < 0.05` (either captures the collapse-to-marginal-mean signature observed). Reviewer chooses the recalibration.
 
-Reviewer options for the shuffle (load-bearing):
+**Mechanical gates remain passed.** G1.1 PASS, G1.2 PASS. **G1.5 trajectory PASS @ scaffolding** (unchanged from session 2; main predictor's M3 sharpness 0.008 → 0.325, 8 of 9 transitions non-decreasing, floor 0.10 cleared).
 
-- **(a) Re-implement shuffle to permute the embedding stream itself, not the visit order.** Spec-correct. ~15 min re-train + ~2 min re-analysis. Recommended.
-- **(b) Accept current shuffle (literal §7.5) and document G1.4 as a different control than the spec intends.** Faster but the experiment loses its principled discrimination test.
-- **(c) Replace the shuffle control entirely** with a different mechanism more aligned to "destroy temporal structure" (e.g., target-replaced-by-random-frame shuffle, or random-window shuffle).
-
-After resolution, G1.3 also needs a verdict (either accept the surprising finding for now and continue to Phase 2, or pause to diagnose the cue-more-confident-than-steady inversion first).
+**Phase 2 entry remains blocked** until the reviewer assigns G1.3 / G1.4 / S4 verdicts.
 
 ---
 
-## Operational state (end of session 2)
+## Operational state (end of session 3)
 
-- Working tree: clean. 16 commits on `main` (11 from session 1 + 5 from session 2: cue-probe fix, gate-report script, Phase 1 results JSONs, this HANDOFF update, and one to come for this entry).
+- Working tree: clean modulo this HANDOFF entry. 20 commits on `main` (12 from sessions 1-2 + 4 new from session 3: shuffle fix, gate report G1.3 augmentation, Phase 1 v2 results, this HANDOFF entry).
 - Push hold: in effect.
 - No running jobs.
-- Phase 1 main: 10 checkpoints + bank state at `results/inner_pam_v0/phase1_main/ckpt_{step}.{pt,/}` (gitignored, ~2.5 GB total).
-- Phase 1 shuffle: 10 checkpoints + bank state at `results/inner_pam_v0/phase1_shuffle/ckpt_{step}.{pt,/}` (gitignored).
-- All result JSONs committed (see commit log).
+- Phase 1 main: unchanged from session 2. 10 checkpoints + bank state at `results/inner_pam_v0/phase1_main/ckpt_{step}.{pt,/}` (gitignored).
+- Phase 1 shuffle: **REPLACED** with spec-correct implementation. 10 new checkpoints + bank state at `results/inner_pam_v0/phase1_shuffle/ckpt_{step}.{pt,/}` (gitignored; bank-state dirs added to .gitignore this session).
+- All result JSONs committed.
+
+---
+
+## Session 3 outcomes — 2026-05-13
+
+**Goal.** Resolve the session-2 STOPs on the reviewer's protocol: (1) re-implement shuffle per spec §10.1's "temporal structure destroyed" rationale, (2) re-train shuffle and re-compute G1.4 + S1-S4, (3) augment G1.3 with main-vs-shuffle log_var comparison, (4) document substrate-artefact diagnostic for G1.3, M3 cross-cluster framing, and cue-probe count confirmation. Pause again for review before any Phase 2 step.
+
+### Cue-probe count: confirmed 46 is the natural maximum, not a bug
+
+After the session-2 cue-probe fix (commit `ea84df1`), 46 cue probes are constructed from the held-out region. The expected ceiling is 10 held-out loops × 5 transitions = 50; the actual ceiling is **(1→2): 10, (2→3): 9, (3→4): 9, (4→5): 9, (5→1): 9 = 46**.
+
+Reason: the seed-7 stream has 100,000 frames over 219 loops (loop_idx 0..218), but loop 218 is **partial** — it completes the dwell at item 1 (Bed) and starts the transit toward item 2 (DiningTable), but doesn't finish the loop. So in the held-out region (loops 209–218), transition (1, 2) has 10 valid windows (one per loop including the partial one) but the other four transitions have only 9. Not a bug.
+
+**Confirmation that all gate metrics used the 46-probe set:** the gate_report.json was first produced (and re-produced this session) AFTER the cue-probe fix commit `ea84df1`. The build_probes call inside the gate report uses the fixed build_cue_probes implementation. No stale 9-probe numbers were used in any reported gate verdict.
+
+### Shuffle re-design — spec §10.1 / §6.3 / §7.5
+
+Replaced the session-2 visit-order-only shuffle with the spec-correct implementation. Single commit `a24d92c`:
+
+- `scripts/run_phase1_shuffle.py`: permutation seed=0 applied via `np.random.default_rng(0).permutation(N_train)` to **`embeddings[:N_train]` AND `annotations[:N_train]` in lockstep** before training begins. Held-out region `[N_train, N)` is preserved unshuffled.
+- `src/trainer/online_trainer.py`: `shuffle_seed` parameter removed from `TrainerConfig`. The trainer always traverses its input stream in sequential order. Shuffle is solely a property of the input stream the trainer receives.
+- `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md` §7.5: wording tightened from "applies permutation to training indices" to "applies `np.random.default_rng(0).permutation(N_train)` to the training portion of the embedding stream itself" with a paragraph documenting why the earlier wording was ambiguous.
+- `.gitignore`: `results/**/ckpt_*/` (bank-state dirs are large binary; not part of audit trail).
+
+First 5 permuted indices applied: `[62740, 36416, 33605, 36404, 55777]` — confirms embeddings at positions 0..4 in the new stream now hold the original frames 62740, 36416, 33605, 36404, 55777 (random unrelated frames). Window construction `embeddings[t-W+1 : t+1]` then yields 16 random unrelated embeddings, destroying temporal structure at source.
+
+### Phase 1 shuffle v2 — re-train
+
+| metric | v1 (visit-order, session 2) | v2 (spec-correct, this session) |
+|---|---:|---:|
+| wall-clock | 862.7 s | 871.4 s |
+| gradient steps | 95,660 | 95,691 |
+| final mean_loss_last_1k | **−69,540** | **−53,526** |
+| final mean_log_var | **−9.48** | **−7.48** |
+| final predictor weight L2 norm | 1,116.51 | 1,237.88 |
+
+The v2 shuffle's loss is **less negative** than main's (−53,526 vs main's −62,607), and its mean_log_var is **higher** than main's (−7.48 vs main's −8.66). Both directions are the spec-correct expectations: shuffle is less optimised than main, and less confident than main. The v1 reversal (shuffle better than main on both) is now resolved.
+
+### Gate verdicts (v2, against the new shuffle baseline)
+
+| gate | criterion | v1 result | v2 result | verdict (vs scaffolding) |
+|---|---|---|---|---|
+| G1.1 | No NaN/Inf | PASS | PASS (unchanged) | **PASS** |
+| G1.2 | Loss decreased | PASS | PASS (unchanged) | **PASS** |
+| G1.3 | mean(log_var, steady) + 0.3 < mean(log_var, cue) | FAIL @ scaffolding (sep −0.14) | FAIL @ scaffolding (sep unchanged: −0.14); but main HAS structure (≈ −0.14) that shuffle does not (≈ 0.0002) | **FAIL @ absolute, pending reviewer call on relative** |
+| G1.4 | Paired test main > shuffle at k=8 steady (p<0.01) | HELD (S1-S4 unexpected, control invalid) | **FAIL @ k=8** (mean_diff −0.13, Wilcoxon p=1.0); PASS @ k=1 (p=1.7e-5); PASS @ k=16 (Wilcoxon p=0.004 rank-based even though mean diff is −0.02) | **FAIL @ gated horizon** |
+| G1.5 | M3 trajectory + floor | PASS (unchanged) | PASS (unchanged) | **PASS** |
+
+#### G1.4 detail (v2)
+
+Paired Wilcoxon on 250 steady-state probes (Shapiro-Wilk rejected normality at p < 1e-15 on every horizon → Wilcoxon used per the spec's fallback rule):
+
+| horizon k | mean_diff (main − shuffle) | shapiro p | Wilcoxon p (one-sided greater) | pass at p < 0.01? |
+|---:|---:|---:|---:|---|
+| 1 | **+0.0395** | 1.4e-15 | **1.74e-05** | **PASS** |
+| 8 (gated) | **−0.1318** | 9.4e-15 | 1.0 | **FAIL** |
+| 16 | −0.0200 | 1.2e-19 | 0.0041 | PASS (rank-based) |
+
+Main beats shuffle at the near horizon (k=1), loses at the mid horizon (k=8 gated), and wins at the far horizon (k=16) only by the rank-based test (mean diff is negative but the rank distribution favours main).
+
+**Diagnostic for the k=8 failure (load-bearing for the reviewer's decision):**
+
+Main's per-step M1 (cosine) has a characteristic shape that is below shuffle's flat baseline at mid-K:
+
+| k | main M1 aggregate | shuffle aggregate (≈) |
+|---:|---:|---:|
+| 1 | 0.69 | 0.65 |
+| 2 | 0.62 | 0.66 |
+| 3-4 | **0.55** | 0.66 |
+| 5-7 | 0.52 | 0.66 |
+| 8 | **0.56** | 0.69 |
+| 9-12 | 0.58–0.62 | 0.66 |
+| 13-16 | 0.62–0.63 | 0.65 |
+
+(Main aggregate over all 296 probes from `eval_95721.json`. Shuffle aggregate ≈ 0.66 is roughly flat because shuffle's predictions are near-constant marginal-mean outputs, see S3 below.)
+
+Two candidate explanations the reviewer should weigh:
+
+**(A) Rank-512 limited predictor architecture.** The output projection is `Linear(512, K*(d+1))`. Each μ_k slot is a 1024×512 sub-matrix mapping the 512-d transformer state to a 1024-d mean. The column space is rank ≤ 512 in the 1024-d output space. Cosine to a 1024-d target is bounded by the alignment of that target with the rank-512 subspace. Main is being penalised on cosine for an architectural reason that the loss (which optimises **squared error scaled by variance**, not cosine) doesn't see. Main's `mean_log_var = −8.66` vs shuffle's `−7.48` means main's squared error is ~half shuffle's (e^−8.66 ≈ 1.7e-4, e^−7.48 ≈ 5.6e-4) — main is winning on the LOSS objective by a large margin. The cosine gate is testing something the loss doesn't optimise.
+
+**(B) Substrate-induced mid-horizon failure mode.** With the un-jittered Phase 1 stream, steady-state probes have bit-identical 16-frame targets; cue probes have a smooth dwell→transit transition. Main may have learned to predict "the first target frame matches the last window frame" (good at k=1, hence the 0.69 peak) and "the eventual stable trajectory matches the average direction" (good at k=16, hence the 0.62 recovery), but the middle of the predicted path drifts. Shuffle, predicting the marginal mean of all training targets, has a flat cosine across k that happens to land above main's mid-K dip.
+
+Under (A), the architecture is fine and the gate is mis-specified; the reviewer would either raise predictor hidden dim (a SCAFFOLDING change per §12) or change the gate metric. Under (B), the substrate's bit-identical-dwell degeneracy plus the rank-limit conspire to produce a real failure of multi-step path prediction that Phase 2/3's jittered substrate may or may not resolve. The diagnostic that separates (A) from (B) is whether main's k=8 cosine improves substantially when the substrate is jittered (Phase 2/3) or whether the same dip persists.
+
+The G1.4 verdict-as-computed stands at **FAIL @ k=8**. I am not declaring this autonomously per the reviewer protocol; the reviewer assigns the verdict.
+
+#### G1.3 detail (v2) — main has structure shuffle doesn't
+
+| stat | main (final ckpt) | shuffle (final ckpt) | main − shuffle |
+|---|---:|---:|---:|
+| steady mean log_var | −8.26 | −7.48 | **−0.78** |
+| cue mean log_var | −8.40 | −7.48 | **−0.92** |
+| separation (cue − steady) | **−0.14** | **+0.0002** | — |
+
+Main is `−0.78 / −0.92` log_var **more confident** than shuffle on steady / cue probes respectively. Shuffle's separation across probe types is ≈ 0 (`0.0002`) — exactly what a temporally-destroyed control should show (shuffle has no way to tell steady from cue, so it predicts the same marginal-mean output for both).
+
+So main DOES learn variance structure that the shuffle doesn't:
+
+- Both magnitudes of confidence (main more confident than shuffle on each probe type).
+- And differential structure across probe types (main −0.14 vs shuffle 0).
+
+The structure runs in the **opposite direction** from the spec's specific hypothesis (which expected cue more variance than steady). The reviewer decides whether "main learns variance structure but not the specific direction §2.2 hypothesised" counts as a partial pass against the relative baseline, or whether the wrong-direction structure indicates a real architecture/substrate failure mode.
+
+**Substrate-artefact diagnostic note for G1.3 (per session-2 reviewer item 2).** The un-jittered Phase 1 stream produces bit-identical 16-frame target embeddings for steady-state probes (all 16 future frames at the same viewing position are identical to floating-point precision). The optimal predictor for "predict 16 copies of a constant" under Gaussian NLL is "predict the constant with arbitrarily small variance" — log_var → −∞ (clamped to −10). Empirically main lands at log_var ≈ −8.26 for steady, well above the clamp, indicating the predictor hasn't fully saturated even on this trivial sub-problem. Possible reasons: the **rank-512 architecture limit** prevents perfect prediction of arbitrary 1024-d targets (squared error nonzero → variance has to absorb it), or the predictor's loss is dominated by other (transit, cue) targets it can't predict as well, dragging steady log_var up via shared weights. Cue probes are slightly *easier* in this substrate for an unintuitive reason: the dwell→transit smooth motion gives the predictor a directional cue (the last few window frames already moving), and the K=16 transit-frame targets share spatial structure (smooth path), so the predictor's variance fits a wider but consistent region. The inversion (cue more confident than steady) is consistent with this substrate-driven story. The reviewer should consider whether to wait for the Phase 2/3 jittered substrate (which adds genuine within-cluster variance to steady-state probes) before drawing architectural conclusions from G1.3.
+
+#### S1-S4 sanity check (v2)
+
+| check | criterion | observed | direction |
+|---|---|---|---|
+| S1 | shuffle log_var > main log_var (less confident) | shuffle −7.48 > main −8.66 | **expected ✓** |
+| S2 | shuffle aggregate M1 < main aggregate M1 | shuffle 0.656 > main 0.592 | unexpected |
+| S3 | shuffle |sharpness| << main |sharpness| | shuffle 0.011 << main 0.325 | **expected ✓** |
+| S4 | quantitative collapse-to-mean: `||μ|| < 0.15` AND `log σ² > 0.4` | shuffle `||μ|| = 0.75`, `log σ² = −7.48` | unexpected |
+
+**Aggregate verdict (with the existing S4 thresholds): unexpected (2 of 4 individual checks fail).**
+
+But the qualitative interpretation has shifted from session 2:
+
+- **S3 PASS is load-bearing.** Shuffle's cluster sharpness is **0.011** vs main's **0.325** — shuffle has essentially no item-discriminability, exactly what a temporally-destroyed control should show. Within-cluster cosines are 1.0 (shuffle outputs are deterministic on inputs) and cross-cluster cosines are 0.989 (shuffle outputs are nearly identical regardless of which item the input window is from). This is the **canonical "collapse to a single output direction" pattern** — just not the specific (norm < 0.15, log_var > 0.4) form S4's SCAFFOLDING thresholds were predicting.
+- **S2's "unexpected" is the cosine artefact discussed in G1.4 above.** Shuffle's per-k aggregate is flat (predicting a fixed direction across all probes); main's per-k dips at mid-K. The aggregate-over-k comparison conflates the unfair-to-main mid-K dip with the favourable k=1 and k=16 endpoints.
+- **S4's failure is a SCAFFOLDING-threshold mis-specification, not a sanity-check failure.** Instr §6.5 explicitly says: *"Starting thresholds (SCAFFOLDING — recalibrate after observing the empirical shuffle distribution at end of Phase 1)"*. The empirical shuffle distribution is now visible (||μ|| ≈ 0.75, log_var ≈ −7.48); the recalibrated thresholds the reviewer can authorise are e.g. `||μ|| > 0.6` (capturing the marginal-mean-direction signature) OR `sharpness < 0.05` (re-using S3's signal). Either captures the observed form of collapse cleanly.
+
+Sanity check report at `results/inner_pam_v0/phase1_shuffle/sanity_check.json`.
+
+### M3 trajectory framing — what spec claim Phase 1 supports
+
+Per the session-2 reviewer note on item 3, the M3 sharpness trajectory 0.008 → 0.325 is real learning but with a specific interpretation given the substrate:
+
+- **Within-cluster cosine ≈ 1.000** by construction: bit-identical pixels at the same viewing position across loops → bit-identical DINOv2 embeddings → bit-identical predictor outputs → within-cluster cosine = 1.0. This is a substrate floor, not a learned property of the predictor.
+- **Cross-cluster cosine** is what evolves: at the first checkpoint (10k steps), shuffle-baseline-aligned ≈ 0.992; at the final checkpoint (95,721 steps), 0.675. Sharpness = 1.0 − 0.675 = 0.325.
+- The trajectory is therefore measuring **cross-cluster discriminability**: how distinguishably the predictor outputs different vectors at different items. That is real learning, supported by the Phase 1 evidence.
+- The **§2.2 "repetition tightens within-cluster representations" claim** is *not* tested in Phase 1 because within-cluster cosine is floored at 1.0 by the substrate. That test moves to Phases 2/3 where jittered collection produces non-identical dwell embeddings, giving within-cluster cosine room below 1.0 to tighten as repetition accumulates.
+
+Architectural-claim status as of Phase 1:
+
+| claim | status after Phase 1 | resolves in |
+|---|---|---|
+| Predictor learns cross-cluster discriminability | **supported** | (this phase) |
+| Within-cluster representations tighten with repetition | **pending** (substrate-floored) | Phase 2/3 (jittered) |
+| Predictor learns multi-step trajectory (cosine at mid-K beats shuffle) | **partial / unresolved** | depends on architecture limit diagnosis |
+| Predictor learns differential variance structure across probe types | **supported (in direction)**, **wrong (in sign)** vs spec §2.2 | clarifies in Phase 2/3 with jitter |
+| Predictor learns the specific cue-more-variance-than-steady pattern | **failed against spec direction** | reviewer call on whether to retain expectation |
+
+### Reviewer-action items before session 4
+
+1. **G1.3 verdict:** FAIL @ absolute scaffolding stands. PASS-at-relative-baseline is the reviewer's call given that main has structure shuffle doesn't, even in the wrong direction. (Item 2 from the session-2 review handed back.)
+2. **G1.4 verdict:** FAIL @ k=8 stands as computed. Diagnostic suggests rank-512 architecture limit OR substrate dip; pre-Phase-2 fix candidates include raising PRED_HIDDEN, switching the gate metric to squared error (which main wins decisively), or accepting cosine-at-mid-K as a known weakness with the bit-identical substrate. (Item 1 from session-2.)
+3. **S4 threshold recalibration:** empirical shuffle distribution is now known (||μ|| ≈ 0.75, log_var ≈ −7.48). Reviewer authorises new thresholds; recommendation in the §G1.4 section above.
+4. **Phase 2 entry depends on items 1–3.** No autonomous progression.
+
+If the reviewer chooses to investigate rather than continue:
+
+- The cheapest single intervention for the cosine-at-mid-K issue is raising PRED_HIDDEN from 512 to ≥ 1024 (rank-unconstrained), which would put the predictor's mu output in the full 1024-d space. Single-variable, ~30 min retrain. Worth doing once before Phase 2 if the verdict is "investigate."
+- The G1.3 direction inversion is most cleanly diagnosed by Phase 2/3 evidence; running them and looking at the relative log_var pattern under jittered substrate would settle whether the substrate or the architecture drove the inversion.
 
 ---
 
