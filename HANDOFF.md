@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Curriculum framing locked (Stage A → Stage B → Stage C; no jitter); spec/instructions/ops docs updated; Phase 2 wrapper + preflight + collect + encode + train scripts implemented and committed; in-flight transition diagnostic landed in OnlineTrainer (G2.T1 / G2.T2 / G2.T3 SCAFFOLDING gates). Phase 2 preflight ran to completion and reports FAIL at three of five checks, but the empirical numbers show the RandomizeMaterials mechanism is working — the failures are threshold-calibration artefacts (pixel-RGB cosines on 300×300 images compress into a tight dynamic range; my session-5 preflight thresholds were too aggressive for that scale). STOP for review of the preflight threshold recalibration before launching the 65k Phase 2 collection. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Curriculum framing locked (Stage A → Stage B → Stage C; no jitter); spec/instructions/ops docs updated; Phase 2 wrapper + preflight + collect + encode + train scripts implemented and committed; in-flight transition diagnostic landed in OnlineTrainer (G2.T1 / G2.T2 / G2.T3 SCAFFOLDING gates). Phase 2 preflight recalibrated per the user's 2026-05-14 authorisation (three-criterion gate: mechanism fires, Bedroom > 0.97, contrast ≥ 0.02) and re-run twice; G_M3 contrast trips on per-run material lottery + DiningTable doorway view-through. Two structural metric issues surfaced that go beyond threshold recalibration; STOP again to escalate to the experiment chat. Working tree clean; push hold in effect.
 
 ---
 
@@ -76,39 +76,51 @@ autonomous.
 
 ## Next immediate action
 
-**STOP for experiment-chat review.** Session 5 implemented the curriculum framing the experiment chat approved on 2026-05-14 — spec/instructions/ops docs updated, Phase 2 wrapper + preflight + collect + encode + train scripts written, in-flight transition diagnostic added to the trainer. The Phase 2 preflight ran to completion and reports FAIL at three of five checks. The empirical numbers (Phase 2 preflight section in the Session 5 outcomes entry below) show the `RandomizeMaterials` mechanism is working correctly — the failures are threshold-calibration artefacts on flat-RGB cosines, not a mechanism failure. The Phase 2 collection has NOT been launched; one reviewer decision is needed before it can be.
+**STOP for experiment-chat review (second STOP in session 5).** The user's 2026-05-14 authorisation (recalibrate preflight to the three-criterion gate `G_M1` + `G_M2 > 0.97` + `G_M3 contrast ≥ 0.02`) was implemented (commit `1da95ba`) and the preflight was re-run twice. Both reruns trip `G_M3` for reasons that go beyond a threshold-calibration issue. The Phase 2 collection has NOT been launched. The findings now point to structural problems with flat-RGB cosine as the preflight metric, which the reviewer should weigh in on.
 
-The session-5 reviewer decision needed:
+**Three preflight runs at the same gate criterion (`G_M3` contrast ≥ 0.02):**
 
-**Preflight threshold recalibration.** My session-5 preflight thresholds (Check 2: per-loop cosine `< 0.95`; Check 3: Bedroom locality cosine `≥ 0.999`; Check 4: LivingRoom change cosine `< 0.9`) were inherited from §8.2's text + a new "per-loop change" criterion I picked, and they were calibrated for a much larger pixel-space delta than `RandomizeMaterials` actually produces at 300×300 resolution. Empirical cosines:
+| run | timestamp | metric form | LivingRoom mean | Bedroom mean | contrast | G_M3 |
+|---|---|---|---:|---:|---:|---|
+| 1 | 2026-05-14 05:26 | single-call (old thresholds) | 0.958 | 0.991 | **+0.033** | would PASS |
+| 2 | 2026-05-14 05:59 | single-call (3-criterion gate) | 0.979 | 0.991 | +0.012 | FAIL |
+| 3 | 2026-05-14 06:01 | 3-call-averaged | 0.979 | 0.987 | +0.008 | FAIL |
 
-| check | item set | observed | criterion |
-|---|---|---|---|
-| 2 per-loop change | Dresser call1↔call2 | 0.974 | < 0.95 ✗ |
-|   | Sofa call1↔call2 | 0.982 | < 0.95 ✗ |
-|   | Dresser call2↔call3 | 0.981 | < 0.95 ✗ |
-|   | Sofa call2↔call3 | **0.996** | < 0.95 ✗ |
-| 3 Bedroom locality | Bed before↔after | 0.996 | ≥ 0.999 ✗ |
-|   | DiningTable before↔after | 0.983 | ≥ 0.999 ✗ |
-|   | Television before↔after | 0.995 | ≥ 0.999 ✗ |
-| 4 LivingRoom change | Dresser before↔after | 0.969 | < 0.9 ✗ |
-|   | Sofa before↔after | 0.947 | < 0.9 ✗ |
+The contrast is positive in all three runs (LivingRoom items always move more than Bedroom items on average), but variance across runs is high and the magnitude depends heavily on which materials happen to land per draw.
 
-The signal is real: LivingRoom items show mean before-after cosine **0.958** vs Bedroom items at **0.991**. Locality contrast = **+0.033** — LivingRoom items move ~3.3% more in pixel cosine than Bedroom items, in the right direction. Materials are per-run (Check 5 confirmed); the per-run materials get recorded by the collection script.
+**Two structural realities surfaced by the runs:**
 
-What's actually happening: `RandomizeMaterials` swaps textures on the targeted LivingRoom furniture, but most of each frame's pixels are unchanged geometry, lighting, walls, and background — texture swaps occupy a small fraction of the visible area, so the flat-RGB cosine moves only a few percent. The §8.4 perturbation-effect check at encoding time (DINOv2 embedding distance, not pixel cosine) is the load-bearing verification; the preflight is just an early-warning sanity check that the API behaves at all.
+(1) **Per-run material lottery on Sofa.** Across the three runs, Sofa's before-vs-after cosine has been 0.947 / 0.996 / 0.991 — i.e., on most random draws Sofa lands on a texture visually similar to the original. Dresser is more consistent (0.969 / 0.963 / 0.966). Averaging across the 3 random draws each run already makes (run 3) narrows the per-item variance but does not pull Sofa's mean down to where Dresser is — Sofa is just genuinely less affected by the available trainMaterials pool than Dresser is, or its viewing pose catches a less-textured angle.
 
-Three options for the reviewer:
+(2) **DiningTable doorway view-through.** In run 3, the per-item 3-call means were:
 
-(a) **Recalibrate the preflight thresholds against the empirical scale.** Adopt a *contrast* criterion that directly tests what we care about: LivingRoom mean before-after cosine must be lower than Bedroom mean before-after cosine by a margin of at least 0.02 (the current contrast is 0.033, so this passes). The per-loop change criterion (Check 2) becomes: Dresser+Sofa pairwise cosines across consecutive calls must all be ≤ 0.999 (rules out a hard-cached materials cycle while accepting the actual small magnitude of the change). Bedroom locality (Check 3): ≥ 0.97 (well above the LivingRoom item changes; still catches a meaningful Bedroom-side leak). Recommend this option.
+| item | room | 3-call mean | per-call values |
+|---|---|---:|---|
+| Bed | Bedroom (control) | 0.9947 | 0.995 / 0.994 / 0.995 |
+| Television | Bedroom (control) | 0.9890 | 0.993 / 0.988 / 0.987 |
+| **DiningTable** | **Bedroom (control)** | **0.9761** | 0.961 / 0.979 / 0.988 |
+| Dresser | LivingRoom (perturbed) | 0.9664 | 0.938 / 0.997 / 0.964 |
+| **Sofa** | **LivingRoom (perturbed)** | **0.9906** | 0.995 / 0.994 / 0.983 |
 
-(b) **Switch the preflight to DINOv2-embedding-distance checks.** Replace flat-RGB cosines with DINOv2-encoded cosines on the same paired frames. This is the same metric the load-bearing §8.4 check uses, so the preflight becomes a true early-warning version of the actual verification. Higher implementation cost (the preflight script gets a DINOv2 forward pass dependency) but the metric scale becomes properly calibrated to the downstream pipeline.
+**DiningTable (Bedroom, control) moves more than Sofa (LivingRoom, perturbed).** The most plausible explanation is that the DiningTable viewing pose looks through into the LivingRoom (the seed-7 house has the Bedroom adjacent to the LivingRoom), so re-texturing LivingRoom furniture changes background pixels visible in the DiningTable frame. The architectural claim is locality at the *DINOv2-embedding* level (§8.4 verification), not at the pixel level — DINOv2 representations may well be insensitive to small background changes that pixel cosines amplify.
 
-(c) **Accept the preflight FAIL as cosmetic and proceed to collection.** The §8.4 check on the actual collected stream is the load-bearing verification; if the preflight's mechanism is empirically working (which the numbers say it is), the preflight gate is a sanity check that can be overridden in writing per `research_operations_v1.md` §8.10. Riskiest of the three because it bypasses a gate explicitly designed to catch this class of issue.
+**My read.** The preflight's pixel-RGB-cosine criterion is structurally noisy for this house geometry and material pool. The mechanism is doing the right thing (Dresser visibly changes; DiningTable noise is plausibly explained); the load-bearing verification (§8.4 DINOv2-embedding gap) hasn't been run yet and is what actually tests the architectural claim. The preflight should be doing one of:
 
-I'd recommend (a) — it's lowest cost, preserves the preflight as a gate, and the contrast criterion directly tests the architectural property (perturbation is scoped, not global). After the reviewer chooses, I update the preflight criteria with explicit justification per `research_operations_v1.md` §15 / instructions §16, re-run the preflight to verify a PASS, then launch the 65k Phase 2 collection per the user's session-5 directive.
+(a) **Switch to DINOv2-embedding-distance contrast.** Same metric the §8.4 check uses. Capture before+after frames for Dresser/Sofa/Bed/DT/TV; encode all 10 frames through frozen DINOv2; compute before-vs-after embedding cosine per item; require LivingRoom mean significantly lower than Bedroom mean. Embedding cosines are not as compressed as pixel cosines, so the dynamic range is more workable. Cost: ~20 minutes implementation, ~30 seconds extra runtime per preflight (10 frame encodes).
 
-The originally-planned session-5 STOP point (end of Phase 2 collection + encoding) is still where we land if the reviewer signs off on (a) or (b) and the recalibrated preflight passes. Phase 2 training remains deferred to a follow-on session.
+(b) **Accept FAIL on the pixel-cosine preflight and proceed.** Document the FAIL with the per-run analysis and the DiningTable hypothesis; rely on the §8.4 verification as the load-bearing gate. CODING_STANDARDS §9.4 / `research_operations_v1.md` §8.10 explicitly allow override with written justification.
+
+(c) **Recalibrate `G_M3` further** (e.g., to ≥ 0.005 or replace contrast with "Dresser-only > 0.95 single-call"). Cheapest, but the underlying noise is in the metric itself; chasing the threshold further has diminishing returns.
+
+I recommend **(a)** — it directly tests the architectural property the preflight is supposed to gate (locality at the level the downstream check actually evaluates) and avoids the per-run-lottery + view-through pathologies of pixel cosine. (b) is also defensible given that the §8.4 check on actual collected data is the real verification. (c) doesn't address the structural issue.
+
+The originally-planned session-5 STOP point (end of Phase 2 collection + encoding, paused before training) remains where we land if the reviewer signs off on (a) or (b) and the preflight either passes or is overridden. Phase 2 training is deferred to a follow-on session per the original session-5 plan.
+
+---
+
+### (Earlier first STOP in session 5) — superseded by the second STOP above
+
+The first session-5 STOP (after the initial preflight run, FAIL on absolute pixel-cosine thresholds I had inherited from the original instructions) was resolved by the user on 2026-05-14 with option (a): recalibrate to the three-criterion gate (mechanism / Bedroom > 0.97 / contrast ≥ 0.02), drop the absolute LivingRoom threshold and per-loop re-application gate. That recalibration was implemented (commit `1da95ba`) and re-run; the second STOP above documents what surfaced.
 
 ---
 
@@ -222,7 +234,29 @@ Reviewer-action gate: when the variation strategy and magnitude are decided, I'l
 - **`scripts/run_phase2_encode.py`** (commit `057e711`). DINOv2 encoding of the Phase 2 stream. §8.4 perturbation-effect check: Stage B vs Stage A Dresser-apex (and Sofa-apex) embeddings; within - cross cosine gap must exceed 0.05.
 - **`scripts/run_phase2_train.py`** (commit `057e711`). Phase 2 main training entry point. Wires the in-flight transition diagnostic with the SCAFFOLDING thresholds. Committed but NOT launched this session (per the session-5 STOP point).
 
-### Phase 2 preflight outcome — FAIL (threshold calibration)
+### Phase 2 preflight recalibration outcome — second STOP (commit `1da95ba`)
+
+After the user authorised option (a) (drop absolute LivingRoom + per-loop-re-application gates; replace with `G_M1` mechanism / `G_M2` Bedroom > 0.97 / `G_M3` contrast ≥ 0.02), the preflight was recalibrated and re-run.
+
+**Run 2 (single-call recalibrated, 2026-05-14 05:59):** `G_M3` tripped at contrast +0.012. Sofa's single-call before-vs-after cosine was 0.996 on this run — the random material draw happened to land on a near-identical-looking texture, pulling the LivingRoom mean up to 0.979.
+
+**3-call averaging fix.** The preflight already makes three `RandomizeMaterials` calls (calls 1/2/3) for the record-only per-loop re-application data. Averaging each item's before-vs-after cosine across the three random draws is the smallest fix that removes the per-run material lottery — and it matches what the actual Phase 2 collection does (fresh material draw per loop). Implemented in the same commit as the recalibration.
+
+**Run 3 (3-call-averaged, 2026-05-14 06:01):** `G_M3` still tripped, contrast +0.008. The per-call breakdown surfaced two structural issues with flat-RGB cosine as the metric:
+
+(1) Sofa is genuinely less affected by the available `useTrainMaterials=True` pool than Dresser is — across 3 calls in run 3 it landed at cosines 0.995 / 0.994 / 0.983, averaging 0.991. Dresser averages 0.966 across the same 3 calls. The asymmetry between the two LivingRoom items is large enough that averaging across them does not produce a clean LivingRoom mean.
+
+(2) DiningTable (a Bedroom control item) showed a 3-call mean of 0.976 — *more change than Sofa, a LivingRoom perturbed item.* The most plausible explanation is that the DiningTable viewing pose looks through into the LivingRoom and the re-textured LivingRoom furniture changes background pixels in the DiningTable frame. (The seed-7 ProcTHOR house has the Bedroom adjacent to the LivingRoom; the route's DiningTable viewing_position and viewing_heading are both in the Bedroom but the camera FOV may catch the doorway.)
+
+The mechanism is doing the right thing — Dresser moves consistently (3-6% per draw across all three runs); the LivingRoom mean before-vs-after cosine is always lower than the Bedroom mean (positive contrast in all three runs). But the magnitude of the contrast is hostage to the material lottery on Sofa and the view-through bleed on DiningTable, both of which are properties of the pixel-cosine metric rather than the underlying perturbation mechanism.
+
+The "Next immediate action" section above presents three options for the reviewer; I recommend (a) — switch the preflight to a DINOv2-embedding-distance contrast that uses the same metric the load-bearing §8.4 verification uses. (b) — override the FAIL with written justification — is also defensible.
+
+### Phase 2 encode script update — docstring (commit `1da95ba`)
+
+`scripts/run_phase2_encode.py` docstring updated to describe the **absolute + differential** metric reporting the experiment chat requested for the §8.4 verification: alongside the gated perturbed-item gap (within - cross) on Dresser and Sofa, the same Stage B vs Stage A comparison is computed on control items (Bed, DiningTable, Television). The "contrast" = perturbed_mean_gap − control_mean_gap is the load-bearing differential read. Implementation of the contrast computation deferred until after the preflight question resolves; the current encode script still gates on the perturbed-item absolute gap only.
+
+### Phase 2 preflight outcome — FAIL (initial run; superseded by the recalibration above)
 
 Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_052627.log`. Process completed cleanly, all five checks ran, three reported FAIL against my chosen thresholds. Empirical numbers are in `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`; side-by-side frame captures at `results/inner_pam_v0/phase2_preflight/frames/`.
 
@@ -248,21 +282,23 @@ Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_05
 | `08cce4f` | phase 2 env wrapper + config | `src/config.py`, `src/env/explorer_phase2.py` |
 | `f94410e` | trainer transition diagnostic | `src/trainer/online_trainer.py` |
 | `057e711` | phase 2 scripts | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_collect.py`, `scripts/run_phase2_encode.py`, `scripts/run_phase2_train.py` |
-| pending this entry | session-5 HANDOFF + preflight artefacts | `HANDOFF.md`, `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`, 14 side-by-side preflight frames |
+| `f447b01` | first session-5 HANDOFF + initial preflight artefacts | `HANDOFF.md`, initial `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`, 14 side-by-side preflight frames |
+| `1da95ba` | preflight recalibration + 3-call averaging + encode docstring | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
+| pending this entry | session-5 second-STOP HANDOFF entry | `HANDOFF.md` |
 
 ### Reviewer-action items before session 6
 
-1. Choose between options (a) / (b) / (c) for the preflight threshold recalibration (see the Next-immediate-action section above; (a) is my recommendation).
-2. After sign-off, the preflight is re-run with recalibrated criteria and the result is verified to PASS.
-3. Then the 65k Phase 2 collection launches (nohup), followed by encoding + §8.4 effect check, then STOP at the original session-5 STOP point before training.
+1. **Pick the preflight metric structure** between options (a) DINOv2-embedding contrast / (b) override FAIL with written justification / (c) loosen `G_M3` further. (a) is my recommendation; (b) is defensible. See the "Next immediate action" section above for the per-option reasoning.
+2. After the decision, the preflight is updated (option a or c) or overridden in writing (option b), and verified to PASS or to have a documented justification.
+3. Then the 65k Phase 2 collection launches (nohup), followed by encoding + §8.4 verification (absolute + differential metrics, per the 2026-05-14 directive), then STOP for review of the §8.4 results before launching Phase 2 training.
 
 ### Operational state (end of session 5)
 
-- Working tree: clean modulo this HANDOFF entry + the preflight artefact commit. 25 commits on `main` after this session lands (4 new commits + pending HANDOFF/artefacts).
+- Working tree: clean modulo this HANDOFF entry. 26 commits on `main` after this entry lands (5 session-5 commits + the pending HANDOFF entry).
 - Push hold: in effect.
 - No running jobs.
 - Phase 1 artefacts: unchanged from session 4 (substrate-degenerate baseline; not re-run).
-- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) added this session. Full Phase 2 collection has NOT begun.
+- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) added this session. Preflight recalibrated and re-run; result FAIL on the contrast gate for structural reasons (per-run material lottery + DiningTable doorway view-through). Full Phase 2 collection has NOT begun.
 
 ---
 
