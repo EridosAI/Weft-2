@@ -73,15 +73,87 @@ autonomous.
 
 ## Next immediate action
 
-**Human review of the DINOv2 stability PASS verdict** (entry below). Per the stability batch §6/§10, the verdict is reported without architectural recommendation. The full §5 protocol is now met by DINOv2 ViT-L/14 CLS on a non-degenerate substrate (Check 1 = `0.9260`, Check 2 = `0.4422`, Check 3 gap = `0.4838` — all PASS). The reviewer decides whether to (a) proceed with DINOv2 as the v0 encoder, (b) probe additional jitter magnitudes, or (c) any other §5.5 path. No autonomous progression.
+**Session 2: launch Phase 1 main training run.** Code scaffolding is complete and unit-tested; precomputed embeddings file is full-stream and verified; reviewer has approved DINOv2 as the v0 encoder (see Session-1 outcomes below). Before launching:
+
+1. **Host-protection prerequisites (carryover from session 1 — user-side actions).** Two items must be set on the Windows host before training launches:
+   - **Disk sleep:** Settings → Power → Additional power settings → Change plan settings → Change advanced power settings → Hard disk → "Turn off hard disk after" → set to **0 (Never)** on AC. Current state at end of session 1 was 20 min on AC (`0x000004b0`), which would interrupt a ~30-90-min Phase 1 run.
+   - **Windows Update pause:** Settings → Windows Update → Pause updates for at least the planned batch window. No pause was active at end of session 1.
+   - The screen-sleep setting was already "Never" — no action needed.
+2. **tmux decision.** Optional for session 2 (training launches with `nohup` so it survives shell death anyway). Recommended if you plan to watch live: `tmux new -s weft` before launching the CC session.
+3. **Launch:** `nohup python3.12 -u scripts/run_phase1_train.py > logs/phase1_main_$(date +%Y%m%d_%H%M%S).log 2>&1 &` then poll the log per CODING_STANDARDS §5.3. Expected wall-clock ≈ 27-30 min on RTX 4080 Super (smoke run measured 60 grad steps/sec, ~95.7k training steps).
+4. **Shuffle control runs sequentially after main** (per instr §7.5, VRAM contention). Same script with `run_phase1_shuffle.py`.
+5. **Per-checkpoint eval** with `scripts/run_eval.py --checkpoint ... --probes phase1 --output ...` paused-for-training per instr §6.4.
+6. **End of session 2:** evaluate G1.1-G1.5 gates, update HANDOFF with results, do not proceed to Phase 2 without explicit gate review.
 
 ---
 
-## Operational state
+## Operational state (end of session 1)
 
-- Working tree: clean modulo this batch's pending commit.
+- Working tree: clean. Eleven commits added in session 1 (see "Session 1 outcomes" below).
 - Push hold: in effect.
 - No running jobs.
+- Embeddings file at `data/dinov2_embeddings/embeddings.npy`: 100,000 × 1024 fp32, all rows L2-normed (min cosine 1.000000 vs archived dwell-only file).
+- Archived dwell-only file: `data/dinov2_embeddings/embeddings_dwell_only_v1.npy`.
+
+---
+
+## Session 1 outcomes — 2026-05-13
+
+**Goal.** Build the v0 code scaffolding ready for session-2 Phase 1 training launch. Not training itself.
+
+**DINOv2 reviewer approval — recorded.** The reviewer approved DINOv2 ViT-L/14 CLS as the v0 encoder on 2026-05-12, citing the substrate-verification + stability batch results: **Check 1 = `0.9260`, Check 2 = `0.4422`, Check 3 gap = `0.4838` — all PASS** against the §5 starting thresholds. The "human review of the DINOv2 stability PASS verdict" gate from the previous next-immediate-action is closed. v0 proceeds on DINOv2 ViT-L/14 CLS.
+
+**STOP caught and resolved at pre-flight: embeddings file was dwell-only.** Pre-flight verification of `data/dinov2_embeddings/embeddings.npy` found that the file had the expected shape `(100000, 1024)` but **only 32,760 of the 100,000 rows were L2-normalised; the remaining 67,240 rows had norm = 0.0** (transit frames). The substrate-verification batch only needed dwell frames; transit frames were never encoded. Phase 1 training requires a contiguous stream (spec §2.3, instr §7.2). Stop reported, full-stream re-encode authorised by reviewer with one tightening (consistency threshold 0.999 → 0.9999).
+
+Re-encode (`scripts/run_dinov2_encode_full_stream.py`, commit `a86c6f0`):
+- Protocol: facebook/dinov2-large, frozen, fp16 eval, 256→224 center crop, ImageNet mean/std, CLS token, L2-normalise (same as substrate-verification).
+- Wall-clock: 218.6 s on RTX 4080 Super, fp16, batch 64 (~457 frames/s).
+- Norm check on all 100,000 rows: PASS (norms in [1−1e-5, 1+1e-5]).
+- Consistency check on 50 random dwell frames against `embeddings_dwell_only_v1.npy`: **min cosine = 1.000000** (threshold 0.9999) — DINOv2 forward is bit-identical-deterministic on identical pixels.
+- Report: [`data/dinov2_embeddings/encode_full_stream_report.json`](data/dinov2_embeddings/encode_full_stream_report.json) (gitignored).
+
+**Documentation corrections caught at pre-flight.** Two items in `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md` were inconsistent with actual repo state:
+
+| location | original | corrected | how caught |
+|---|---|---|---|
+| §0 Environment Header | "Python 3.10 (target match to previous repo)" | Python 3.12.3, matching the previous repo's `requirements.txt` header which explicitly says "WSL2, Python 3.12.3, CUDA 12.8 via WSL2 passthrough" | comparing §0 against the old repo's `requirements.txt` comments at pre-flight |
+| §0 venv | `Active venv: .venv at repo root` | "none; uses system Python 3.12.3, matching the previous repo's verified-working pattern" | no `.venv` exists; the old repo also used system Python |
+| §1.2 / §7.2 (embeddings precondition) | "100,000 frames × 1024 dim, fp32, L2-normalised" — implicitly assumed all 100k rows populated | (now true after the session-1 re-encode; no doc change needed, but the gap was load-bearing and is captured in this entry) | direct inspection of the file's norm distribution |
+
+The §0 corrections are committed in `cc0a6a8`. Both errors were caught **before** any training launch, which is the design intent of the §7.2 / §4.7 norm checks.
+
+**Code scaffolding delivered.** Eleven commits stand up the full Phase 1 pipeline:
+
+| commit | scope | files |
+|---|---|---|
+| `e640dde` | infra | `requirements.txt`, `.gitignore`, `src/config.py`, all `src/*/__init__.py`, `src/env/explorer_phase{1,2,3}.py` stubs |
+| `a86c6f0` | encoding | `scripts/run_dinov2_encode_full_stream.py` |
+| `3016f23` | memory | `src/memory/memory_bank.py` (FAISS, hard cap, BankCapExceededError) |
+| `a820ce1` | predictor | `src/predictor/inner_pam.py` (4-layer transformer, K*(d+1) head, Gaussian NLL) |
+| `11e3f41` | mixing | `src/mixing/recall_mixer.py` (confidence threshold, τ calibration helper) |
+| `567799f` | trainer | `src/trainer/online_trainer.py` (single-pass loop + §4.7 init-time checks) |
+| `2dd3ae9` | eval | `src/eval/probes.py`, `metrics.py` (M1-M7), `controls.py` (C1 + S1-S4) |
+| `4938a50` | encoder | `src/encoder/dinov2_encoder.py` (Phase 2/3 wrapper) |
+| `715ba21` | scripts | `scripts/run_phase1_train.py`, `run_phase1_shuffle.py`, `run_eval.py` (with `--developmental` flag wired) |
+| `b03062d` | tests | 21 tests across predictor / memory / mixer / probes / embeddings-norm invariant (all pass) |
+| `cc0a6a8` | docs | `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md` §0 correction |
+
+**Verification before commit (per instr §4.7 / instr §15-style review-cycle equivalents):**
+
+- **21 unit tests pass** on system Python 3.12.3 / pytest 9.0.3: predictor shapes + param count (21,555,728 trainable params, within 2.6% of the 21M target — well inside the 10% tolerance), Gaussian-NLL closed-form sanity, log_var clamp at [−10, 10], target-detached-from-grad, memory-bank append + retrieve + hard-cap + FIFO + save/load round-trip, mixer routing + tau median calibration, probe construction (held-out boundary, steady-state uniform-dwell, cue dwell-to-transit), and an explicit "no-zero-rows" guard on `embeddings.npy` that would catch the dwell-only failure mode if it ever recurs.
+- **§4.7 init-time smoke run on real Phase 1 data** (300-step budget): all four §4.7 checks pass — encoder frozen-equivalent (DINOv2 not loaded at training time; embeddings are precomputed), predictor trainable (21.6M params), forward pass produces correct shapes `(2, K, d)` + `(2, K)`, embedding norm check passes on 1000 sampled rows. 270 gradient steps in 4.3 s, no NaN/Inf, loss trended monotonically downward (first-50 mean ≈ −13,985 → last-50 mean ≈ −30,265 — Gaussian NLL is unbounded below; only the trend is informative). Bank populated correctly. Smoke artefact deleted before commits.
+
+**Estimated session-2 budget.** At ~60 grad steps/sec, full Phase 1 (~95,700 training steps) is ~27 min plus checkpoint I/O. Shuffle control adds another ~27 min sequentially. Eval at 10 checkpoints × ~2 min/ckpt ≈ 20 min. Total session-2 wall-clock ≈ 75-90 min before gate review.
+
+**Operational divergences from the instructions that are now resolved or recorded:**
+
+1. **Python 3.12.3, not 3.10.** Doc corrected (commit `cc0a6a8`). System Python directly; no `.venv`. Matches the substrate-verification batch.
+2. **`.env_snapshot.txt` written** (`pip freeze`, 207 packages) and gitignored per CODING_STANDARDS §8.4.
+3. **`requirements.txt`** is pinned to the substrate-verification batch's stack plus `scipy==1.17.1` (used by G1.4 / G2.3 / G3.3 t-test + Wilcoxon fallback).
+4. **Bug fix during session-1 encoding:** the encode script's temp-file rename relied on `Path.with_suffix(".npy.tmp")` which produced `.npy.tmp`, but `np.save` auto-appends `.npy`, so the file actually landed at `.tmp.npy` and the rename-to-final failed at the end of the encode. The work (encode + checks) had already completed cleanly before the rename; manual rename completed the artefact handover. Script fixed in the same commit so what's in git is what would work clean on a re-run.
+5. **GPU has 3.4 GB used by the Windows desktop compositor.** Acceptable (12.6 GB free for training). No compute processes; no other ML jobs.
+
+**Push hold remains in effect.**
 
 ---
 
