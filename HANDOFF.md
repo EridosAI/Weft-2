@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Curriculum framing locked (Stage A → Stage B → Stage C; no jitter); spec/instructions/ops docs updated; Phase 2 wrapper + preflight + collect + encode + train scripts implemented and committed; in-flight transition diagnostic landed in OnlineTrainer (G2.T1 / G2.T2 / G2.T3 SCAFFOLDING gates). Phase 2 preflight recalibrated per the user's 2026-05-14 authorisation (three-criterion gate: mechanism fires, Bedroom > 0.97, contrast ≥ 0.02) and re-run twice; G_M3 contrast trips on per-run material lottery + DiningTable doorway view-through. Two structural metric issues surfaced that go beyond threshold recalibration; STOP again to escalate to the experiment chat. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Curriculum framing locked (Stage A → Stage B → Stage C; no jitter); spec/instructions/ops docs updated; Phase 2 wrapper + preflight + collect + encode + train scripts implemented and committed; in-flight transition diagnostic landed in OnlineTrainer; encode script extended with absolute + differential §8.4 metrics. Phase 2 preflight rewritten to use DINOv2-embedding contrast per Grok's specification (G_M2 = 0.98 fixed; G_M3 = 0.5 × observed_contrast; S1 contrast<0.02 / S2 Bedroom<0.98 STOP-and-report conditions). The DINOv2 calibration run tripped both STOP conditions: DiningTable (a Bedroom control item) shows more DINOv2 movement under LivingRoom retexturing than either LivingRoom perturbed item, corroborating the doorway-bleed hypothesis. Per the directive, no auto-tuning. Third STOP in session 5. Working tree clean; push hold in effect.
 
 ---
 
@@ -76,51 +76,55 @@ autonomous.
 
 ## Next immediate action
 
-**STOP for experiment-chat review (second STOP in session 5).** The user's 2026-05-14 authorisation (recalibrate preflight to the three-criterion gate `G_M1` + `G_M2 > 0.97` + `G_M3 contrast ≥ 0.02`) was implemented (commit `1da95ba`) and the preflight was re-run twice. Both reruns trip `G_M3` for reasons that go beyond a threshold-calibration issue. The Phase 2 collection has NOT been launched. The findings now point to structural problems with flat-RGB cosine as the preflight metric, which the reviewer should weigh in on.
+**STOP for experiment-chat review (third STOP in session 5).** The user's second authorisation (option (a): switch the preflight to DINOv2-embedding contrast; G_M2 at Bedroom DINOv2 cosine > 0.98; G_M3 at 40–60% of observed mean DINOv2 contrast; STOP-and-report if calibration surfaces unexpected pattern, no auto-tuning) was implemented (commit `1dcf387`) and the calibration run was executed. **Both STOP-and-report conditions tripped on the calibration data**, surfacing a substrate-level finding that goes beyond preflight thresholds and has implications for the §8.4 verification + the curriculum's control-item framing.
 
-**Three preflight runs at the same gate criterion (`G_M3` contrast ≥ 0.02):**
+**DINOv2 calibration outcome (single 3-call run):**
 
-| run | timestamp | metric form | LivingRoom mean | Bedroom mean | contrast | G_M3 |
-|---|---|---|---:|---:|---:|---|
-| 1 | 2026-05-14 05:26 | single-call (old thresholds) | 0.958 | 0.991 | **+0.033** | would PASS |
-| 2 | 2026-05-14 05:59 | single-call (3-criterion gate) | 0.979 | 0.991 | +0.012 | FAIL |
-| 3 | 2026-05-14 06:01 | 3-call-averaged | 0.979 | 0.987 | +0.008 | FAIL |
-
-The contrast is positive in all three runs (LivingRoom items always move more than Bedroom items on average), but variance across runs is high and the magnitude depends heavily on which materials happen to land per draw.
-
-**Two structural realities surfaced by the runs:**
-
-(1) **Per-run material lottery on Sofa.** Across the three runs, Sofa's before-vs-after cosine has been 0.947 / 0.996 / 0.991 — i.e., on most random draws Sofa lands on a texture visually similar to the original. Dresser is more consistent (0.969 / 0.963 / 0.966). Averaging across the 3 random draws each run already makes (run 3) narrows the per-item variance but does not pull Sofa's mean down to where Dresser is — Sofa is just genuinely less affected by the available trainMaterials pool than Dresser is, or its viewing pose catches a less-textured angle.
-
-(2) **DiningTable doorway view-through.** In run 3, the per-item 3-call means were:
-
-| item | room | 3-call mean | per-call values |
+| item | room | DINOv2 3-call mean | per-call cosines |
 |---|---|---:|---|
-| Bed | Bedroom (control) | 0.9947 | 0.995 / 0.994 / 0.995 |
-| Television | Bedroom (control) | 0.9890 | 0.993 / 0.988 / 0.987 |
-| **DiningTable** | **Bedroom (control)** | **0.9761** | 0.961 / 0.979 / 0.988 |
-| Dresser | LivingRoom (perturbed) | 0.9664 | 0.938 / 0.997 / 0.964 |
-| **Sofa** | **LivingRoom (perturbed)** | **0.9906** | 0.995 / 0.994 / 0.983 |
+| Bed | Bedroom (control) | 0.9884 | 0.989 / 0.990 / 0.986 |
+| **DiningTable** | **Bedroom (control)** | **0.9448** | 0.937 / 0.965 / 0.932 |
+| Television | Bedroom (control) | 0.9945 | 0.997 / 0.993 / 0.993 |
+| Dresser | LivingRoom (perturbed) | 0.9884 | 0.991 / 0.996 / 0.977 |
+| Sofa | LivingRoom (perturbed) | 0.9757 | 0.962 / 0.987 / 0.978 |
 
-**DiningTable (Bedroom, control) moves more than Sofa (LivingRoom, perturbed).** The most plausible explanation is that the DiningTable viewing pose looks through into the LivingRoom (the seed-7 house has the Bedroom adjacent to the LivingRoom), so re-texturing LivingRoom furniture changes background pixels visible in the DiningTable frame. The architectural claim is locality at the *DINOv2-embedding* level (§8.4 verification), not at the pixel level — DINOv2 representations may well be insensitive to small background changes that pixel cosines amplify.
+- Bedroom mean: **0.9759** (below G_M2's 0.98 threshold — S2 tripped)
+- LivingRoom mean: 0.9820
+- Contrast: **−0.0061** (negative; below S1's 0.02 threshold — S1 tripped)
 
-**My read.** The preflight's pixel-RGB-cosine criterion is structurally noisy for this house geometry and material pool. The mechanism is doing the right thing (Dresser visibly changes; DiningTable noise is plausibly explained); the load-bearing verification (§8.4 DINOv2-embedding gap) hasn't been run yet and is what actually tests the architectural claim. The preflight should be doing one of:
+**DiningTable, a Bedroom control item, moves more in DINOv2 cosine under LivingRoom retexturing than either LivingRoom perturbed item.** This isn't metric noise — it's a substrate property. The DiningTable viewing pose in the seed-7 house has line-of-sight into the LivingRoom (corroborating the doorway-bleed hypothesis from the prior pixel-cosine runs), and DINOv2 representations are sensitive enough to the visible LivingRoom backdrop that the DiningTable's embedding shifts more when LivingRoom textures change than the LivingRoom items' own embeddings do.
 
-(a) **Switch to DINOv2-embedding-distance contrast.** Same metric the §8.4 check uses. Capture before+after frames for Dresser/Sofa/Bed/DT/TV; encode all 10 frames through frozen DINOv2; compute before-vs-after embedding cosine per item; require LivingRoom mean significantly lower than Bedroom mean. Embedding cosines are not as compressed as pixel cosines, so the dynamic range is more workable. Cost: ~20 minutes implementation, ~30 seconds extra runtime per preflight (10 frame encodes).
+Per the directive: no auto-tuning of G_M2 or G_M3. Stopping for review.
 
-(b) **Accept FAIL on the pixel-cosine preflight and proceed.** Document the FAIL with the per-run analysis and the DiningTable hypothesis; rely on the §8.4 verification as the load-bearing gate. CODING_STANDARDS §9.4 / `research_operations_v1.md` §8.10 explicitly allow override with written justification.
+**The finding has implications beyond the preflight:**
 
-(c) **Recalibrate `G_M3` further** (e.g., to ≥ 0.005 or replace contrast with "Dresser-only > 0.95 single-call"). Cheapest, but the underlying noise is in the metric itself; chasing the threshold further has diminishing returns.
+The §8.4 verification on the actual Phase 2 stream (perturbed-item Stage B vs Stage A apex embedding gap, plus the differential against control items per the 2026-05-14 directive) also depends on the locality claim holding at the DINOv2 level. The numbers above predict that DiningTable Stage A vs Stage B in the collected stream will likely show *more* separation than Dresser or Sofa Stage A vs Stage B, because every Stage B loop fires a fresh `RandomizeMaterials` call that changes the LivingRoom backdrop visible from the DiningTable pose. The curriculum's "LivingRoom items widen into tubes; Bedroom items stay on Stage A lines as within-experiment controls" framing is therefore undermined for at least one of the controls.
 
-I recommend **(a)** — it directly tests the architectural property the preflight is supposed to gate (locality at the level the downstream check actually evaluates) and avoids the per-run-lottery + view-through pathologies of pixel cosine. (b) is also defensible given that the §8.4 check on actual collected data is the real verification. (c) doesn't address the structural issue.
+This is an architectural decision for the experiment chat, not a CC-level autonomy question. Options I see:
 
-The originally-planned session-5 STOP point (end of Phase 2 collection + encoding, paused before training) remains where we land if the reviewer signs off on (a) or (b) and the preflight either passes or is overridden. Phase 2 training is deferred to a follow-on session per the original session-5 plan.
+(a) **Reframe the curriculum to acknowledge DiningTable as a non-clean control.** Keep Bed and Television as the within-experiment Bedroom controls; treat DiningTable as a "partially-perturbed-via-background" item and either report it separately or exclude it from the control comparison. Smallest change; preserves the rest of the design. The §8.4 differential metric (already wired in commit `1dcf387`) handles this naturally because control-item gaps are reported per-item.
 
----
+(b) **Adjust the route's DiningTable viewing pose so its camera FOV does not include the doorway into the LivingRoom.** Re-derive `viewing_position` and/or `viewing_heading` for item 2 so the scene visible in the DiningTable frame is fully inside the Bedroom. Changes the substrate; requires re-running the session-4 calibration to verify within-loop continuity and apex bit-identicity properties still hold. Cleanest preservation of the curriculum's control framing but adds substrate work.
 
-### (Earlier first STOP in session 5) — superseded by the second STOP above
+(c) **Switch house seed.** Pick a seed where the Bedroom and LivingRoom geometry does not produce inter-room line-of-sight from any chosen viewing pose. Most disruptive — would invalidate session-4's calibration artefacts and require fresh substrate verification. Only consider if (a) and (b) prove unworkable.
 
-The first session-5 STOP (after the initial preflight run, FAIL on absolute pixel-cosine thresholds I had inherited from the original instructions) was resolved by the user on 2026-05-14 with option (a): recalibrate to the three-criterion gate (mechanism / Bedroom > 0.97 / contrast ≥ 0.02), drop the absolute LivingRoom threshold and per-loop re-application gate. That recalibration was implemented (commit `1da95ba`) and re-run; the second STOP above documents what surfaced.
+(d) **Accept the locality breach as a substrate property and reformulate the architectural claim.** The "LivingRoom-scoped perturbation affects only LivingRoom items at the encoder level" claim is empirically wrong for this house seed. Rather than re-engineering the substrate, document the finding and let the §8.4 verification report it explicitly; the architectural reading shifts from "locality" to "scoped-perturbation-with-known-leakage-pattern". The predictor still has a chance to learn the perturbed-item shapes; the within-experiment control story is just weaker.
+
+I'd recommend **(a)**. The locality claim is broken specifically and predictably at DiningTable (the per-call DINOv2 numbers say so cleanly); reframing the curriculum's control set to {Bed, Television} preserves the design with minimal change. The §8.4 differential metric is already in place (commit `1dcf387`) and reports gaps per-item, so the reviewer can read both the full control set and the cleaned-up {Bed, Television} subset from the same encoded data.
+
+(b) is the most principled but adds substrate work. (c) is most disruptive. (d) is the "accept reality" path; reasonable but loses the clean-control story.
+
+**What is NOT decided autonomously:** lowering G_M2 below 0.98 to admit DiningTable's 0.945; widening G_M3's tolerance to admit a negative contrast; switching the preflight to "Dresser+Sofa only" without an explicit reviewer override. All of those would be tuning thresholds to fit and violate the directive.
+
+The originally-planned session-5 STOP point (end of Phase 2 collection + encoding) is no longer the next stop — the Phase 2 collection is gated on whichever option (a–d) the reviewer chooses. After that decision, the preflight is either re-run (b/c), overridden in writing (a/d), or the substrate is changed (b/c). Then collection launches; then the §8.4 verification stops for review per the user's prior directive.
+
+### (Earlier first STOP in session 5) — superseded
+
+Resolved by the user on 2026-05-14 with option (a): recalibrate to three-criterion pixel-RGB gate. Implemented (commit `1da95ba`).
+
+### (Earlier second STOP in session 5) — superseded by the third STOP above
+
+The pixel-RGB three-criterion gate tripped on per-run material lottery + DiningTable doorway view-through after two re-runs (commits `1da95ba` for the recalibration, `1870c02` for the second-STOP HANDOFF entry). Resolved by the user on 2026-05-14 with option (a) from that round: switch the preflight to DINOv2-embedding contrast (G_M2=0.98 fixed, G_M3=40-60% of observed contrast, STOP-and-report on unexpected pattern, no auto-tuning). That switch was implemented (commit `1dcf387`) and the calibration tripped both STOP conditions — see the current "Next immediate action" block above.
 
 ---
 
@@ -256,6 +260,35 @@ The "Next immediate action" section above presents three options for the reviewe
 
 `scripts/run_phase2_encode.py` docstring updated to describe the **absolute + differential** metric reporting the experiment chat requested for the §8.4 verification: alongside the gated perturbed-item gap (within - cross) on Dresser and Sofa, the same Stage B vs Stage A comparison is computed on control items (Bed, DiningTable, Television). The "contrast" = perturbed_mean_gap − control_mean_gap is the load-bearing differential read. Implementation of the contrast computation deferred until after the preflight question resolves; the current encode script still gates on the perturbed-item absolute gap only.
 
+### DINOv2-contrast preflight calibration outcome — third STOP (commit `1dcf387`)
+
+Per the user's authorisation of option (a) (switch the preflight to DINOv2-embedding contrast), the preflight was rewritten to encode all 20 captured frames (5 items × {before, call1, call2, call3}) through frozen DINOv2-large and compute the contrast gate at the embedding level. Thresholds reviewer-authorised:
+
+- G_M2 = 0.98 (fixed; Bedroom items should be near-identical in DINOv2 space if locality holds)
+- G_M3 = 0.5 × observed_contrast (midpoint of the 40–60% range)
+- S1 contrast < 0.02 → STOP-and-report
+- S2 bedroom_mean < 0.98 → STOP-and-report
+
+The calibration run executed cleanly (encoder norm check passed; mechanism G_M1 passed). Per-item DINOv2 3-call means:
+
+| item | room | DINOv2 3-call mean |
+|---|---|---:|
+| Bed | Bedroom | 0.9884 |
+| DiningTable | Bedroom | **0.9448** |
+| Television | Bedroom | 0.9945 |
+| Dresser | LivingRoom | 0.9884 |
+| Sofa | LivingRoom | 0.9757 |
+
+Bedroom mean = 0.9759 (< 0.98, **S2 trips**). LivingRoom mean = 0.9820. Contrast = **−0.0061** (negative; < 0.02, **S1 trips**).
+
+The dominant signal is DiningTable's strong DINOv2 shift under LivingRoom retexturing. DINOv2 is sensitive enough to the LivingRoom backdrop visible through the doorway from the DiningTable viewing pose that DiningTable behaves more like a "perturbed" item than a control. Dresser and Sofa show smaller shifts than DiningTable does.
+
+Per the directive: no auto-tuning of thresholds. The finding is a substrate / house-geometry issue with implications for the §8.4 verification + the curriculum's control-item framing, which the experiment chat needs to weigh in on. Four options laid out in the Next-immediate-action section above.
+
+### Phase 2 encode script — absolute + differential metrics (commit `1dcf387`)
+
+`scripts/run_phase2_encode.py` extended to compute both the absolute perturbed-item Stage B vs Stage A gap (gated; passes if Dresser and Sofa each have within - cross > 0.05) and the differential control-item gap (record-only; same calculation applied to Bed, DiningTable, Television). The contrast = mean(perturbed gaps) − mean(control gaps) is reported in the JSON for the experiment-chat review at the §8.4 STOP point. With the DINOv2 calibration prediction that DiningTable's DINOv2 representation is sensitive to LivingRoom retexturing, the differential metric is likely to show DiningTable's gap on the actual collected stream being non-trivial — the reviewer will see this directly when §8.4 runs.
+
 ### Phase 2 preflight outcome — FAIL (initial run; superseded by the recalibration above)
 
 Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_052627.log`. Process completed cleanly, all five checks ran, three reported FAIL against my chosen thresholds. Empirical numbers are in `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`; side-by-side frame captures at `results/inner_pam_v0/phase2_preflight/frames/`.
@@ -283,22 +316,27 @@ Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_05
 | `f94410e` | trainer transition diagnostic | `src/trainer/online_trainer.py` |
 | `057e711` | phase 2 scripts | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_collect.py`, `scripts/run_phase2_encode.py`, `scripts/run_phase2_train.py` |
 | `f447b01` | first session-5 HANDOFF + initial preflight artefacts | `HANDOFF.md`, initial `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}`, 14 side-by-side preflight frames |
-| `1da95ba` | preflight recalibration + 3-call averaging + encode docstring | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
-| pending this entry | session-5 second-STOP HANDOFF entry | `HANDOFF.md` |
+| `1da95ba` | pixel-RGB preflight recalibration + 3-call averaging + encode docstring | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
+| `1870c02` | session-5 second-STOP HANDOFF entry | `HANDOFF.md` |
+| `1dcf387` | DINOv2-contrast preflight + encode differential metrics + calibration artefacts | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
+| pending this entry | session-5 third-STOP HANDOFF entry | `HANDOFF.md` |
 
 ### Reviewer-action items before session 6
 
-1. **Pick the preflight metric structure** between options (a) DINOv2-embedding contrast / (b) override FAIL with written justification / (c) loosen `G_M3` further. (a) is my recommendation; (b) is defensible. See the "Next immediate action" section above for the per-option reasoning.
-2. After the decision, the preflight is updated (option a or c) or overridden in writing (option b), and verified to PASS or to have a documented justification.
-3. Then the 65k Phase 2 collection launches (nohup), followed by encoding + §8.4 verification (absolute + differential metrics, per the 2026-05-14 directive), then STOP for review of the §8.4 results before launching Phase 2 training.
+1. **Decide on the substrate / control-item question** between options (a) treat DiningTable as a non-clean control / (b) adjust DiningTable's viewing pose / (c) switch house seed / (d) accept the locality breach. (a) is my recommendation; (b) is the most principled; (c) is most disruptive; (d) preserves substrate but weakens the architectural claim. See the "Next immediate action" section above for the per-option reasoning.
+2. After the decision:
+   - (a/d) implies the preflight is overridden in writing with the DINOv2 numbers documented; the §8.4 verification on the collected stream is the load-bearing locality test.
+   - (b) implies a substrate change: update the seed-7 route's DiningTable viewing pose, re-run the session-4 5-loop calibration to verify within-loop continuity + apex bit-identicity, then re-run the DINOv2 preflight against the new pose.
+   - (c) implies a house-seed change: full substrate re-verification, then re-run all preflight + calibration steps.
+3. Phase 2 collection launches after the decision is implemented; encoding + §8.4 verification (absolute + differential metrics) follows; then STOP for review of §8.4 results before Phase 2 training.
 
 ### Operational state (end of session 5)
 
-- Working tree: clean modulo this HANDOFF entry. 26 commits on `main` after this entry lands (5 session-5 commits + the pending HANDOFF entry).
+- Working tree: clean modulo this HANDOFF entry. 27 commits on `main` after this entry lands (6 session-5 commits + the pending HANDOFF entry).
 - Push hold: in effect.
 - No running jobs.
 - Phase 1 artefacts: unchanged from session 4 (substrate-degenerate baseline; not re-run).
-- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) added this session. Preflight recalibrated and re-run; result FAIL on the contrast gate for structural reasons (per-run material lottery + DiningTable doorway view-through). Full Phase 2 collection has NOT begun.
+- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) added this session. DINOv2-contrast preflight calibrated; result FAIL on S1+S2 with the finding that DiningTable's DINOv2 representation is sensitive to LivingRoom retexturing via doorway view-through. Full Phase 2 collection has NOT begun.
 
 ---
 
