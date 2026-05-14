@@ -2,7 +2,9 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status at end of session 7 (2026-05-14, post-disaggregating-diagnostics addendum):** Ninth STOP, **v0 verdict still deferred; verdict-recording goes to a fresh reviewer chat once these diagnostics are in.** Reviewer authorised two disaggregating diagnostics on existing data after the cross-loop substrate-determinism finding: (1) variance trajectory by close-up ordinal across items × loops; (2) within-loop input-invariance check on Bed in Stage B. **Headline new finding:** Bed's cross-loop drift loop 30 → 100 is **uniform across all 11 close-up ordinals** (std 0.034, range 0.129 nat) while TV, Dresser, Sofa show **non-uniform per-ordinal drifts** (std 0.12–0.19, range 0.30–0.56). Bed has LARGER within-loop pose-driven view variation than TV (cos_mean 0.74 vs 0.85), so input-magnitude alone doesn't explain why Bed's drift uniform while TV's is ordinal-monotonic. The data is mixed across items: TV/Dresser/Sofa's behaviour supports input-driven per-pose response (consistent with reviewer's account ii); Bed's uniform drift is consistent with cross-item coupling (consistent with account i). **No autonomous verdict.** Loop-170 safety check NOT run per directive. Working tree clean; push hold in effect.
+**Status at end of session 7 (2026-05-14, post-per-ordinal-input-variation addendum):** Ninth STOP, **verdict-branch pointer = `reading_i_supported`**. Reviewer-chat-authorised disambiguator on existing data: at Bed's close-up ords 9 and 10 — established as pixel-MD5 identical across Stage B loops 50/75/100 — the loop-30 frames are ALSO pixel-MD5 identical to those, and `cos(loop_30 embedding, loop_100 embedding) = 1.000000` exactly. Yet variance drift at those ordinals = **-0.4356** and **-0.4059** nat, both inside Bed's 2σ uniform-drift band [-0.488, -0.358]. Drift-under-zero-input-variation observed on perfectly invariant Bed poses. Supplementary Pearson r = -0.0128 (p = 0.97), far outside any non-zero correlation. The mechanism (i) interpretation — cross-item coupling shifting Bed's variance estimate via global gradient flow regardless of Bed's per-pose inputs — is supported. The mechanism (ii) interpretation — predictor responding to input variation — is incompatible with these specific ordinals' data (zero input variation but non-zero drift). All three sanity checks PASS (frame indices match `variance_by_ordinal.json`; embedding L2 norms in tolerance; ord 9/10 MD5s recomputed from PNGs match `within_loop_invariance.json`). **CC does not record the verdict; the pointer is a mechanical summary for the fresh reviewer chat that closes v0.** Working tree clean; push hold in effect.
+
+**Status at end of session 7 (post-disaggregating-diagnostics, superseded by per-ordinal-input addendum above):** Ninth STOP, **v0 verdict still deferred; verdict-recording goes to a fresh reviewer chat once these diagnostics are in.** Reviewer authorised two disaggregating diagnostics on existing data after the cross-loop substrate-determinism finding: (1) variance trajectory by close-up ordinal across items × loops; (2) within-loop input-invariance check on Bed in Stage B. **Headline new finding:** Bed's cross-loop drift loop 30 → 100 is **uniform across all 11 close-up ordinals** (std 0.034, range 0.129 nat) while TV, Dresser, Sofa show **non-uniform per-ordinal drifts** (std 0.12–0.19, range 0.30–0.56). Bed has LARGER within-loop pose-driven view variation than TV (cos_mean 0.74 vs 0.85), so input-magnitude alone doesn't explain why Bed's drift uniform while TV's is ordinal-monotonic. The data is mixed across items: TV/Dresser/Sofa's behaviour supports input-driven per-pose response (consistent with reviewer's account ii); Bed's uniform drift is consistent with cross-item coupling (consistent with account i). **No autonomous verdict.** Loop-170 safety check NOT run per directive. Working tree clean; push hold in effect.
 
 **Status at end of session 7 (post-substrate-determinism addendum, superseded by disaggregating-diagnostics addendum above):** Ninth STOP, **verdict deferred pending substrate-determinism diagnostic findings now in.** Reviewer surfaced a question after the loop-100 G2.T2 verdict: §8.4 reported control gaps (Bed 0.0045, TV 0.0068) that are inconsistent with the deterministic-substrate assumption (expected gap = 0). Cross-loop invariance diagnostic on existing data (commit `91a66fb`): **Bed Stage A close-up frames are pixel-MD5 identical across loops** (Case A); **Television Stage A close-up frames are NOT pixel-identical** but DINOv2 cosines are 0.99983–1.0 (Case B — per-call rendering non-determinism specific to TV, visually negligible). Poses match exactly. **Decisive new finding:** Bed's Stage A within-cosine is exactly 1.000000 (consistent with bit-identicity), but the §8.4 within-Stage-B cosine is 0.9954, so the entire Bed gap comes from Stage B — `RandomizeMaterials(inRoomTypes=["LivingRoom"])` produces visual variation in Bedroom item frames despite Bedroom not being in API scope. **Cross-room visual leakage from the perturbation API itself** — a substrate-level finding the §8.4 framing didn't surface. Reframes the loop-100 V2 reading: control items DO have real Stage B input variation (small but nonzero); Bed's predictor-narrowing despite that variation is still anomalous, but not the same as "predictor doesn't see perturbation". **No autonomous verdict.** Working tree clean; push hold in effect.
 
@@ -83,6 +85,81 @@ autonomous.
 ---
 
 ## Next immediate action
+
+**Ninth STOP — reviewer-chat verdict-disambiguation diagnostic now in (commit `64b3e36`); pointer = `reading_i_supported`. Verdict-recording goes to a fresh reviewer chat.** The reviewer-chat-authorised per-ordinal cross-loop input variation diagnostic on Bed produced a decisive result on the primary discriminator: ords 9 and 10 have literally zero cross-loop input variation across the full loop-30-to-100 span (pixel-MD5 identical across all four sampled loops; embedding `cos(loop_30, loop_100) = 1.000000` exactly), yet their variance drifts (-0.4356 and -0.4059 nat) fall inside Bed's 2σ uniform-drift band. Drift-under-zero-input-variation is architecturally impossible under reading (ii) and expected under reading (i). The supplementary Pearson r = -0.0128 (p = 0.97) corroborates: essentially no relationship between per-ordinal input variation and per-ordinal drift across the 11 ordinals.
+
+### Per-ordinal cross-loop input variation diagnostic (verdict-disambiguator)
+
+**Script:** [scripts/run_phase2_per_ordinal_cross_loop_input.py](scripts/run_phase2_per_ordinal_cross_loop_input.py).
+**Report:** [results/inner_pam_v0/phase2_main/per_ordinal_cross_loop_input.json](results/inner_pam_v0/phase2_main/per_ordinal_cross_loop_input.json).
+**Method:** for Bed at the same four sample loops used by `variance_by_ordinal.json` ({30, 50, 75, 100}), resolve the 11 close-up frame indices per loop (cross-checked against `variance_by_ordinal.json` target_frame_idx — all 44 indices match exactly), pull pairwise cosines across the 4 loops per ordinal (6 loop pairs × 11 ordinals = 66 cosines), recompute pixel-MD5 at loop 30 from PNGs, cross-reference ord-9/ord-10 MD5s for loops 50/75/100 against `within_loop_invariance.json` (recomputed-from-PNGs match).
+
+**Sanity checks (all PASS):**
+
+1. Frame index resolution matches `variance_by_ordinal.json`'s `target_frame_idx` at all 4 loops × 11 ordinals.
+2. All 44 embedding L2 norms in [0.9999999, 1.0000001] (well inside the 1e-5 tolerance).
+3. Ord 9/10 pixel-MD5 at loops 50/75/100, recomputed from PNGs in this run, match the values stored in `within_loop_invariance.json`.
+
+**Primary discriminator (ords 9 and 10):**
+
+| ord | MD5 identical across 4 loops? | cos(loop_30, loop_100) | variance drift loop 30 → 100 | within 2σ band? |
+|---:|:---:|---:|---:|:---:|
+| 9 | **TRUE** | **1.000000** | -0.4356 | TRUE |
+| 10 | **TRUE** | **1.000000** | -0.4059 | TRUE |
+
+Bed's drift distribution across all 11 ordinals: mean = -0.4229, std = 0.0326, 2σ band = [-0.4881, -0.3578]. Both ord-9 and ord-10 drifts are inside the band.
+
+**The frame at Bed close-up ord 9 in loop 30 is bit-identical (pixel-MD5 and DINOv2-embedding) to the same frame in loop 100.** Same for ord 10. There is no input variation to attribute drift to at these ordinals; the predictor's variance estimate on those frames moved by ~0.42 nat over 70 Stage B loops with zero changes in the input. The only mechanism that can produce variance change without input change is gradient updates from training on OTHER frames — cross-item coupling. Reading (i) is supported; reading (ii) is incompatible with the data at these specific ordinals.
+
+**Supplementary Pearson r across the 11 ordinals:**
+
+`x_per_ord = 1 − mean(pairwise cosines across the 4 loops)`, per ordinal.
+`y_per_ord = |drift|`, per ordinal.
+
+`r = -0.0128, p = 0.9702`. r is far outside the non-load-bearing band [0.3, 0.7] — specifically, well below 0.3, with a sign that's effectively zero. No relationship between per-ordinal input variation magnitude and per-ordinal drift magnitude. This corroborates the primary discriminator: variance drift is not tracking input variation across Bed's ordinals.
+
+**Verdict-branch logic evaluation:**
+
+- **`reading_i_supported`** conditions (all required):
+  - Ord 9 and ord 10 MD5 identical across 4 loops: **TRUE**
+  - Ord 9 and ord 10 cos(loop_30, loop_100) ≥ 0.9999: **TRUE** (both 1.000000)
+  - Ord 9 and ord 10 drift within mean ± 2σ band: **TRUE**
+  → overall TRUE.
+
+- **`reading_ii_supported`** conditions (all required):
+  - Ord 9 or ord 10 cos < 0.999: **FALSE** (both are 1.000000)
+  - Pearson r ≥ 0.7 with p < 0.05: **FALSE** (r = -0.0128, p = 0.97)
+  → overall FALSE.
+
+**Verdict branch pointer = `reading_i_supported`.**
+
+### Notes for the fresh reviewer chat
+
+- The embedding-path entry in the diagnostic spec (`data/dinov2_embeddings/embeddings.npy`) appears to be a typo for `data/phase2_embeddings/embeddings.npy`. The former is the 100k Phase-1 substrate-degenerate baseline whose frame indices don't align with `phase2_annotations.jsonl` (65k Phase-2 frames). All prior Phase-2 diagnostics (variance_by_ordinal, within_loop_invariance, encode_report) used the Phase-2 file; the per-ordinal-input diagnostic does too. Flagged in the output JSON's `notes` field and again here so the reviewer chat can confirm the path interpretation. If the reviewer intended a Phase-1 comparison, that would be a different diagnostic that this script does not implement.
+- All thresholds (cos ≥ 0.9999, Pearson [0.3, 0.7], 2σ band) are per the reviewer-chat spec and were not adjusted.
+- `verdict_branch_pointer` is a mechanical summary computed from the spec's logic; CC has not edited the spec or recorded a verdict. The pointer is in the output JSON for the reviewer chat to pick up.
+
+### Stop conditions / scope-of-this-session
+
+- No v0 verdict recorded.
+- No loop-170 safety check.
+- No further training, encoding, or AI2-THOR.
+- Diagnostic completed in 5.3 seconds (well under the 5-minute STOP threshold).
+- No SCAFFOLDING thresholds adjusted.
+- Working tree clean.
+- Push hold remains in effect.
+
+### Working-tree state at end of this addendum
+
+Working tree clean. Commits since `981b09d` (prior session-7 HANDOFF):
+- `64b3e36` — `exp(phase2): per-ordinal cross-loop input variation diagnostic on Bed (verdict-disambiguation)`.
+- (this commit) — HANDOFF entry with discriminator results, Pearson, branch pointer.
+
+No running jobs. GPU clear. Disk: 231 GB free (88% used).
+
+---
+
+### (Earlier — initial disaggregating-diagnostics addendum; superseded by the per-ordinal-input addendum above)
 
 **Ninth STOP — v0 verdict still deferred. Two disaggregating diagnostics now in (commit `b49e80f`); verdict-recording goes to a fresh reviewer chat with this data.** The reviewer-authorised disaggregating diagnostics (variance-by-ordinal, within-loop input invariance) ran on existing data and produced a mixed result: TV/Dresser/Sofa show input-driven per-ordinal differentiation (consistent with the architecture's variance response operating), while Bed shows uniform-across-ordinals drift inconsistent with input-driven variance. The data does NOT cleanly select between the V2-stands account (i) and the V2-doesn't-stand account (ii). Loop-170 safety check NOT run per directive.
 
