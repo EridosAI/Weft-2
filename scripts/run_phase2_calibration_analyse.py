@@ -145,6 +145,30 @@ def main() -> int:
         }
 
     n_consec_bit_identical = int(bit_identical_mask.sum())
+
+    # Within-loop motion-continuity (spec §2.3) cares about IN-MOTION phase
+    # pairs: close_up→close_up and transit→transit. Boundary pairs
+    # (close_up→transit, transit→close_up) can have a 1-frame duplication at
+    # the phase boundary if the last transit step lands at exactly
+    # (close_up_start, viewing_heading); this is a cosmetic artefact, not a
+    # motion-continuity failure (session-4 open decision 4, accepted as
+    # cosmetic 2026-05-14). Verdict is computed only on the in-motion pairs.
+    in_motion_pair_keys = ("close_up->close_up", "transit->transit")
+    in_motion_bit_identical = sum(
+        pair_summary[k]["n_bit_identical_gt_0.9999"]
+        for k in in_motion_pair_keys
+        if k in pair_summary
+    )
+    boundary_bit_identical = sum(
+        v["n_bit_identical_gt_0.9999"] for k, v in pair_summary.items()
+        if k not in in_motion_pair_keys
+    )
+
+    # Cross-loop apex bit-identicity is the expected Stage A baseline state
+    # under the curriculum framing (no jitter; identical loops produce
+    # identical embeddings). It's reported as informational, not a verdict
+    # input.
+
     report = {
         "n_frames": int(n),
         "norm_check": {
@@ -158,8 +182,10 @@ def main() -> int:
             "std": float(consec_cos.std(ddof=0)),
             "min": float(consec_cos.min()),
             "max": float(consec_cos.max()),
-            "n_bit_identical_gt_0.9999": int(n_consec_bit_identical),
-            "fraction_bit_identical": float(
+            "n_bit_identical_gt_0.9999_total": int(n_consec_bit_identical),
+            "n_bit_identical_in_motion_pairs": int(in_motion_bit_identical),
+            "n_bit_identical_boundary_pairs": int(boundary_bit_identical),
+            "fraction_bit_identical_total": float(
                 n_consec_bit_identical / len(consec_cos)
             ),
             "by_phase_pair": pair_summary,
@@ -167,13 +193,27 @@ def main() -> int:
         "cross_loop_apex_comparison": cross_loop_apex,
         "motion_continuity_verdict": (
             "pass"
-            if all_norm_ok and n_consec_bit_identical == 0
+            if all_norm_ok and in_motion_bit_identical == 0
             else "fail"
+        ),
+        "verdict_criteria": (
+            "PASS iff norms in [1-1e-5, 1+1e-5] AND zero bit-identical "
+            "(cos>0.9999) pairs within in-motion phase pairs "
+            "(close_up->close_up, transit->transit). Boundary pairs "
+            "(close_up->transit, transit->close_up) reported separately "
+            "as cosmetic; cross-loop apex bit-identicity is the curriculum's "
+            "Stage A baseline (informational, not gated)."
         ),
         "items_with_bit_identical_cross_loop_apex": [
             vp for vp, stats in cross_loop_apex.items()
             if stats["n_bit_identical_gt_0.9999"] > 0
         ],
+        "items_with_bit_identical_cross_loop_apex_note": (
+            "Bit-identicity across Stage A loops at the same viewing pose is "
+            "the curriculum's expected baseline (no jitter; deterministic "
+            "rendering at fixed pose). This list is informational; the "
+            "motion_continuity_verdict does not depend on it."
+        ),
     }
     args.out_report.parent.mkdir(parents=True, exist_ok=True)
     args.out_report.write_text(json.dumps(report, indent=2))
