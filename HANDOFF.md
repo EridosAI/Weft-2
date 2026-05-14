@@ -2,6 +2,8 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
+**Status at end of session 7 (2026-05-14):** Ninth STOP. G2.T2 restructured (instr §8.7a) per session-7 authorisation: three-part criterion at loop 100 — (a) trajectory direction (monotonic non-decreasing, ≤ 3 dips), (b) trajectory shape (descriptive), (c) differential perturbed/control ≥ 2.0. Original 0.5 absolute threshold dropped per the same pattern as §8.4's 0.05 floor → Wilcoxon Reading C restructuring in session 6 (research_operations §15 corollary added). Trainer extended-mode added: on resume, loads prior diagnostic JSON, skips the session-6 boundary auto-trip, and re-evaluates G2.T1/T3 at every checkpoint over the extended window. Training resumed from `ckpt_12000.pt` with `--max_loops 100`; ran 286.3s, 24,360 gradient steps. **G2.T1 and G2.T3 clean across the entire loops-36..100 window** (no in-flight trip at the 4 new checkpoints). **G2.T2 restructured FAILS all three gated criteria:** (a) 34 dips vs ≤ 3 allowed; (b) shape "mixed" — widened by loop 50 then partially retracted; (c) ratio 0.639 vs ≥ 2.0 required (controls drift MORE than perturbed widen — Bed log_var actually NARROWED by 0.21 over loops 30→100). This is the documented session-7 STOP-for-review condition. Per session-7 authorisation language, the restructured-G2.T2 failure puts option (iv) (reframe verdict toward V2) in the reviewer's frame as a live decision based on loop-100 evidence. **No autonomous decision on the verdict.** Working tree clean; push hold in effect.
+
 **Status at end of session 6 (2026-05-14):** Eighth STOP. §8.4 gate restructured and PASSED on the existing collected data (ratio = 2.107 vs threshold 2.0 with clean controls = {Bed, Television}; Wilcoxon corrected_p < 1e-300 on both perturbed items vs 0.001 threshold). Trainer extended with `--max_loops` and `--resume_from`; resume smoke-tested on real data. Phase 2 training launched with `--max_loops 35` and ran cleanly to step 12,960 (loop 36 boundary). **§8.7a G2.T2 TRIPPED**: perturbed-item log_var widening = +0.022 between loop 30 and loop 35, vs required ≥ 0.5 SCAFFOLDING threshold. Trainer wrote `transition_diagnostic_TRIPPED.txt`, exit code 3. G2.T1 (loss-spike) and G2.T3 (control-drift) both clean. This is the documented session-6 STOP-for-review condition — training STOPPED, reviewer judgement requested. Working tree clean; push hold in effect.
 
 **Status at end of session 5 (2026-05-14):** Seventh-STOP §8.4 verification reviewed; reviewer authorised the next session's restructuring and (conditional) Phase 2 training launch but stopped THIS session for context-budget reasons (`CODING_STANDARDS.md` §9.6 — compacted context can produce fabricated numbers during statistical-test computation). Phase 2 collected data on the corrected substrate is on disk (65k frames + annotations + materials metadata; `encode_report.json` committed at `6d6e58d`; embeddings.npy not yet written — pending the restructured §8.4 gate). Phase 2 training NOT launched. Next session has authorised tasks captured in detail in the "Next immediate action" block below. Working tree clean; push hold in effect.
@@ -78,7 +80,117 @@ autonomous.
 
 ## Next immediate action
 
-**Eighth STOP (session 6 outcome).** §8.4 restructured and PASSED on the existing collected data; Phase 2 training launched with `--max_loops 35` per the session-6 authorisation; the in-flight transition diagnostic's **G2.T2 (perturbed log_var widening) tripped** with widening = 0.022 versus the 0.5 SCAFFOLDING threshold. G2.T1 (loss spike) and G2.T3 (control drift) both clean. This is the explicit STOP-for-review condition recorded in the session-5 handoff's "Stop conditions during the next session's execution" block. Training stopped at loop 36 boundary (step 12,960); `transition_diagnostic_TRIPPED.txt` written; trainer exited non-zero (status 3). **No autonomous resolution.** Next session waits on experiment-chat review of the trip data and the four options below.
+**Ninth STOP (session 7 outcome).** §8.7a G2.T2 restructured from the absolute "log_var widening ≥ 0.5 by loop 35" formulation to a three-part criterion at loop 100 (trajectory direction + shape + differential), per session-7 authorisation. Training resumed from `ckpt_12000.pt` (session-6 endpoint, step 12,000) with `--max_loops 100`. Resume worked cleanly (extended-mode diagnostic loaded prior loops 0..35 from the session-6 JSON, appended loops 36..100 from the resumed run). G2.T1 (loss spike) and G2.T3 (control drift) clean across the entire loops-36..100 in-flight window — no trip at any of the 4 new checkpoints (steps 15k, 20k, 30k, 36,360). **Restructured G2.T2 FAILS all three gated criteria at loop 100.** This is the documented session-7 STOP-for-review condition; per the session-6 handoff's authorisation language, option (iv) (reframe verdict toward V2 — architecture's confidence-graded mechanism falsified at this signal magnitude) becomes a live reviewer decision based on loop-100 evidence. **No autonomous resolution.**
+
+### Session 7 outcomes (load-bearing summary)
+
+**§8.7a G2.T2 restructuring (commit `28003ee`).** Dropped the original 0.5 absolute-widening threshold. New three-part criterion:
+- **(a) Trajectory direction** (gated): perturbed-item mean log_var monotonically non-decreasing across loops 30 → 100, with up to 3 stochastic dips tolerated.
+- **(b) Trajectory shape** (descriptive, not gated): characterise the curve at {30, 35, 50, 75, 100} as accelerating / decelerating / linear / flat. Flat fails the architectural claim; the other three are interpretable.
+- **(c) Differential** (gated): `perturbed_widening_at_100 / mean(|control_drift_at_100|) ≥ 2.0`, or controls essentially unmoved.
+
+Audit-trail rationale recorded in §8.7a: the original 0.5 was anchored to "what a clearly-visible response looks like" (a 30–40% cross-stage cosine drop); the empirical drop is only 1–2% per §8.4. Wrong perturbation scale. Same pattern as §8.4's 0.05 → Wilcoxon Reading C restructuring in session 6. SCAFFOLDING inventory at §12 updated.
+
+**research_operations §15 corollary added.** Fifth instance of the absolute-magnitude pattern in the v0 batch and first inside an architectural-strength check. The pattern is now strong enough to promote from recurring-correction to default discipline: **for any architectural-strength gate, default to trajectory-shape or relative-criterion formulations rather than absolute-magnitude, unless an empirical baseline exists from prior runs on the same substrate.**
+
+**Trainer extended-mode (commits `28003ee` + `19d464b`).** `TrainerConfig.transition_diagnostic_extended_mode` auto-enables on resume. Trainer (1) seeds `_diag_per_loop_summary` from the existing diagnostic JSON so prior loops 0..35 from session 6 are preserved; (2) skips the session-6 boundary G2.T2 auto-trip (the restructured G2.T2 is post-hoc at loop 100); (3) re-evaluates G2.T1 + G2.T3 at every checkpoint past `post_end`, breaking on any trip. Drops partial-loop preseed entries (`n_train_steps_attributed < 50`) so the session-6 partial loop 36 (1 step) gets re-recorded fully. Session-6 trip marker renamed to `transition_diagnostic_TRIPPED.session6.txt` so a session-7 trip would write a fresh `*TRIPPED.txt` unambiguously.
+
+**Resume training run (commit `98446dc`).** Launched `python3.12 scripts/run_phase2_train.py --resume_from results/inner_pam_v0/phase2_main/ckpt_12000.pt --max_loops 100`. Ran 286.3s on the RTX 4080 Super, 24,360 gradient steps (steps 12,001 → 36,360). Bank loaded from disk (size 11,986 entries). New checkpoints at scheduled steps {15,000, 20,000, 30,000} plus the final stop step 36,360 (first step of loop 101). Tau calibration skipped (handled in patched script — resume's confidence log starts at step 12,001 ≫ the calibration window [5,000, 10,000); session-6's `tau_calibration.json` at step ~10,000 with τ = 7.7215 stands).
+
+### Restructured G2.T2 verdict — the full data
+
+**Report:** [results/inner_pam_v0/phase2_main/transition_g2t2_restructured.json](results/inner_pam_v0/phase2_main/transition_g2t2_restructured.json).
+
+**(a) Trajectory direction: FAIL** — 34 dips across the loop-30..100 window vs ≤ 3 allowed. Perturbed log_var fluctuates loop-to-loop without a sustained monotonic trend. Concrete dip examples (selected from the 34): loop 32 → 33 (-7.957 → -8.065, -0.108), loop 36 → 37 (-7.915 → -8.061, -0.146), loop 44 → 45 (-7.926 → -8.010, -0.084), loop 87 → 88 (-8.049 → -8.107, -0.058), loop 93 → 94 (-7.891 → -8.112, -0.222), loop 94 → 95 (-8.112 → -8.151, -0.039).
+
+**(b) Trajectory shape: "mixed"** — perturbed log_var at the key loops:
+
+| loop | mean log_var (Dresser + Sofa) | delta from prior | cumulative from loop 30 |
+|---:|---:|---:|---:|
+| 30 | -8.0404 | — | 0 |
+| 35 | -8.0179 | +0.0225 | +0.0225 |
+| 50 | -7.9498 | +0.0681 | +0.0906 |
+| 75 | -7.9615 | -0.0117 | +0.0789 |
+| 100 | -7.9751 | -0.0137 | +0.0653 |
+
+Reading: perturbed log_var widened from loop 30 → 50 (Δ +0.091), then partially retracted from loop 50 → 100 (Δ -0.025). Net widening at loop 100 vs loop 30 = +0.0653 nat — equivalent to σ × √(e^0.065) ≈ σ × 1.033, a 3.3% σ increase. NOT a monotone-accelerating, decelerating, linear, or flat trajectory. Closer to "widened modestly, then plateaued / slightly returned toward baseline".
+
+**(c) Differential at loop 100: FAIL** — perturbed_widening = +0.0653. Per-control drift loop 30 → 100:
+
+| item | log_var(30) | log_var(100) | drift | |drift| |
+|---|---:|---:|---:|---:|
+| Bed (vp=1) | -8.0291 | -8.2382 | **-0.2091** | 0.2091 |
+| DiningTable (vp=2) | -7.9927 | -7.9212 | +0.0715 | 0.0715 |
+| Television (vp=5) | -7.9239 | -7.9497 | -0.0258 | 0.0258 |
+
+`control_widening_mean_abs = mean(0.2091, 0.0715, 0.0258) = 0.1021`.
+`ratio = 0.0653 / 0.1021 = 0.639` vs threshold 2.0 → FAIL.
+
+**The control-set behaviour is the load-bearing finding.** Bed's log_var NARROWED by 0.21 nat over loops 30 → 100 — the predictor became *more confident* on Bed during Stage B than it was at the end of Stage A. DT widened by 0.07 (modest). TV essentially flat. The perturbed items widened by 0.065 — *less than Bed's narrowing in magnitude.* The architecturally-meaningful prediction ("variance widens specifically on perturbed items in response to surprise, while controls remain stable") is not observed.
+
+### G2.T1 / G2.T3 in-flight verdicts
+
+G2.T1 and G2.T3 evaluated at each new checkpoint in the extended window. No trips:
+
+| step | loop | G2.T1 status | G2.T3 status |
+|---:|---:|---|---|
+| 15,000 | ~42 | PASS (post_loss_max ≪ 3× baseline) | PASS (max abs drift < 0.3) |
+| 20,000 | ~56 | PASS | PASS |
+| 30,000 | ~83 | PASS | PASS |
+| 36,360 | 101 | PASS | PASS |
+
+`transition_diagnostic.json` `gate_tripped: false` at end of training.
+
+### Reading
+
+The encoder signal is real and statistically distinguishable from controls (§8.4 PASSED with margin). The predictor receives that signal — its variance moves loop-to-loop by ~0.1 nat on multiple items — but the *pattern* of that movement does NOT match the architectural prediction:
+
+1. **Perturbed items don't preferentially widen.** Bed's |drift| over loops 30 → 100 (0.21) is more than 3× the perturbed-item widening (0.065). The predictor's variance changes are dominated by per-item idiosyncrasy rather than perturbation status.
+
+2. **The variance trajectory is highly noisy.** 34 non-monotonic transitions in 70 loops — roughly one dip every other loop. The predictor's variance estimate is unstable at this signal magnitude, not a smooth response surface.
+
+3. **The widening that does happen on perturbed items partially retracts.** Peak widening occurs at loop 50 (+0.091) and partially reverses by loop 100 (+0.065). If the architectural claim were operating, repetition should drive *sustained* widening, not transient.
+
+4. **Bed specifically becomes MORE confident during Stage B.** -0.21 in log_var = σ shrinks by ~9%. There's no architectural reason for the predictor to become more confident on an item the perturbation doesn't visually affect. Most plausibly: the predictor's per-item representations are coupled through the shared transformer body, so updates on perturbed-frame batches affect control-item representations as a side-effect of gradient descent's global parameter updates. The per-K-step scalar isotropic variance (spec §3.3) may be inadequate to isolate item-specific surprise.
+
+Combined with session 6's reading (which observed the +0.022 widening at loop 35 as "the predictor just starting to notice"), the loop-100 evidence says: it *did* notice, modestly, and then mostly forgot — and meanwhile the variance estimates on items the perturbation doesn't visually affect drifted by larger magnitudes in idiosyncratic directions.
+
+### Four options for the reviewer (no autonomous resolution; same set as session 6 plus the loop-100 evidence updating their relative weights)
+
+(i) **Further restructure G2.T2** (third gate re-design). E.g. (a) require widening at *any* loop in 30..100 to exceed control drift, not the loop-100 endpoint specifically. The shape-(b) data shows widening peaks at loop 50 then retracts; a "peak widening" formulation would pass on the perturbed items (+0.091 at loop 50) but probably also pass on Bed (0.21 narrowing). Doesn't really help. Considered low-yield.
+
+(ii) **Continue training to Phase end (~loop 170)** and re-evaluate. The shape-(b) peak-then-retraction at loop 50→100 suggests the predictor is finding a different equilibrium, not progressively widening. Another 70 loops is unlikely to reverse that — but is cheap to run (~5 min compute) and removes the "5 more loops would have changed everything" argument. Defensible diagnostic; resume from `ckpt_36360.pt` if authorised.
+
+(iii) **Switch to a stronger perturbation mechanism.** Texture-variation magnitude increase, multiple `RandomizeMaterials` calls per loop, or per-loop asset replacement at Dresser + Sofa. The loop-100 data narrows the question: it's specifically whether the architectural mechanism can respond to *this* magnitude of perturbation, or whether it needs a fundamentally larger signal. Re-collection cost (~few hours).
+
+(iv) **Reframe verdict toward V2 (Shape-learning falsified).** The architectural prediction is testable as "variance widens specifically on perturbed items in response to repetition + surprise". The loop-100 evidence is consistent with that prediction failing — controls drift more than perturbed widen, perturbed widening peaks early then partially retracts, no monotonic widening over 70 Stage B loops. Per the V2 criteria in §11 of the instructions: "Multiple subsequent gates fail in ways consistent with 'the predictor never represented shapes as recurring patterns.'" Two restructured gates (the 0.5 absolute threshold AND the three-part restructured) have now failed; the second was specifically designed to test the architectural claim more honestly than the first.
+
+**My read:** the loop-100 evidence is stronger for (iv) than session 6's was. Session 6's reading included "+0.022 widening at loop 35 may be the predictor just starting to notice" — that hypothesis is now testable: did it notice? Yes, modestly, peaked at loop 50, then partially retracted. The peak-and-retract pattern is not what "variance responds to surprise and tightens with repetition" predicts; that prediction would have widening *continue* under continued surprise (which Stage B provides every loop). The control behaviour (Bed narrowing more than perturbed widen) also doesn't fit. (ii) is a cheap safety check; (iii) is the "but maybe we just need a bigger signal" path; (iv) is the "let's read what the evidence says" path.
+
+What is **NOT** decided autonomously: which option to take; the V2 verdict declaration; further restructuring of G2.T2; re-collection. All four go to experiment-chat review.
+
+### Stop conditions for the next session (if continuation is authorised)
+
+- If option (i) is authorised: implement the new G2.T2 formulation in docs + analysis script; re-run analysis on the existing JSON (no new training). Standard CC stop discipline applies.
+- If option (ii) is authorised: resume from `ckpt_36360.pt` (loop 101 start) to Phase 2 end (~loop 171 at 65k frames, held-out 10 loops). Trainer continues to handle extended-mode diagnostic accumulation; G2.T1 + G2.T3 monitored at the remaining scheduled checkpoints (40k, 55k, final). New G2.T2 evaluation point would need to be specified (loop 170? final?).
+- If option (iii) is authorised: STOP current line; substrate-revision path becomes live (re-collection of Phase 2 frames with stronger perturbation mechanism per §9.2-equivalent preflight).
+- If option (iv) is authorised: stop training; produce the V2 evidence package per §11; no further Phase 2 work.
+
+### Working-tree state at end of session 7
+
+Working tree clean. Push hold in effect. Commits this session:
+- `28003ee` — docs(instructions) + docs(ops) + feat(trainer): §8.7a G2.T2 restructured + research_operations §15 corollary + trainer extended-mode diagnostic.
+- `19d464b` — prep(session-7): preseed only fully-recorded loops; preserve session-6 trip marker as historical record.
+- `98446dc` — exp(phase2): training resumed loop 33→100 + restructured G2.T2 verdict (FAIL all gated).
+- (this commit) — exp(phase2) + docs(handoff): HANDOFF entry with full loop-30..100 trajectory and restructured-G2.T2 verdict.
+
+No running jobs. GPU clear (training exited cleanly after 286.3s; tau-calibration crash post-training was a script-level bug fixed in the trainer commit above, no data loss). Disk: 101 GB free at training-launch time.
+
+---
+
+### (Earlier eighth STOP — session 6's G2.T2 trip; superseded by the session 7 restructuring + loop-100 verdict above)
+
+**Eighth STOP (session 6 outcome).** §8.4 restructured and PASSED on the existing collected data; Phase 2 training launched with `--max_loops 35` per the session-6 authorisation; the in-flight transition diagnostic's **G2.T2 (perturbed log_var widening) tripped** with widening = 0.022 versus the 0.5 SCAFFOLDING threshold. G2.T1 (loss spike) and G2.T3 (control drift) both clean. This is the explicit STOP-for-review condition recorded in the session-5 handoff's "Stop conditions during the next session's execution" block. Training stopped at loop 36 boundary (step 12,960); `transition_diagnostic_TRIPPED.session6.txt` (renamed from `.txt` at the start of session 7) written; trainer exited non-zero (status 3). The session-7 restructuring of G2.T2 supersedes the session-6 trip's gate logic; the per-loop trajectory data from session 6 (loops 0..35) is preserved in the current `transition_diagnostic.json` and carried into the loop-100 analysis.
 
 ### Session 6 outcomes (load-bearing summary)
 
