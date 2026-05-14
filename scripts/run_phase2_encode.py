@@ -59,8 +59,17 @@ _DEFAULT_REPORT = _ROOT / "data" / "phase2_embeddings" / "encode_report.json"
 
 _EMBED_DIM = 1024
 _NORM_TOL = 1e-5
-_PERTURBATION_GAP_THRESHOLD = 0.05  # instr §8.4
+_PERTURBATION_GAP_THRESHOLD = 0.05  # instr §8.4 (absolute per-perturbed-item gap)
 _PERTURBATION_SAMPLE_N = 50         # instr §8.4
+
+# Differential go/no-go gate (promoted 2026-05-14, fifth STOP resolution).
+# (perturbed_mean_gap - control_mean_gap) must exceed this for Phase 2 training
+# to launch. SCAFFOLDING: the threshold has no prior empirical grounding for
+# the §8.4 metric on the actual collected stream; 0.01 is a starting value
+# that admits ~one σ of measurement noise on the per-item gap while still
+# requiring perturbed items to separate meaningfully more than controls.
+# Recalibratable from the empirical §8.4 distribution after the first run.
+_DIFFERENTIAL_CONTRAST_GAP_MIN: float = 0.01
 
 
 def _load_annotations(path: Path) -> List[Dict[str, Any]]:
@@ -294,14 +303,20 @@ def main() -> int:
     perturbed_mean_gap = float(np.mean(perturbed_gaps)) if perturbed_gaps else float("nan")
     control_mean_gap = float(np.mean(control_gaps)) if control_gaps else float("nan")
     contrast = perturbed_mean_gap - control_mean_gap
+    # Promoted to go/no-go gate 2026-05-14 (fifth STOP resolution; the preflight's
+    # S1 was dropped in favour of validating the localisation signal on the actual
+    # collected stream here, where the sample size is much larger).
+    differential_pass = bool(contrast > _DIFFERENTIAL_CONTRAST_GAP_MIN)
     print(
         f"[encode2] [contrast] perturbed_mean_gap={perturbed_mean_gap:.4f} "
         f"control_mean_gap={control_mean_gap:.4f} "
-        f"contrast={contrast:.4f}  (perturbed - control; record-only)",
+        f"contrast={contrast:.4f}  "
+        f"(differential gate threshold {_DIFFERENTIAL_CONTRAST_GAP_MIN}, "
+        f"{'PASS' if differential_pass else 'FAIL'})",
         flush=True,
     )
 
-    overall_pass = norm["passed"] and pert_pass
+    overall_pass = norm["passed"] and pert_pass and differential_pass
     report = {
         "config": {
             "frames_dir": str(args.frames_dir),
@@ -312,14 +327,16 @@ def main() -> int:
             "seed": int(args.seed),
             "perturbation_gap_threshold": float(_PERTURBATION_GAP_THRESHOLD),
             "perturbation_sample_n": int(_PERTURBATION_SAMPLE_N),
+            "differential_contrast_gap_min": float(_DIFFERENTIAL_CONTRAST_GAP_MIN),
             "norm_tolerance": float(_NORM_TOL),
         },
         "n_frames_encoded": int(emb.shape[0]),
         "encode_seconds": float(encode_seconds),
         "norm_check": norm,
-        # Absolute (gated): per-perturbed-item gap; gate passes if both > threshold.
+        # Absolute (gated): per-perturbed-item gap > _PERTURBATION_GAP_THRESHOLD
+        # on each of Dresser and Sofa.
         "absolute_perturbation_effect_checks": pert_checks,
-        # Differential (record-only): same metric on control items + contrast.
+        # Differential (gated since 2026-05-14): control-item gap + contrast.
         "differential_control_item_effect_checks": control_checks,
         "differential_summary": {
             "perturbed_items": [label for label, _ in perturbed_items],
@@ -327,11 +344,15 @@ def main() -> int:
             "perturbed_mean_gap": perturbed_mean_gap,
             "control_mean_gap": control_mean_gap,
             "contrast_perturbed_minus_control": contrast,
+            "differential_gate_threshold": float(_DIFFERENTIAL_CONTRAST_GAP_MIN),
+            "differential_gate_pass": differential_pass,
             "note": (
-                "Differential metrics are record-only — the gate is on the "
-                "absolute perturbed-item gap. The experiment chat reviews both "
-                "absolute and differential metrics at the §8.4 STOP point "
-                "before authorising Phase 2 training launch."
+                "Differential go/no-go gate promoted 2026-05-14 from record-only "
+                "(fifth STOP resolution; replaces the dropped preflight S1). "
+                "Phase 2 training launches only if perturbed_mean_gap - "
+                f"control_mean_gap > {_DIFFERENTIAL_CONTRAST_GAP_MIN}. "
+                "Threshold is SCAFFOLDING; recalibratable from the empirical "
+                "§8.4 distribution after the first run."
             ),
         },
         "overall_pass": bool(overall_pass),
@@ -340,8 +361,19 @@ def main() -> int:
     print(f"[encode2] wrote report: {args.report}", flush=True)
 
     if not overall_pass:
-        print("[encode2] FAIL: perturbation effect check below gap threshold; "
-              "NOT writing embeddings.", file=sys.stderr)
+        reasons = []
+        if not norm["passed"]:
+            reasons.append("norm check")
+        if not pert_pass:
+            reasons.append("absolute per-perturbed-item gap")
+        if not differential_pass:
+            reasons.append(
+                f"differential contrast ({contrast:.4f} <= "
+                f"{_DIFFERENTIAL_CONTRAST_GAP_MIN}, perturbed items not separating "
+                f"sufficiently from controls)"
+            )
+        print(f"[encode2] FAIL: {'; '.join(reasons)}. NOT writing embeddings.",
+              file=sys.stderr)
         return 2
 
     np.save(args.out, emb)

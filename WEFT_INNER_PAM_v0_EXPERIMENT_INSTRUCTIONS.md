@@ -615,40 +615,25 @@ Run a Stage A baseline (loops 1–30, unperturbed) followed by a Stage B perturb
 
 `scripts/run_phase2_preflight.py` verifies the perturbation mechanism behaves as specified before any data collection. This is mandatory and gates the rest of Phase 2.
 
-**Preflight tasks:**
+The preflight encodes 20 frames (5 items × {before, call1, call2, call3} captures) through frozen DINOv2-large and gates on the embedding-space contrast — pixel-RGB metrics are kept as record-only because they compress into a too-tight dynamic range at 300×300 resolution to discriminate locality (see HANDOFF session-5 third-STOP entry and `research_operations_v1.md` §15).
 
-1. **Verify `RandomizeMaterials` action exists and accepts `inRoomTypes`.**
-   - Launch a controller against the seed-7 scene.
-   - Call `controller.step(action="RandomizeMaterials", inRoomTypes=["LivingRoom"], useTrainMaterials=True)`.
-   - Verify the action returns success (event.metadata["lastActionSuccess"] is True).
-   - If the action fails or `inRoomTypes` is unrecognised, stop and report.
+**Gate (three criteria; all must PASS):**
 
-2. **Verify per-loop re-application produces fresh textures.**
-   - After step 1, capture an RGB frame at the Dresser viewing position (item 3, position from seed-7 metadata).
-   - Call `RandomizeMaterials` again with the same parameters (the per-loop pattern Phase 2 uses from loop 31 onward).
-   - Capture another RGB frame at the Dresser viewing position.
-   - Verify the two frames differ measurably (cosine of flattened RGB < 0.95). If identical, `RandomizeMaterials` is not actually re-randomising per call — stop and report.
-   - Also call `RandomizeMaterials` a third time and verify the second→third capture also differs (rules out a two-state cycle).
+  - **G_M1 — Mechanism fires.** `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)` returns `lastActionSuccess = True`. If the action fails or `inRoomTypes` is unrecognised, stop and report.
+  - **G_M2 — Bedroom DINOv2 scope locality.** Mean Bedroom-item (Bed, DiningTable, Television) DINOv2 CLS before-vs-after cosine **> 0.98**, averaged across three RandomizeMaterials draws (the per-loop pattern Phase 2 uses from loop 31 onward). Threshold 0.98 SCAFFOLDING; admits ordinary lighting/shadow variation without admitting actual cross-room perturbation. (Spec §5.6 makes this a load-bearing substrate gate.)
+  - **G_M3 — LivingRoom-vs-Bedroom contrast direction.** `(Bedroom mean) − (LivingRoom mean) >= 0.5 × observed_contrast`. Threshold ratio 0.5 SCAFFOLDING (midpoint of the reviewer-authorised 40–60% range). Within the calibration run this trivially passes when contrast > 0 (locality direction is right); the persistent value is written to `g_m3_calibration.json` for future preflight runs against the same substrate.
 
-3. **Verify perturbation locality (does not affect Bedroom items).**
-   - Capture frames at Bed and Television viewing positions before and after the LivingRoom RandomizeMaterials call.
-   - Verify pre/post frames at Bedroom items are pixel-identical (cosine > 0.999).
-   - If Bedroom items also changed, `inRoomTypes` scoping is not working — stop and report.
+**Record-only measurements (not gated):**
 
-4. **Verify perturbation is visually detectable at LivingRoom items.**
-   - Capture frames at Dresser and Sofa viewing positions before and after.
-   - Verify pre/post frames differ measurably (cosine < 0.9 in flattened RGB).
-   - If frames are visually identical despite RandomizeMaterials succeeding, the perturbation is a null perturbation — stop and report.
+  - Per-loop re-application call-vs-call DINOv2 cosines on Dresser and Sofa (call1↔call2, call2↔call3).
+  - Flat-RGB cosines on the same paired frames.
+  - Cross-session determinism note.
 
-5. **Verify determinism across controller sessions.**
-   - Launch a fresh controller, apply `RandomizeMaterials` with the same parameters.
-   - Compare the resulting Dresser frame to step 1's Dresser frame.
-   - If identical: determinism confirmed; proceed.
-   - If different: AI2-THOR's RandomizeMaterials is non-deterministic across sessions. CC documents the specific materials applied (read from `event.metadata` after the call) and treats them as a fixed-per-run perturbation. Reproducibility is per-run rather than global. Flagged in HANDOFF.md.
+**S1 / S2 STOP-and-report conditions removed (2026-05-14, fifth STOP resolution).** S1 was the "contrast < 0.02" trip; the 0.02 threshold was a pre-empirical SCAFFOLDING guess that consistently tripped on every run after the substrate-adjustment cycle established empirical contrast magnitudes in the 0.006–0.012 range. S2 was an effective duplicate of G_M2 against the same 0.98 Bedroom threshold. Both were dropped per the §15 principle that SCAFFOLDING thresholds get evaluated against what they're protecting. The locality magnitude — the question S1 was meant to catch — is now assessed at §8.4 on the actual collected stream, where the sample size is much larger and the differential check (perturbed_mean_gap − control_mean_gap) is a go/no-go gate before Phase 2 training launches.
 
-Preflight output: `results/inner_pam_v0/phase2_preflight/preflight_report.md` with all five verifications and pass/fail per item.
+Preflight output: `results/inner_pam_v0/phase2_preflight/preflight_report.{md,json}` with G_M1 / G_M2 / G_M3 verdicts, per-item DINOv2 cosines, and record-only measurements. `g_m3_calibration.json` carries the persistent G_M3 threshold for re-use.
 
-**Preflight gates:** all five must pass (with documented partial pass on item 5 if determinism is per-run). If any of 1–4 fails unconditionally, stop and report; do not proceed.
+**Preflight verdict:** PASS iff all three of G_M1 / G_M2 / G_M3 pass. If any fails, stop and report; do not proceed.
 
 ### 8.3 Frame collection
 
@@ -678,14 +663,21 @@ Output: `data/phase2_frames/` (PNG, gitignored) + `data/phase2_annotations.jsonl
 
 Script: `scripts/run_phase2_collect.py`. nohup, log to `logs/phase2_collect_*.log`.
 
-### 8.4 Encoding
+### 8.4 Encoding + go/no-go gate before training
 
-`scripts/run_phase2_encode.py` runs frozen DINOv2 over Phase 2 frames, writes `data/phase2_embeddings/embeddings.npy`. Same encoder configuration as the substrate verification (fp16 eval, ImageNet mean/std normalisation, L2-normalised output).
+`scripts/run_phase2_encode.py` runs frozen DINOv2 over Phase 2 frames, writes `data/phase2_embeddings/embeddings.npy`, and applies the §8.4 verification suite (the load-bearing site for assessing the localisation signal, after the preflight S1 was dropped 2026-05-14 per the fifth-STOP resolution).
 
-CC verifies post-encoding:
-- Shape: `(65000, 1024)`.
-- Norms in `[1.0 - 1e-5, 1.0 + 1e-5]`.
-- **Perturbation effect check (Stage B vs Stage A within Phase 2).** Mean cosine between 50 randomly sampled Phase 2 *Stage-B* Dresser-apex embeddings (`perturbation_active = True`, viewing_position_id = 3) and 50 randomly sampled Phase 2 *Stage-A* Dresser-apex embeddings (`perturbation_active = False`, same item) *vs* mean cosine within each set. If the cross-set mean is similar to the within-set means (< 0.05 separation), the per-loop `RandomizeMaterials` did not produce a measurable encoder-level perturbation — flag and stop. Repeat for Sofa. (Phase 1 embeddings are *not* used as the unperturbed reference: Phase 1 is on the substrate-degenerate baseline, the encoder-level comparison would conflate substrate effects with perturbation effects. The Stage A loops *inside* Phase 2 are the right reference: same substrate, same continuous-motion trajectory, only the LivingRoom textures differ.)
+Same encoder configuration as the substrate verification (fp16 eval, ImageNet mean/std normalisation, L2-normalised output).
+
+CC verifies post-encoding, in this order; the encode script writes the embeddings to `embeddings.npy` only when all three checks pass:
+
+1. **Shape + norms.** Embeddings shape consistent with collection (rows = annotation count, cols = 1024). Per-row L2 norms in `[1.0 - 1e-5, 1.0 + 1e-5]`.
+
+2. **Absolute perturbation-effect check (gated; per-perturbed-item Stage B vs Stage A).** For each perturbed item (Dresser, Sofa): mean cosine between 50 randomly sampled Stage-B apex embeddings (`perturbation_active = True`, `viewing_position_id = {3, 4}`) and 50 randomly sampled Stage-A apex embeddings at the same item, vs the mean cosine within each set. The gap `(within_a + within_b) / 2 − cross` must exceed **0.05** on each of Dresser and Sofa. If either gap falls below the threshold, the per-loop `RandomizeMaterials` did not produce a measurable encoder-level perturbation on that item — stop and report. (Phase 1 embeddings are *not* used as the unperturbed reference: Phase 1 is on the substrate-degenerate baseline; the comparison would conflate substrate effects with perturbation effects. The Stage A loops *inside* Phase 2 are the right reference — same substrate, same continuous-motion trajectory, only the LivingRoom textures differ.)
+
+3. **Differential go/no-go gate (promoted 2026-05-14 from record-only to gated).** Run the same Stage B vs Stage A gap calculation on the **control items** (Bed, DiningTable, Television); compute `perturbed_mean_gap = mean(gap for Dresser, Sofa)` and `control_mean_gap = mean(gap for Bed, DiningTable, Television)` and the contrast `perturbed_mean_gap − control_mean_gap`. Gate passes iff `contrast > 0.01`. The threshold is **SCAFFOLDING** — no prior empirical grounding exists for the §8.4 metric on the actual collected stream; 0.01 is a starting value that admits ~one σ of per-item measurement noise while still requiring perturbed items to separate meaningfully more than controls. Recalibratable from the empirical §8.4 distribution after the first run (per `research_operations_v1.md` §15's principle that SCAFFOLDING thresholds get evaluated against what they're protecting). The contrast was the load-bearing read the experiment chat had asked to see; promoting it to go/no-go replaces the dropped preflight S1 with a check on the full collected stream where the sample size is much larger and the localisation signal — if it exists — should be cleanly resolvable.
+
+A trip on (2) indicates the perturbation produced no encoder-level signal on a specific item; a trip on (3) indicates the perturbation produced signal but the perturbed-vs-control contrast doesn't separate enough to claim item-localisation. Either failure stops Phase 2 training launch and is reported for experiment-chat review.
 
 ### 8.5 Continued training
 

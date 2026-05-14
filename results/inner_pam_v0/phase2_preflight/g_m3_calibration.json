@@ -1,0 +1,8 @@
+{
+  "timestamp_utc": "2026-05-14T03:47:55Z",
+  "house_seed": 7,
+  "observed_contrast": 0.008098281092113968,
+  "calibration_ratio": 0.5,
+  "g_m3_threshold": 0.004049140546056984,
+  "rationale": "Calibrated during the initial DINOv2 preflight run; future preflight runs against the same substrate should pass G_M3 against this fixed threshold."
+}

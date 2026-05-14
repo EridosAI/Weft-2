@@ -40,20 +40,22 @@ now an early-warning version of the same metric.
          still requiring a meaningfully positive contrast in subsequent
          runs).
 
-**STOP-and-report conditions (no auto-tuning to fit).** If either of
-these conditions is met during this preflight, the script exits
-non-zero with a FAIL verdict and does NOT set the G_M3 threshold —
-escalation to the experiment chat is required rather than chasing the
-threshold to make the gate pass:
-
-  S1 — Very small contrast. Observed contrast (Bedroom mean -
-       LivingRoom mean) < 0.02. Indicates the perturbation is not
-       producing a meaningful DINOv2-level localisation signal.
-  S2 — Unexpectedly low Bedroom cosine. Bedroom DINOv2 mean < 0.98.
-       Indicates Bedroom items moved more than the locality claim
-       allows; suggests the LivingRoom-scoped RandomizeMaterials call
-       is having a global effect (or the scene/encoder is unusually
-       sensitive in a way that breaks the locality assumption).
+**S1 / S2 STOP-and-report conditions removed (2026-05-14, fifth STOP
+resolution).** The S1 = 0.02 threshold for "very small contrast" was a
+pre-empirical SCAFFOLDING guess; once the substrate-adjustment cycle
+established that empirical contrast magnitudes consistently sit in the
+0.006–0.012 range, S1 was tripping on every run by structural
+under-estimation rather than catching a real failure mode. Per
+`research_operations_v1.md` §15's new principle ("SCAFFOLDING
+thresholds get evaluated against what they're protecting, not adjusted
+by margin"), S1 was dropped; the locality direction is enforced by
+G_M3 (positive contrast by construction when the substrate is
+locality-correct) and the magnitude of the localisation signal is
+assessed at §8.4 on the actual collected stream, where the differential
+check (perturbed_mean_gap − control_mean_gap) is a go/no-go gate
+before Phase 2 training launches. S2 was effectively duplicate of
+G_M2 (both checking Bedroom mean against the 0.98 threshold); S2's
+separate exit path is removed and G_M2 carries the check.
 
 **Record-only measurements** (not gated; kept for the audit trail):
 
@@ -131,9 +133,8 @@ _CROP = 224
 _G_M2_BEDROOM_DINOV2_THRESHOLD: float = 0.98
 _G_M3_THRESHOLD_RATIO: float = 0.5      # 50% — midpoint of Grok's 40-60% range
 
-# STOP-and-report conditions (do NOT auto-tune to fit).
-_S1_CONTRAST_TOO_SMALL: float = 0.02
-_S2_BEDROOM_TOO_LOW: float = 0.98       # same as G_M2 — failing this triggers escalation, not threshold drop
+# S1 / S2 STOP-and-report conditions removed 2026-05-14 (fifth STOP resolution).
+# See module docstring for rationale.
 
 
 def _pixel_cosine(img_a: np.ndarray, img_b: np.ndarray) -> float:
@@ -262,8 +263,6 @@ def main() -> int:
             "G_M2_bedroom_dinov2_min": _G_M2_BEDROOM_DINOV2_THRESHOLD,
             "G_M3_threshold_ratio_of_contrast": _G_M3_THRESHOLD_RATIO,
             "G_M3_threshold_ratio_range_authorised": [0.4, 0.6],
-            "S1_contrast_too_small": _S1_CONTRAST_TOO_SMALL,
-            "S2_bedroom_too_low": _S2_BEDROOM_TOO_LOW,
             "rationale": (
                 "G_M2 = 0.98: Bedroom items are not visually re-textured under "
                 "LivingRoom-scoped RandomizeMaterials; their DINOv2 embeddings "
@@ -271,10 +270,10 @@ def main() -> int:
                 "shadow variation without admitting actual cross-room "
                 "perturbation. G_M3 = 50% of observed contrast: midpoint of "
                 "the reviewer-authorised 40-60% range; gives downward "
-                "robustness against per-run material lottery while still "
-                "requiring a meaningfully positive contrast on future runs. "
-                "S1 = 0.02 and S2 = 0.98 are STOP-and-report conditions, NOT "
-                "auto-tuned during calibration."
+                "robustness against per-run material lottery on future runs. "
+                "S1 / S2 STOP-and-report conditions removed 2026-05-14 (fifth "
+                "STOP resolution); locality magnitude is now assessed at §8.4 "
+                "on the actual collected stream rather than at preflight time."
             ),
         },
         "gate": {},
@@ -427,25 +426,6 @@ def main() -> int:
             flush=True,
         )
 
-        # ---- STOP-and-report conditions (Grok directive: don't tune to fit). ----
-        stop_triggered = False
-        stop_reasons: List[str] = []
-        if observed_contrast < _S1_CONTRAST_TOO_SMALL:
-            stop_triggered = True
-            stop_reasons.append(
-                f"S1: observed_contrast={observed_contrast:.4f} < {_S1_CONTRAST_TOO_SMALL:.2f}; "
-                "perturbation is not producing a meaningful DINOv2-level localisation signal. "
-                "STOP and report to the experiment chat rather than chasing the threshold."
-            )
-        if bedroom_dinov2_mean < _S2_BEDROOM_TOO_LOW:
-            stop_triggered = True
-            stop_reasons.append(
-                f"S2: bedroom_dinov2_mean={bedroom_dinov2_mean:.4f} < {_S2_BEDROOM_TOO_LOW:.2f}; "
-                "Bedroom items moved more than the locality claim allows; suggests the "
-                "LivingRoom-scoped RandomizeMaterials call is having a global effect. "
-                "STOP and report; do not lower G_M2 to fit."
-            )
-
         results["dinov2"] = {
             "per_item_3call_mean_before_vs_after": per_item_dinov2_3call_mean,
             "per_item_per_call_before_vs_after": per_item_dinov2_per_call,
@@ -455,81 +435,66 @@ def main() -> int:
             "encoder_norm_check_passed": norm_ok,
         }
 
-        if stop_triggered:
-            results["gate"]["G_M2_bedroom_dinov2_locality"] = {
-                "pass": False,
-                "reason": "STOP-and-report triggered; gate not finalised",
-            }
-            results["gate"]["G_M3_dinov2_contrast"] = {
-                "pass": False,
-                "reason": "STOP-and-report triggered; gate not finalised",
-            }
-            results["stop_and_report"] = {
-                "triggered": True,
-                "reasons": stop_reasons,
-                "guidance": (
-                    "Per the reviewer's 2026-05-14 directive: if calibration "
-                    "surfaces an unexpected pattern, STOP and report rather "
-                    "than tuning thresholds to fit. Do NOT lower G_M2 or G_M3 "
-                    "to make the gate pass."
-                ),
-            }
-        else:
-            # G_M2 — Bedroom DINOv2 locality > 0.98.
-            results["gate"]["G_M2_bedroom_dinov2_locality"] = {
-                "pass": bool(bedroom_dinov2_mean > _G_M2_BEDROOM_DINOV2_THRESHOLD),
-                "criterion": (
-                    f"mean Bedroom DINOv2 before-vs-after CLS cosine > "
-                    f"{_G_M2_BEDROOM_DINOV2_THRESHOLD} "
-                    f"(averaged across 3 RandomizeMaterials draws and 3 Bedroom items)"
-                ),
-                "bedroom_per_item_dinov2_3call_mean": bedroom_dinov2_per_item_mean,
-                "bedroom_mean_cosine": bedroom_dinov2_mean,
-                "threshold": _G_M2_BEDROOM_DINOV2_THRESHOLD,
-            }
+        # G_M2 — Bedroom DINOv2 locality > 0.98.
+        results["gate"]["G_M2_bedroom_dinov2_locality"] = {
+            "pass": bool(bedroom_dinov2_mean > _G_M2_BEDROOM_DINOV2_THRESHOLD),
+            "criterion": (
+                f"mean Bedroom DINOv2 before-vs-after CLS cosine > "
+                f"{_G_M2_BEDROOM_DINOV2_THRESHOLD} "
+                f"(averaged across 3 RandomizeMaterials draws and 3 Bedroom items)"
+            ),
+            "bedroom_per_item_dinov2_3call_mean": bedroom_dinov2_per_item_mean,
+            "bedroom_mean_cosine": bedroom_dinov2_mean,
+            "threshold": _G_M2_BEDROOM_DINOV2_THRESHOLD,
+        }
 
-            # G_M3 — calibrated DINOv2 contrast threshold.
-            g_m3_threshold = _G_M3_THRESHOLD_RATIO * observed_contrast
-            results["gate"]["G_M3_dinov2_contrast"] = {
-                "pass": bool(observed_contrast >= g_m3_threshold),
-                "criterion": (
-                    f"(Bedroom mean - LivingRoom mean) DINOv2 cosine "
-                    f">= {_G_M3_THRESHOLD_RATIO} * observed_contrast"
-                ),
-                "livingroom_per_item_dinov2_3call_mean": livingroom_dinov2_per_item_mean,
-                "livingroom_mean_cosine": livingroom_dinov2_mean,
-                "bedroom_mean_cosine": bedroom_dinov2_mean,
-                "observed_contrast": observed_contrast,
-                "calibration_ratio": _G_M3_THRESHOLD_RATIO,
-                "calibrated_threshold": g_m3_threshold,
-                "note": (
-                    "Threshold is set to 50% of the observed contrast (midpoint "
-                    "of the reviewer-authorised 40-60% range). This run trivially "
-                    "passes by construction; the threshold's purpose is to gate "
-                    "future preflight runs (or substrate changes) against a "
-                    "downward drop of more than 50% in the contrast."
-                ),
-            }
+        # G_M3 — calibrated DINOv2 contrast threshold. By construction within
+        # the same run this trivially passes when observed_contrast > 0
+        # (positive contrast → locality direction is right; threshold = 50% of
+        # observed is also positive and smaller). The persistent value is
+        # written to `g_m3_calibration.json` for use by future preflight runs
+        # against the same substrate.
+        g_m3_threshold = _G_M3_THRESHOLD_RATIO * observed_contrast
+        results["gate"]["G_M3_dinov2_contrast"] = {
+            "pass": bool(observed_contrast >= g_m3_threshold),
+            "criterion": (
+                f"(Bedroom mean - LivingRoom mean) DINOv2 cosine "
+                f">= {_G_M3_THRESHOLD_RATIO} * observed_contrast"
+            ),
+            "livingroom_per_item_dinov2_3call_mean": livingroom_dinov2_per_item_mean,
+            "livingroom_mean_cosine": livingroom_dinov2_mean,
+            "bedroom_mean_cosine": bedroom_dinov2_mean,
+            "observed_contrast": observed_contrast,
+            "calibration_ratio": _G_M3_THRESHOLD_RATIO,
+            "calibrated_threshold": g_m3_threshold,
+            "note": (
+                "Threshold is set to 50% of the observed contrast (midpoint "
+                "of the reviewer-authorised 40-60% range). This run trivially "
+                "passes by construction; the threshold's purpose is to gate "
+                "future preflight runs (or substrate changes) against a "
+                "downward drop of more than 50% in the contrast."
+            ),
+        }
 
-            # Persist the calibration to a side file for any future re-runs.
-            calib_file = args.results_dir / "g_m3_calibration.json"
-            calib_file.write_text(
-                json.dumps(
-                    {
-                        "timestamp_utc": ts,
-                        "house_seed": int(route["seed"]),
-                        "observed_contrast": observed_contrast,
-                        "calibration_ratio": _G_M3_THRESHOLD_RATIO,
-                        "g_m3_threshold": g_m3_threshold,
-                        "rationale": (
-                            "Calibrated during the initial DINOv2 preflight run; "
-                            "future preflight runs against the same substrate should "
-                            "pass G_M3 against this fixed threshold."
-                        ),
-                    },
-                    indent=2,
-                )
+        # Persist the calibration to a side file for any future re-runs.
+        calib_file = args.results_dir / "g_m3_calibration.json"
+        calib_file.write_text(
+            json.dumps(
+                {
+                    "timestamp_utc": ts,
+                    "house_seed": int(route["seed"]),
+                    "observed_contrast": observed_contrast,
+                    "calibration_ratio": _G_M3_THRESHOLD_RATIO,
+                    "g_m3_threshold": g_m3_threshold,
+                    "rationale": (
+                        "Calibrated during the initial DINOv2 preflight run; "
+                        "future preflight runs against the same substrate should "
+                        "pass G_M3 against this fixed threshold."
+                    ),
+                },
+                indent=2,
             )
+        )
 
         results["record_only"]["per_item_re_application_dinov2"] = re_appl
         results["record_only"]["flat_rgb_per_item_per_call"] = flat_per_item_per_call
@@ -580,9 +545,8 @@ def main() -> int:
         "G_M2_bedroom_dinov2_locality",
         "G_M3_dinov2_contrast",
     ]
-    overall = (
-        not results.get("stop_and_report", {}).get("triggered", False)
-        and all(results["gate"].get(k, {}).get("pass", False) for k in gate_keys)
+    overall = all(
+        results["gate"].get(k, {}).get("pass", False) for k in gate_keys
     )
     results["overall_pass"] = bool(overall)
 
@@ -599,11 +563,6 @@ def main() -> int:
         f"## Verdict: {'PASS' if overall else 'FAIL'}",
         "",
     ]
-    if results.get("stop_and_report", {}).get("triggered", False):
-        md_lines.append("## STOP-AND-REPORT TRIGGERED")
-        for r in results["stop_and_report"]["reasons"]:
-            md_lines.append(f"- {r}")
-        md_lines.append("")
     md_lines.append("## Gate criteria")
     md_lines.append("")
     for k in gate_keys:

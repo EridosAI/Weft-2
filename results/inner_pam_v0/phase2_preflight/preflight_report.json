@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-05-14T03:21:51Z",
+  "timestamp_utc": "2026-05-14T03:47:55Z",
   "house_seed": 7,
   "gate_thresholds": {
     "G_M2_bedroom_dinov2_min": 0.98,
@@ -8,9 +8,7 @@
       0.4,
       0.6
     ],
-    "S1_contrast_too_small": 0.02,
-    "S2_bedroom_too_low": 0.98,
-    "rationale": "G_M2 = 0.98: Bedroom items are not visually re-textured under LivingRoom-scoped RandomizeMaterials; their DINOv2 embeddings should be very close to identical. 0.98 admits small lighting/shadow variation without admitting actual cross-room perturbation. G_M3 = 50% of observed contrast: midpoint of the reviewer-authorised 40-60% range; gives downward robustness against per-run material lottery while still requiring a meaningfully positive contrast on future runs. S1 = 0.02 and S2 = 0.98 are STOP-and-report conditions, NOT auto-tuned during calibration."
+    "rationale": "G_M2 = 0.98: Bedroom items are not visually re-textured under LivingRoom-scoped RandomizeMaterials; their DINOv2 embeddings should be very close to identical. 0.98 admits small lighting/shadow variation without admitting actual cross-room perturbation. G_M3 = 50% of observed contrast: midpoint of the reviewer-authorised 40-60% range; gives downward robustness against per-run material lottery on future runs. S1 / S2 STOP-and-report conditions removed 2026-05-14 (fifth STOP resolution); locality magnitude is now assessed at \u00a78.4 on the actual collected stream rather than at preflight time."
   },
   "gate": {
     "G_M1_mechanism_fires": {
@@ -18,108 +16,118 @@
       "criterion": "RandomizeMaterials(inRoomTypes=['LivingRoom']) lastActionSuccess == True"
     },
     "G_M2_bedroom_dinov2_locality": {
-      "pass": false,
-      "reason": "STOP-and-report triggered; gate not finalised"
+      "pass": true,
+      "criterion": "mean Bedroom DINOv2 before-vs-after CLS cosine > 0.98 (averaged across 3 RandomizeMaterials draws and 3 Bedroom items)",
+      "bedroom_per_item_dinov2_3call_mean": {
+        "Bed": 0.9892024993896484,
+        "DiningTable": 0.9790758689244589,
+        "Television": 0.9889542460441589
+      },
+      "bedroom_mean_cosine": 0.9857442047860888,
+      "threshold": 0.98
     },
     "G_M3_dinov2_contrast": {
-      "pass": false,
-      "reason": "STOP-and-report triggered; gate not finalised"
+      "pass": true,
+      "criterion": "(Bedroom mean - LivingRoom mean) DINOv2 cosine >= 0.5 * observed_contrast",
+      "livingroom_per_item_dinov2_3call_mean": {
+        "Dresser": 0.9842591484387716,
+        "Sofa": 0.9710326989491781
+      },
+      "livingroom_mean_cosine": 0.9776459236939748,
+      "bedroom_mean_cosine": 0.9857442047860888,
+      "observed_contrast": 0.008098281092113968,
+      "calibration_ratio": 0.5,
+      "calibrated_threshold": 0.004049140546056984,
+      "note": "Threshold is set to 50% of the observed contrast (midpoint of the reviewer-authorised 40-60% range). This run trivially passes by construction; the threshold's purpose is to gate future preflight runs (or substrate changes) against a downward drop of more than 50% in the contrast."
     }
   },
   "record_only": {
     "per_item_re_application_dinov2": {
-      "Dresser_call1_call2_dinov2": 0.989314615726471,
-      "Dresser_call2_call3_dinov2": 0.9925086498260498,
-      "Sofa_call1_call2_dinov2": 0.9687811136245728,
-      "Sofa_call2_call3_dinov2": 0.9595118761062622
+      "Dresser_call1_call2_dinov2": 0.9763787984848022,
+      "Dresser_call2_call3_dinov2": 0.9921088814735413,
+      "Sofa_call1_call2_dinov2": 0.965919017791748,
+      "Sofa_call2_call3_dinov2": 0.9725021719932556
     },
     "flat_rgb_per_item_per_call": {
       "Bed": {
-        "call1": 0.9913299372956844,
-        "call2": 0.9947561224112592,
-        "call3": 0.9946104804087039
+        "call1": 0.9963987164576537,
+        "call2": 0.9952042810803563,
+        "call3": 0.9967770957882544
       },
       "DiningTable": {
-        "call1": 0.9945208222472047,
-        "call2": 0.9891982900939734,
-        "call3": 0.9856094914058497
+        "call1": 0.9898880908272318,
+        "call2": 0.9922979272142491,
+        "call3": 0.9873182483671147
       },
       "Dresser": {
-        "call1": 0.9788544850136378,
-        "call2": 0.9762853899266423,
-        "call3": 0.9631581602176426
+        "call1": 0.9919526237027293,
+        "call2": 0.9502218549124879,
+        "call3": 0.9469578346165547
       },
       "Sofa": {
-        "call1": 0.9444331009662521,
-        "call2": 0.988791344915978,
-        "call3": 0.994904448052894
+        "call1": 0.9848414025289093,
+        "call2": 0.9506815823236477,
+        "call3": 0.9822147156754382
       },
       "Television": {
-        "call1": 0.9966239525726265,
-        "call2": 0.9901240529030889,
-        "call3": 0.9942925858305162
+        "call1": 0.9896464582798518,
+        "call2": 0.996233768025457,
+        "call3": 0.9884017446711558
       }
     },
     "flat_rgb_per_item_3call_mean": {
-      "Bed": 0.9935655133718825,
-      "DiningTable": 0.9897762012490093,
-      "Dresser": 0.9727660117193077,
-      "Sofa": 0.9760429646450414,
-      "Television": 0.9936801971020772
+      "Bed": 0.9961266977754214,
+      "DiningTable": 0.9898347554695319,
+      "Dresser": 0.9630441044105907,
+      "Sofa": 0.9725792335093318,
+      "Television": 0.9914273236588215
     },
     "session_determinism": {
       "deterministic_across_sessions": false,
-      "cos_dresser_sessionA_sessionB_flatrgb": 0.9591186456644238,
-      "cos_sofa_sessionA_sessionB_flatrgb": 0.9878902809837619,
+      "cos_dresser_sessionA_sessionB_flatrgb": 0.9871675450235738,
+      "cos_sofa_sessionA_sessionB_flatrgb": 0.9929293276358897,
       "note": "Materials may be per-run; per-loop applied materials are recorded in phase2_collection_metadata.json by the collection script."
     }
   },
-  "overall_pass": false,
+  "overall_pass": true,
   "dinov2": {
     "per_item_3call_mean_before_vs_after": {
-      "Bed": 0.9846576849619547,
-      "DiningTable": 0.9767722288767496,
-      "Dresser": 0.980617622534434,
-      "Sofa": 0.9713314572970072,
-      "Television": 0.9852180679639181
+      "Bed": 0.9892024993896484,
+      "DiningTable": 0.9790758689244589,
+      "Dresser": 0.9842591484387716,
+      "Sofa": 0.9710326989491781,
+      "Television": 0.9889542460441589
     },
     "per_item_per_call_before_vs_after": {
       "Bed": {
-        "call1": 0.9836145639419556,
-        "call2": 0.9854795932769775,
-        "call3": 0.9848788976669312
+        "call1": 0.9891659021377563,
+        "call2": 0.9886592626571655,
+        "call3": 0.9897823333740234
       },
       "DiningTable": {
-        "call1": 0.9785262942314148,
-        "call2": 0.9741145372390747,
-        "call3": 0.9776758551597595
+        "call1": 0.9810835123062134,
+        "call2": 0.9777792692184448,
+        "call3": 0.9783648252487183
       },
       "Dresser": {
-        "call1": 0.9857444167137146,
-        "call2": 0.9812469482421875,
-        "call3": 0.9748615026473999
+        "call1": 0.9918650388717651,
+        "call2": 0.981531023979187,
+        "call3": 0.9793813824653625
       },
       "Sofa": {
-        "call1": 0.9676117897033691,
-        "call2": 0.9647364616394043,
-        "call3": 0.9816461205482483
+        "call1": 0.975105345249176,
+        "call2": 0.963584303855896,
+        "call3": 0.9744084477424622
       },
       "Television": {
-        "call1": 0.979432225227356,
-        "call2": 0.9877017140388489,
-        "call3": 0.9885202646255493
+        "call1": 0.9925450086593628,
+        "call2": 0.9811898469924927,
+        "call3": 0.9931278824806213
       }
     },
-    "bedroom_dinov2_mean": 0.9822159939342074,
-    "livingroom_dinov2_mean": 0.9759745399157206,
-    "observed_contrast": 0.006241454018486858,
+    "bedroom_dinov2_mean": 0.9857442047860888,
+    "livingroom_dinov2_mean": 0.9776459236939748,
+    "observed_contrast": 0.008098281092113968,
     "encoder_norm_check_passed": true
-  },
-  "stop_and_report": {
-    "triggered": true,
-    "reasons": [
-      "S1: observed_contrast=0.0062 < 0.02; perturbation is not producing a meaningful DINOv2-level localisation signal. STOP and report to the experiment chat rather than chasing the threshold."
-    ],
-    "guidance": "Per the reviewer's 2026-05-14 directive: if calibration surfaces an unexpected pattern, STOP and report rather than tuning thresholds to fit. Do NOT lower G_M2 or G_M3 to make the gate pass."
   }
 }
