@@ -103,6 +103,22 @@ class TrainerConfig:
     transition_log_var_widening_min: float = 0.5          # G2.T2
     transition_control_drift_max: float = 0.3             # G2.T3
 
+    # ---- Early-stop at loop boundary (instr §8.7a STOP-for-review). ----
+    # When set, the trainer halts after observing the first step whose
+    # annotation `loop_index` exceeds `max_loops` — i.e. immediately after
+    # the existing transition-diagnostic boundary handler has flushed
+    # `loop=max_loops` and (if applicable) evaluated the §8.7a gates. A
+    # final checkpoint is written at the stop step regardless of
+    # `checkpoint_steps`, so the next session can resume cleanly.
+    max_loops: Optional[int] = None
+
+    # ---- Resume support (session-6 directive). ----
+    # When `resume_step` is set, the trainer skips the bank pre-population
+    # step (the caller is expected to have already loaded the bank from
+    # disk and populated optimizer/predictor/RNG state) and begins the
+    # training loop at `resume_step + 1`.
+    resume_step: Optional[int] = None
+
 
 class OnlineTrainer:
     """Single-pass continuous-time trainer wiring predictor, bank, optimiser, logger."""
@@ -238,10 +254,18 @@ class OnlineTrainer:
                 f"n_train={self.n_train} too small for W+K-1={first_train_step}"
             )
 
-        # Pre-populate the bank with the first W frames (these are inputs to the
-        # first prediction but cannot themselves be trained on yet).
-        for t in range(min(WINDOW_W, self.n_train)):
-            self._append_to_bank(t)
+        if self.cfg.resume_step is None:
+            # Fresh start. Pre-populate the bank with the first W frames
+            # (these are inputs to the first prediction but cannot themselves
+            # be trained on yet).
+            for t in range(min(WINDOW_W, self.n_train)):
+                self._append_to_bank(t)
+            start_step = first_train_step
+        else:
+            # Resume mode: the caller already loaded the bank from disk and
+            # restored predictor/optimizer/RNG state. Skip pre-population and
+            # pick up at the step after the saved checkpoint.
+            start_step = max(int(self.cfg.resume_step) + 1, first_train_step)
 
         ckpt_set = set(int(s) for s in self.cfg.checkpoint_steps)
         ckpt_set.add(int(self.cfg.final_step))
@@ -249,7 +273,7 @@ class OnlineTrainer:
         t0 = time.time()
         # We index by the position in the shuffled order so that the shuffle
         # control sees the same number of gradient updates as the main run.
-        for ordered_pos in range(first_train_step, self.n_train):
+        for ordered_pos in range(start_step, self.n_train):
             t = int(self._order[ordered_pos])
             # window ends at t-K, targets are t-K+1 .. t.
             target_end = t
@@ -339,6 +363,23 @@ class OnlineTrainer:
                                 # Halt training cleanly per instr §8.7a.
                                 break
 
+            # ---- max_loops early-stop (session-6 directive). ----
+            # When set, halt as soon as a step's `loop_index` exceeds
+            # max_loops. The transition-diagnostic boundary handler above
+            # has already flushed and (if `transition_diagnostic_enabled`)
+            # evaluated the §8.7a gates against loop=max_loops, so by the
+            # time we hit this check the per-loop summary is complete. We
+            # write a checkpoint at the current step (the first step of
+            # loop max_loops+1) so the next session can resume cleanly.
+            if self.cfg.max_loops is not None:
+                cur_loop = int(
+                    self._annotations[t].get("loop_index", -1)
+                )
+                if cur_loop > int(self.cfg.max_loops):
+                    if ordered_pos not in ckpt_set:
+                        self._write_checkpoint(ordered_pos)
+                    break
+
             if ordered_pos in ckpt_set:
                 self._write_checkpoint(ordered_pos)
                 if (
@@ -359,10 +400,32 @@ class OnlineTrainer:
             self._flush_loop_to_diagnostic(self._last_loop_seen)
 
         elapsed = time.time() - t0
+        last_step_done = (
+            int(self._step_indices_log[-1]) if self._step_indices_log else -1
+        )
+        # Resolve last_loop_seen from the annotations directly, so the value is
+        # correct independent of whether the §8.7a diagnostic was enabled
+        # (the diag block is the only place that updates self._last_loop_seen).
+        last_loop_observed = -1
+        if last_step_done >= 0:
+            last_loop_observed = int(
+                self._annotations[int(self._order[last_step_done])]
+                .get("loop_index", -1)
+            )
         return {
             "elapsed_seconds": float(elapsed),
             "final_step": int(self.cfg.final_step),
+            "last_step_done": last_step_done,
+            "last_loop_seen": last_loop_observed,
             "n_gradient_steps_actual": int(len(self._losses_log)),
+            "max_loops": (
+                int(self.cfg.max_loops)
+                if self.cfg.max_loops is not None else None
+            ),
+            "stopped_at_max_loops": bool(
+                self.cfg.max_loops is not None
+                and last_loop_observed > int(self.cfg.max_loops)
+            ),
             "transition_diagnostic_gate_tripped": bool(self._diag_gate_tripped),
             "transition_diagnostic_trip_record": self._diag_trip_record,
         }

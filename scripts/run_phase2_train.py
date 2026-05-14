@@ -81,6 +81,22 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", type=Path, default=PHASE2.results_main)
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument(
+        "--max_loops", type=int, default=None,
+        help=(
+            "Halt training as soon as a step's loop_index exceeds this value. "
+            "Used in session 6 to stop at loop 35 (transition-diagnostic review)."
+        ),
+    )
+    parser.add_argument(
+        "--resume_from", type=Path, default=None,
+        help=(
+            "Resume training from this `.pt` checkpoint (and the matching "
+            "ckpt_<step>/ bank directory next to it). Disables the in-flight "
+            "transition diagnostic on the assumption that its evaluation "
+            "window has already passed."
+        ),
+    )
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -117,10 +133,39 @@ def main() -> int:
     print(f"[phase2] held-out region: frames [{held_out_start}, {held_out_end}); "
           f"n_train={n_train}", flush=True)
 
-    # ---- Construct predictor + bank (fresh; Phase 1 discarded). -----------
+    # ---- Construct predictor + bank (fresh or resumed). ------------------
     torch.manual_seed(SEED_PREDICTOR_INIT)
     predictor = InnerPAM()
-    bank = MemoryBank()
+    resume_step: int | None = None
+    resume_optimizer_state: dict | None = None
+    if args.resume_from is not None:
+        if not args.resume_from.is_file():
+            print(f"[phase2] FAIL: resume_from not a file: {args.resume_from}",
+                  file=sys.stderr)
+            return 1
+        ckpt = torch.load(args.resume_from, map_location=device, weights_only=False)
+        predictor.load_state_dict(ckpt["predictor_state"])
+        resume_step = int(ckpt["step"])
+        resume_optimizer_state = ckpt["optimizer_state"]
+        try:
+            # torch.load(map_location=device) puts the RNG byte-tensor on the
+            # GPU; torch.set_rng_state needs a ByteTensor on CPU.
+            torch.set_rng_state(ckpt["rng_torch"].cpu().byte())
+            np.random.set_state(ckpt["rng_numpy"])
+        except Exception as exc:
+            print(f"[phase2] WARN: failed to restore RNG state: {exc}",
+                  file=sys.stderr)
+        bank_dir = args.resume_from.parent / f"ckpt_{resume_step}"
+        if not bank_dir.is_dir():
+            print(f"[phase2] FAIL: bank dir not found alongside checkpoint: "
+                  f"{bank_dir}", file=sys.stderr)
+            return 1
+        bank = MemoryBank.load(bank_dir)
+        print(f"[phase2] resumed from step={resume_step}, "
+              f"bank_size={bank.size()}, ckpt={args.resume_from}",
+              flush=True)
+    else:
+        bank = MemoryBank()
     print(f"[phase2] predictor trainable params: "
           f"{sum(p.numel() for p in predictor.parameters() if p.requires_grad)}",
           flush=True)
@@ -130,6 +175,10 @@ def main() -> int:
         s for s in PHASE_2_3_CKPT_STEPS if 0 < s < final_step
     )
 
+    # The in-flight transition diagnostic is the load-bearing observation in
+    # the loops-25..35 window. Disable when resuming — by construction the
+    # resume entrypoint comes after that window has already been evaluated.
+    diag_enabled = (resume_step is None)
     transition_path = args.output_dir / "transition_diagnostic.json"
     cfg = TrainerConfig(
         phase_name=PHASE2.name,
@@ -138,8 +187,10 @@ def main() -> int:
         checkpoint_steps=ckpt_schedule,
         final_step=final_step,
         git_commit=git,
+        max_loops=args.max_loops,
+        resume_step=resume_step,
         # In-flight transition diagnostic (instr §8.7a).
-        transition_diagnostic_enabled=True,
+        transition_diagnostic_enabled=diag_enabled,
         transition_diagnostic_path=transition_path,
         transition_perturbed_items=TRANSITION_PERTURBED_ITEMS,
         transition_control_items=TRANSITION_CONTROL_ITEMS,
@@ -158,6 +209,7 @@ def main() -> int:
         n_train=n_train,
         device=device,
         cfg=cfg,
+        resume_optimizer_state=resume_optimizer_state,
     )
 
     # ---- Init-time checks ------------------------------------------------
@@ -201,7 +253,15 @@ def main() -> int:
         )
         print(f"[phase2] tau calibrated to {tau:.6f}", flush=True)
 
-    (args.output_dir / "training_summary.json").write_text(
+    summary_path = args.output_dir / "training_summary.json"
+    if summary_path.exists():
+        # Don't clobber an earlier session's summary on resume — keep the
+        # historical record by writing a numbered sidecar instead.
+        i = 1
+        while (args.output_dir / f"training_summary.session{i}.json").exists():
+            i += 1
+        summary_path = args.output_dir / f"training_summary.session{i}.json"
+    summary_path.write_text(
         json.dumps(
             {
                 "phase": PHASE2.name,
@@ -210,6 +270,13 @@ def main() -> int:
                 "held_out_region": [held_out_start, held_out_end],
                 "elapsed_seconds": summary["elapsed_seconds"],
                 "n_gradient_steps_actual": summary["n_gradient_steps_actual"],
+                "last_step_done": summary.get("last_step_done"),
+                "last_loop_seen": summary.get("last_loop_seen"),
+                "max_loops": summary.get("max_loops"),
+                "stopped_at_max_loops": bool(summary.get("stopped_at_max_loops")),
+                "resume_step": resume_step,
+                "resume_from": str(args.resume_from) if args.resume_from else None,
+                "transition_diagnostic_enabled": bool(diag_enabled),
                 "transition_diagnostic_gate_tripped": bool(
                     summary["transition_diagnostic_gate_tripped"]
                 ),
@@ -221,6 +288,7 @@ def main() -> int:
             indent=2,
         )
     )
+    print(f"[phase2] wrote summary: {summary_path}", flush=True)
 
     # Non-zero exit if the in-flight diagnostic tripped.
     return 3 if summary["transition_diagnostic_gate_tripped"] else 0
