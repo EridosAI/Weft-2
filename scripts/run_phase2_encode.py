@@ -61,7 +61,15 @@ _DEFAULT_REPORT = _ROOT / "data" / "phase2_embeddings" / "encode_report.json"
 _EMBED_DIM = 1024
 _NORM_TOL = 1e-5
 _PERTURBATION_GAP_THRESHOLD = 0.05  # instr §8.4 (absolute per-perturbed-item gap)
-_PERTURBATION_SAMPLE_N = 50         # instr §8.4
+# Per-stage apex-frame sample count for the gap calculation. Reduced from 50
+# to 25 on 2026-05-14 because Stage A occupies the first 31 collected loops
+# (PHASE_2_PERTURBATION_START_LOOP=31) → there are 31 apex frames per item
+# per stage in Stage A, less than the original 50-pair requirement inherited
+# from spec §5.1/5.2's substrate-verification pattern. 25 sits well below
+# Stage A's 31-loop natural ceiling and still gives tight within/cross gap
+# estimates (the per-pair sampler draws 500 pairs from the sampled set, so
+# the bottleneck wasn't pair count, it was apex-frame availability).
+_PERTURBATION_SAMPLE_N = 25         # instr §8.4
 
 # Differential go/no-go gate — ratio criterion (reviewer-authorised 2026-05-14
 # post-sixth-STOP fix). perturbed_mean_gap must be at least

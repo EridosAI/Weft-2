@@ -1,0 +1,38 @@
+{
+  "stage_tag": "phase2_main_collection",
+  "launch_timestamp_utc": "2026-05-14T05:10:19Z",
+  "wall_clock_seconds": 3835.0576009750366,
+  "frames_written": 65000,
+  "max_frames_requested": 65000,
+  "perturbation_start_loop": 31,
+  "stage_a_frames": 11160,
+  "stage_b_frames": 53840,
+  "close_up_frames_per_item": {
+    "1": 1991,
+    "2": 1991,
+    "3": 1991,
+    "4": 1980,
+    "5": 1980
+  },
+  "transit_frames": 55067,
+  "perturbed_loops_count": 150,
+  "explorer_stats": {
+    "frames_emitted": 65000,
+    "close_up_frames_emitted": 9933,
+    "transit_frames_emitted": 55067,
+    "loops_completed": 180,
+    "transitions_planned": 902,
+    "transitions_planner_fallback": 361,
+    "teleport_failures": 0
+  },
+  "house_seed": 7,
+  "items": [
+    "Bed",
+    "DiningTable",
+    "Dresser",
+    "Sofa",
+    "Television"
+  ],
+  "failed": false,
+  "fail_msg": ""
+}

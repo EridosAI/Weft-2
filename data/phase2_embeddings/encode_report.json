@@ -1,0 +1,115 @@
+{
+  "config": {
+    "frames_dir": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_frames",
+    "annotations": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_annotations.jsonl",
+    "model_id": "facebook/dinov2-large",
+    "batch_size": 64,
+    "num_workers": 4,
+    "seed": 42,
+    "perturbation_gap_threshold": 0.05,
+    "perturbation_sample_n": 25,
+    "differential_ratio_min": 2.0,
+    "control_gap_near_zero": 0.001,
+    "norm_tolerance": 1e-05
+  },
+  "n_frames_encoded": 65000,
+  "encode_seconds": 139.4769880771637,
+  "norm_check": {
+    "passed": true,
+    "tolerance": 1e-05,
+    "n_total": 65000,
+    "n_out_of_range": 0,
+    "norms_min": 0.9999998807907104,
+    "norms_max": 1.0000001192092896
+  },
+  "absolute_perturbation_effect_checks": {
+    "Dresser": {
+      "passed": false,
+      "item": "Dresser",
+      "viewing_position_id": 3,
+      "n_stage_a": 31,
+      "n_stage_b": 150,
+      "within_stage_a_mean_cosine": 0.9999998807907104,
+      "within_stage_b_mean_cosine": 0.9856463505162133,
+      "cross_stage_mean_cosine": 0.9831246137619019,
+      "within_avg_minus_cross": 0.009698501891560074,
+      "gap_threshold": 0.05,
+      "criterion": "within - cross > 0.05"
+    },
+    "Sofa": {
+      "passed": false,
+      "item": "Sofa",
+      "viewing_position_id": 4,
+      "n_stage_a": 31,
+      "n_stage_b": 149,
+      "within_stage_a_mean_cosine": 1.0,
+      "within_stage_b_mean_cosine": 0.9616905550779022,
+      "cross_stage_mean_cosine": 0.967287003993988,
+      "within_avg_minus_cross": 0.013558273544963084,
+      "gap_threshold": 0.05,
+      "criterion": "within - cross > 0.05"
+    }
+  },
+  "differential_control_item_effect_checks": {
+    "Bed": {
+      "passed": false,
+      "item": "Bed",
+      "viewing_position_id": 1,
+      "n_stage_a": 31,
+      "n_stage_b": 150,
+      "within_stage_a_mean_cosine": 0.9999998807907104,
+      "within_stage_b_mean_cosine": 0.9954217397345382,
+      "cross_stage_mean_cosine": 0.9931939244270325,
+      "within_avg_minus_cross": 0.004516885835591844,
+      "gap_threshold": 0.05,
+      "criterion": "within - cross > 0.05"
+    },
+    "DiningTable": {
+      "passed": false,
+      "item": "DiningTable",
+      "viewing_position_id": 2,
+      "n_stage_a": 31,
+      "n_stage_b": 150,
+      "within_stage_a_mean_cosine": 0.9999695986755623,
+      "within_stage_b_mean_cosine": 0.9826914360084295,
+      "cross_stage_mean_cosine": 0.9769307374954224,
+      "within_avg_minus_cross": 0.01439977984657359,
+      "gap_threshold": 0.05,
+      "criterion": "within - cross > 0.05"
+    },
+    "Television": {
+      "passed": false,
+      "item": "Television",
+      "viewing_position_id": 5,
+      "n_stage_a": 31,
+      "n_stage_b": 149,
+      "within_stage_a_mean_cosine": 0.9999868442967441,
+      "within_stage_b_mean_cosine": 0.9885289983136031,
+      "cross_stage_mean_cosine": 0.9874625205993652,
+      "within_avg_minus_cross": 0.006795400705808419,
+      "gap_threshold": 0.05,
+      "criterion": "within - cross > 0.05"
+    }
+  },
+  "differential_summary": {
+    "perturbed_items": [
+      "Dresser",
+      "Sofa"
+    ],
+    "control_items": [
+      "Bed",
+      "DiningTable",
+      "Television"
+    ],
+    "perturbed_mean_gap": 0.011628387718261579,
+    "control_mean_gap": 0.008570688795991285,
+    "contrast_perturbed_minus_control": 0.003057698922270294,
+    "ratio_perturbed_over_control": 1.356762332066059,
+    "ratio_threshold_min": 2.0,
+    "control_gap_near_zero": 0.001,
+    "differential_gate_pass": false,
+    "differential_gate_reason": "perturbed_mean_gap / control_mean_gap = 1.357 vs threshold 2.0",
+    "note": "Differential go/no-go gate (ratio criterion, reviewer-authorised 2026-05-14 post-sixth-STOP fix). Phase 2 training launches only if perturbed_mean_gap / control_mean_gap >= 2.0, or control_mean_gap <= 0.001 (clean locality by construction). Ratio formulation is robust to absolute scale of the gaps."
+  },
+  "overall_pass": false
+}
