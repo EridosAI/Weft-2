@@ -1,0 +1,158 @@
+{
+  "timestamp_utc": "2026-05-14T02:15:12Z",
+  "house_seed": 7,
+  "num_random_calls": 6,
+  "per_item": {
+    "Bed": {
+      "viewing_position_id": 1,
+      "scope": "Bedroom",
+      "expected_role": "control (Bedroom items should be unchanged)",
+      "dinov2_per_call": [
+        0.989077627658844,
+        0.9868401885032654,
+        0.9890874624252319,
+        0.983440637588501,
+        0.9878999590873718,
+        0.9876071214675903
+      ],
+      "dinov2_mean": 0.987325499455134,
+      "dinov2_std": 0.0019109971227968118,
+      "dinov2_min": 0.983440637588501,
+      "dinov2_max": 0.9890874624252319,
+      "flat_rgb_per_call": [
+        0.9964016372702599,
+        0.9942957128214083,
+        0.996398601315827,
+        0.9918779375900527,
+        0.9942998882414514,
+        0.9936429381414277
+      ],
+      "flat_rgb_mean": 0.9944861192300712,
+      "flat_rgb_std": 0.0015764569709627882
+    },
+    "DiningTable": {
+      "viewing_position_id": 2,
+      "scope": "Bedroom",
+      "expected_role": "control (Bedroom items should be unchanged)",
+      "dinov2_per_call": [
+        0.9514801502227783,
+        0.9522339105606079,
+        0.973884642124176,
+        0.9466906189918518,
+        0.962399959564209,
+        0.9517255425453186
+      ],
+      "dinov2_mean": 0.956402470668157,
+      "dinov2_std": 0.009123194282175374,
+      "dinov2_min": 0.9466906189918518,
+      "dinov2_max": 0.973884642124176,
+      "flat_rgb_per_call": [
+        0.9951235502748798,
+        0.9900460292891872,
+        0.9909473392084196,
+        0.9761003804948725,
+        0.9817072713576842,
+        0.9871980053838528
+      ],
+      "flat_rgb_mean": 0.9868537626681494,
+      "flat_rgb_std": 0.006292554146924126
+    },
+    "Dresser": {
+      "viewing_position_id": 3,
+      "scope": "LivingRoom",
+      "expected_role": "perturbed (LivingRoom items get re-textured)",
+      "dinov2_per_call": [
+        0.983643651008606,
+        0.9946368932723999,
+        0.9802918434143066,
+        0.9819779396057129,
+        0.9802244901657104,
+        0.9848958849906921
+      ],
+      "dinov2_mean": 0.9842784504095713,
+      "dinov2_std": 0.0049278378158525964,
+      "dinov2_min": 0.9802244901657104,
+      "dinov2_max": 0.9946368932723999,
+      "flat_rgb_per_call": [
+        0.9810769435886402,
+        0.9946605287955754,
+        0.9677888960142592,
+        0.9773107079640452,
+        0.9506932422280315,
+        0.9839194511766483
+      ],
+      "flat_rgb_mean": 0.9759082949611999,
+      "flat_rgb_std": 0.013821662418994974
+    },
+    "Sofa": {
+      "viewing_position_id": 4,
+      "scope": "LivingRoom",
+      "expected_role": "perturbed (LivingRoom items get re-textured)",
+      "dinov2_per_call": [
+        0.9704246520996094,
+        0.981063723564148,
+        0.9860404133796692,
+        0.9812503457069397,
+        0.9745652675628662,
+        0.9735889434814453
+      ],
+      "dinov2_mean": 0.9778222242991129,
+      "dinov2_std": 0.005370451156493283,
+      "dinov2_min": 0.9704246520996094,
+      "dinov2_max": 0.9860404133796692,
+      "flat_rgb_per_call": [
+        0.9847425320850509,
+        0.990438093677807,
+        0.9920167358751297,
+        0.9909166378413896,
+        0.9927971859847937,
+        0.9484188530725521
+      ],
+      "flat_rgb_mean": 0.983221673089454,
+      "flat_rgb_std": 0.015779111077981575
+    },
+    "Television": {
+      "viewing_position_id": 5,
+      "scope": "Bedroom",
+      "expected_role": "control (Bedroom items should be unchanged)",
+      "dinov2_per_call": [
+        0.9928144216537476,
+        0.9857799410820007,
+        0.9938564300537109,
+        0.9853394031524658,
+        0.9870164394378662,
+        0.988361120223999
+      ],
+      "dinov2_mean": 0.9888612926006317,
+      "dinov2_std": 0.0033199075175554555,
+      "dinov2_min": 0.9853394031524658,
+      "dinov2_max": 0.9938564300537109,
+      "flat_rgb_per_call": [
+        0.987436945670195,
+        0.9889941069867043,
+        0.9958452646510897,
+        0.9811175505870386,
+        0.9895444537560215,
+        0.9979408070825773
+      ],
+      "flat_rgb_mean": 0.9901465214556046,
+      "flat_rgb_std": 0.00553445605499798
+    }
+  },
+  "aggregate": {
+    "bedroom_dinov2_mean": 0.9775297542413076,
+    "livingroom_dinov2_mean": 0.9810503373543421,
+    "bedroom_minus_livingroom_contrast": -0.0035205831130344922,
+    "bedroom_items_below_0_98_dinov2_mean": [
+      "DiningTable"
+    ],
+    "bedroom_items_above_0_98_dinov2_mean": [
+      "Bed",
+      "Television"
+    ]
+  },
+  "affected_items": [
+    "DiningTable"
+  ],
+  "rationale": "Items in the Bedroom whose 3+ call DINOv2 mean cosine sits below 0.98 under LivingRoom-scoped RandomizeMaterials are treated as 'affected' \u2014 their representation is sensitive to out-of-scope perturbation, indicating the viewing pose's FOV catches visible LivingRoom content (the doorway-bleed pattern). Std across draws separates 'consistent leak' (low std, real cross-room sensitivity) from 'lottery noise' (high std)."
+}

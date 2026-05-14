@@ -1,0 +1,159 @@
+{
+  "seed": 7,
+  "house_room_types": [
+    "Bathroom",
+    "Bedroom",
+    "Kitchen",
+    "LivingRoom"
+  ],
+  "items": [
+    {
+      "item_id": 1,
+      "object_id": "Bed|4|0",
+      "object_type": "Bed",
+      "object_centroid": {
+        "x": 11.348219871520996,
+        "y": 0.6060875058174133,
+        "z": 0.5480688810348511
+      },
+      "viewing_position": {
+        "x": 11.75,
+        "y": 0.9009997844696045,
+        "z": 2.25
+      },
+      "viewing_heading_deg": 193.28280273980442,
+      "viewing_distance_m": 1.7487128996329182,
+      "viewing_room_type": "Bedroom",
+      "viewing_room_id": "room|4"
+    },
+    {
+      "item_id": 2,
+      "object_id": "DiningTable|4|1|0",
+      "object_type": "DiningTable",
+      "object_centroid": {
+        "x": 9.740991592407227,
+        "y": 0.37085551023483276,
+        "z": 3.971683979034424
+      },
+      "viewing_position": {
+        "x": 8.25,
+        "y": 0.9009997844696045,
+        "z": 4.75
+      },
+      "viewing_heading_deg": 117.56511489014792,
+      "viewing_distance_m": 1.6819131241299963,
+      "viewing_room_type": "Bedroom",
+      "viewing_room_id": "room|4",
+      "pose_adjusted_2026_05_14": {
+        "previous_pose": {
+          "viewing_position": {
+            "x": 11.0,
+            "y": 0.9009997844696045,
+            "z": 2.75
+          },
+          "viewing_heading_deg": 314.13799434060377
+        },
+        "reason": "DiningTable doorway view-through into LivingRoom caused DINOv2 representation to shift under out-of-scope perturbation. New pose approaches DT from the northwest (heading 117.56 deg), placing the doorway behind the agent.",
+        "rationale_metric": "DINOv2 stability 3-call mean cosine 0.9827 (vs 0.9564 at original pose); motion-continuity consec cosines [0.765, 0.978] with 0 bit-identical pairs."
+      }
+    },
+    {
+      "item_id": 3,
+      "object_id": "Dresser|4|2",
+      "object_type": "Dresser",
+      "object_centroid": {
+        "x": 7.286728382110596,
+        "y": 0.6141960620880127,
+        "z": 1.8223196268081665
+      },
+      "viewing_position": {
+        "x": 6.0,
+        "y": 0.9009997844696045,
+        "z": 3.0
+      },
+      "viewing_heading_deg": 132.4663628280541,
+      "viewing_distance_m": 1.7443053031881224,
+      "viewing_room_type": "LivingRoom",
+      "viewing_room_id": "room|7"
+    },
+    {
+      "item_id": 4,
+      "object_id": "Sofa|7|0|1",
+      "object_type": "Sofa",
+      "object_centroid": {
+        "x": 3.7731752395629883,
+        "y": 0.44729354977607727,
+        "z": 1.036520004272461
+      },
+      "viewing_position": {
+        "x": 5.5,
+        "y": 0.9009997844696045,
+        "z": 0.75
+      },
+      "viewing_heading_deg": 279.42086177011856,
+      "viewing_distance_m": 1.7504335080506868,
+      "viewing_room_type": "LivingRoom",
+      "viewing_room_id": "room|7"
+    },
+    {
+      "item_id": 5,
+      "object_id": "Television|4|3|1",
+      "object_type": "Television",
+      "object_centroid": {
+        "x": 12.138110160827637,
+        "y": 0.852537989616394,
+        "z": 1.9287033081054688
+      },
+      "viewing_position": {
+        "x": 10.75,
+        "y": 0.9009997844696045,
+        "z": 3.0
+      },
+      "viewing_heading_deg": 127.65975107822524,
+      "viewing_distance_m": 1.7534327533889327,
+      "viewing_room_type": "Bedroom",
+      "viewing_room_id": "room|4"
+    }
+  ],
+  "viewing_distance_target": 1.75,
+  "viewing_distance_window": [
+    1.5,
+    2.0
+  ],
+  "scaffolding": {
+    "search_set": [
+      7,
+      42,
+      3,
+      1,
+      100
+    ],
+    "curated_furniture_types": [
+      "Sofa",
+      "Bed",
+      "Refrigerator",
+      "DiningTable",
+      "Bathtub",
+      "Toilet",
+      "Television",
+      "Dresser",
+      "Desk",
+      "ArmChair",
+      "ShowerCurtain",
+      "Stove"
+    ],
+    "min_rooms": 4,
+    "width": 300,
+    "height": 300,
+    "grid_size": 0.25
+  },
+  "_phase2_pose_adjustment": {
+    "date_utc": "2026-05-14",
+    "affected_items": [
+      "DiningTable (item_id=2)"
+    ],
+    "source_route": "/mnt/c/Users/Jason/Desktop/Eridos/Weft/results/stage_0b_furniture/route.json",
+    "reason_summary": "Cross-room DINOv2 bleed at item 2 (DiningTable) viewing pose; doorway view-through into LivingRoom.",
+    "workflow": "extended_diagnostic -> pose_search -> motion_continuity_check (see results/inner_pam_v0/phase2_{extended_diagnostic,pose_search,motion_continuity}/)."
+  }
+}

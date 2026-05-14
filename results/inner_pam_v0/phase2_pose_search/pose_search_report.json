@@ -1,0 +1,516 @@
+{
+  "timestamp_utc": "2026-05-14T02:20:14Z",
+  "house_seed": 7,
+  "affected_items": [
+    "DiningTable"
+  ],
+  "candidates_per_item": 12,
+  "n_random_draws": 3,
+  "items": {
+    "DiningTable": {
+      "viewing_position_id": 2,
+      "current_pose": {
+        "viewing_position": {
+          "x": 11.0,
+          "y": 0.9009997844696045,
+          "z": 2.75
+        },
+        "viewing_heading_deg": 314.13799434060377
+      },
+      "centroid": {
+        "x": 9.740991592407227,
+        "y": 0.37085551023483276,
+        "z": 3.971683979034424
+      },
+      "viewing_distance_m": 1.75431294671694,
+      "candidates": [
+        {
+          "candidate_id": "DiningTable_h360",
+          "heading_deg": 359.7002126805091,
+          "viewing_position": {
+            "x": 9.75,
+            "y": 0.901,
+            "z": 2.25
+          },
+          "snapped_distance_m": 1.7217075463246259,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9550954103469849,
+            0.9703842997550964,
+            0.9712139964103699
+          ],
+          "dinov2_mean": 0.9655645688374838,
+          "dinov2_std": 0.007410558177777221,
+          "dinov2_min": 0.9550954103469849,
+          "dinov2_max": 0.9712139964103699,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h034",
+          "heading_deg": 33.95524250751396,
+          "viewing_position": {
+            "x": 8.75,
+            "y": 0.901,
+            "z": 2.5
+          },
+          "snapped_distance_m": 1.7742373207574023,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.918669581413269,
+            0.9418627619743347,
+            0.9551047086715698
+          ],
+          "dinov2_mean": 0.9385456840197245,
+          "dinov2_std": 0.015058372625660536,
+          "dinov2_min": 0.918669581413269,
+          "dinov2_max": 0.9551047086715698,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h057",
+          "heading_deg": 56.90758429581268,
+          "viewing_position": {
+            "x": 8.25,
+            "y": 0.901,
+            "z": 3.0
+          },
+          "snapped_distance_m": 1.7796701053119952,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9632211923599243,
+            0.9362967014312744,
+            0.9665857553482056
+          ],
+          "dinov2_mean": 0.9553678830464681,
+          "dinov2_std": 0.013555135488694662,
+          "dinov2_min": 0.9362967014312744,
+          "dinov2_max": 0.9665857553482056,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h091",
+          "heading_deg": 90.93179396624271,
+          "viewing_position": {
+            "x": 8.0,
+            "y": 0.901,
+            "z": 4.0
+          },
+          "snapped_distance_m": 1.7412218474037056,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.958046019077301,
+            0.9630604386329651,
+            0.9835574626922607
+          ],
+          "dinov2_mean": 0.9682213068008423,
+          "dinov2_std": 0.011035831308801144,
+          "dinov2_min": 0.958046019077301,
+          "dinov2_max": 0.9835574626922607,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h118",
+          "heading_deg": 117.56511489014792,
+          "viewing_position": {
+            "x": 8.25,
+            "y": 0.901,
+            "z": 4.75
+          },
+          "snapped_distance_m": 1.6819131241299963,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9713155031204224,
+            0.9865673184394836,
+            0.9901538491249084
+          ],
+          "dinov2_mean": 0.9826788902282715,
+          "dinov2_std": 0.008167444541654268,
+          "dinov2_min": 0.9713155031204224,
+          "dinov2_max": 0.9901538491249084,
+          "passes_stability_threshold": true
+        },
+        {
+          "candidate_id": "DiningTable_h147",
+          "heading_deg": 147.03979376644503,
+          "viewing_position": {
+            "x": 8.75,
+            "y": 0.901,
+            "z": 5.5
+          },
+          "snapped_distance_m": 1.8214868092198369,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9849435091018677,
+            0.9436423778533936,
+            0.9866955280303955
+          ],
+          "dinov2_mean": 0.9717604716618856,
+          "dinov2_std": 0.019895356110557528,
+          "dinov2_min": 0.9436423778533936,
+          "dinov2_max": 0.9866955280303955,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h180",
+          "heading_deg": 180.29024049393595,
+          "viewing_position": {
+            "x": 9.75,
+            "y": 0.901,
+            "z": 5.75
+          },
+          "snapped_distance_m": 1.7783388377444262,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9573957920074463,
+            0.9695116281509399,
+            0.9797468781471252
+          ],
+          "dinov2_mean": 0.9688847661018372,
+          "dinov2_std": 0.00913555252579325,
+          "dinov2_min": 0.9573957920074463,
+          "dinov2_max": 0.9797468781471252,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h206",
+          "heading_deg": 206.41039834795507,
+          "viewing_position": {
+            "x": 10.5,
+            "y": 0.901,
+            "z": 5.5
+          },
+          "snapped_distance_m": 1.7064125007560655,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.97950279712677,
+            0.9520047903060913,
+            0.9814081788063049
+          ],
+          "dinov2_mean": 0.970971922079722,
+          "dinov2_std": 0.013434326322890988,
+          "dinov2_min": 0.9520047903060913,
+          "dinov2_max": 0.9814081788063049,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h243",
+          "heading_deg": 242.7162315105248,
+          "viewing_position": {
+            "x": 11.25,
+            "y": 0.901,
+            "z": 4.75
+          },
+          "snapped_distance_m": 1.69790523960478,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.961946964263916,
+            0.9405759572982788,
+            0.9734333753585815
+          ],
+          "dinov2_mean": 0.9586520989735922,
+          "dinov2_std": 0.013614810155572324,
+          "dinov2_min": 0.9405759572982788,
+          "dinov2_max": 0.9734333753585815,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h269",
+          "heading_deg": 269.07774836738764,
+          "viewing_position": {
+            "x": 11.5,
+            "y": 0.901,
+            "z": 4.0
+          },
+          "snapped_distance_m": 1.7592363044870885,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9505581855773926,
+            0.94794762134552,
+            0.9638245701789856
+          ],
+          "dinov2_mean": 0.9541101257006327,
+          "dinov2_std": 0.006951334885925793,
+          "dinov2_min": 0.94794762134552,
+          "dinov2_max": 0.9638245701789856,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h326",
+          "heading_deg": 325.56488555920237,
+          "viewing_position": {
+            "x": 10.75,
+            "y": 0.901,
+            "z": 2.5
+          },
+          "snapped_distance_m": 1.7843631078733664,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9680395722389221,
+            0.9504722952842712,
+            0.9467805624008179
+          ],
+          "dinov2_mean": 0.955097476641337,
+          "dinov2_std": 0.00927471838794276,
+          "dinov2_min": 0.9467805624008179,
+          "dinov2_max": 0.9680395722389221,
+          "passes_stability_threshold": false
+        }
+      ],
+      "ranked_candidates": [
+        {
+          "candidate_id": "DiningTable_h118",
+          "heading_deg": 117.56511489014792,
+          "viewing_position": {
+            "x": 8.25,
+            "y": 0.901,
+            "z": 4.75
+          },
+          "snapped_distance_m": 1.6819131241299963,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9713155031204224,
+            0.9865673184394836,
+            0.9901538491249084
+          ],
+          "dinov2_mean": 0.9826788902282715,
+          "dinov2_std": 0.008167444541654268,
+          "dinov2_min": 0.9713155031204224,
+          "dinov2_max": 0.9901538491249084,
+          "passes_stability_threshold": true
+        },
+        {
+          "candidate_id": "DiningTable_h147",
+          "heading_deg": 147.03979376644503,
+          "viewing_position": {
+            "x": 8.75,
+            "y": 0.901,
+            "z": 5.5
+          },
+          "snapped_distance_m": 1.8214868092198369,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9849435091018677,
+            0.9436423778533936,
+            0.9866955280303955
+          ],
+          "dinov2_mean": 0.9717604716618856,
+          "dinov2_std": 0.019895356110557528,
+          "dinov2_min": 0.9436423778533936,
+          "dinov2_max": 0.9866955280303955,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h206",
+          "heading_deg": 206.41039834795507,
+          "viewing_position": {
+            "x": 10.5,
+            "y": 0.901,
+            "z": 5.5
+          },
+          "snapped_distance_m": 1.7064125007560655,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.97950279712677,
+            0.9520047903060913,
+            0.9814081788063049
+          ],
+          "dinov2_mean": 0.970971922079722,
+          "dinov2_std": 0.013434326322890988,
+          "dinov2_min": 0.9520047903060913,
+          "dinov2_max": 0.9814081788063049,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h180",
+          "heading_deg": 180.29024049393595,
+          "viewing_position": {
+            "x": 9.75,
+            "y": 0.901,
+            "z": 5.75
+          },
+          "snapped_distance_m": 1.7783388377444262,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9573957920074463,
+            0.9695116281509399,
+            0.9797468781471252
+          ],
+          "dinov2_mean": 0.9688847661018372,
+          "dinov2_std": 0.00913555252579325,
+          "dinov2_min": 0.9573957920074463,
+          "dinov2_max": 0.9797468781471252,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h091",
+          "heading_deg": 90.93179396624271,
+          "viewing_position": {
+            "x": 8.0,
+            "y": 0.901,
+            "z": 4.0
+          },
+          "snapped_distance_m": 1.7412218474037056,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.958046019077301,
+            0.9630604386329651,
+            0.9835574626922607
+          ],
+          "dinov2_mean": 0.9682213068008423,
+          "dinov2_std": 0.011035831308801144,
+          "dinov2_min": 0.958046019077301,
+          "dinov2_max": 0.9835574626922607,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h360",
+          "heading_deg": 359.7002126805091,
+          "viewing_position": {
+            "x": 9.75,
+            "y": 0.901,
+            "z": 2.25
+          },
+          "snapped_distance_m": 1.7217075463246259,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9550954103469849,
+            0.9703842997550964,
+            0.9712139964103699
+          ],
+          "dinov2_mean": 0.9655645688374838,
+          "dinov2_std": 0.007410558177777221,
+          "dinov2_min": 0.9550954103469849,
+          "dinov2_max": 0.9712139964103699,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h243",
+          "heading_deg": 242.7162315105248,
+          "viewing_position": {
+            "x": 11.25,
+            "y": 0.901,
+            "z": 4.75
+          },
+          "snapped_distance_m": 1.69790523960478,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.961946964263916,
+            0.9405759572982788,
+            0.9734333753585815
+          ],
+          "dinov2_mean": 0.9586520989735922,
+          "dinov2_std": 0.013614810155572324,
+          "dinov2_min": 0.9405759572982788,
+          "dinov2_max": 0.9734333753585815,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h057",
+          "heading_deg": 56.90758429581268,
+          "viewing_position": {
+            "x": 8.25,
+            "y": 0.901,
+            "z": 3.0
+          },
+          "snapped_distance_m": 1.7796701053119952,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9632211923599243,
+            0.9362967014312744,
+            0.9665857553482056
+          ],
+          "dinov2_mean": 0.9553678830464681,
+          "dinov2_std": 0.013555135488694662,
+          "dinov2_min": 0.9362967014312744,
+          "dinov2_max": 0.9665857553482056,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h326",
+          "heading_deg": 325.56488555920237,
+          "viewing_position": {
+            "x": 10.75,
+            "y": 0.901,
+            "z": 2.5
+          },
+          "snapped_distance_m": 1.7843631078733664,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9680395722389221,
+            0.9504722952842712,
+            0.9467805624008179
+          ],
+          "dinov2_mean": 0.955097476641337,
+          "dinov2_std": 0.00927471838794276,
+          "dinov2_min": 0.9467805624008179,
+          "dinov2_max": 0.9680395722389221,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h269",
+          "heading_deg": 269.07774836738764,
+          "viewing_position": {
+            "x": 11.5,
+            "y": 0.901,
+            "z": 4.0
+          },
+          "snapped_distance_m": 1.7592363044870885,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.9505581855773926,
+            0.94794762134552,
+            0.9638245701789856
+          ],
+          "dinov2_mean": 0.9541101257006327,
+          "dinov2_std": 0.006951334885925793,
+          "dinov2_min": 0.94794762134552,
+          "dinov2_max": 0.9638245701789856,
+          "passes_stability_threshold": false
+        },
+        {
+          "candidate_id": "DiningTable_h034",
+          "heading_deg": 33.95524250751396,
+          "viewing_position": {
+            "x": 8.75,
+            "y": 0.901,
+            "z": 2.5
+          },
+          "snapped_distance_m": 1.7742373207574023,
+          "teleport_ok": true,
+          "screened_in": true,
+          "dinov2_per_draw": [
+            0.918669581413269,
+            0.9418627619743347,
+            0.9551047086715698
+          ],
+          "dinov2_mean": 0.9385456840197245,
+          "dinov2_std": 0.015058372625660536,
+          "dinov2_min": 0.918669581413269,
+          "dinov2_max": 0.9551047086715698,
+          "passes_stability_threshold": false
+        }
+      ]
+    }
+  }
+}

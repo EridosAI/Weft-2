@@ -1,0 +1,109 @@
+{
+  "timestamp_utc": "2026-05-14T02:25:06Z",
+  "house_seed": 7,
+  "top_k_checked": 3,
+  "candidates_checked": [
+    {
+      "item_label": "DiningTable",
+      "candidate_id": "DiningTable_h118",
+      "heading_deg": 117.56511489014792,
+      "viewing_position": {
+        "x": 8.25,
+        "y": 0.901,
+        "z": 4.75
+      },
+      "n_sweep_frames": 11,
+      "n_consec_pairs": 10,
+      "consec_cosines_min": 0.7645413875579834,
+      "consec_cosines_max": 0.978481650352478,
+      "consec_cosines_mean": 0.9384974777698517,
+      "n_bit_identical": 0,
+      "motion_continuity_pass": true,
+      "dinov2_stability_mean": 0.9826788902282715,
+      "dinov2_stability_std": 0.008167444541654268,
+      "passes_stability_threshold": true
+    },
+    {
+      "item_label": "DiningTable",
+      "candidate_id": "DiningTable_h147",
+      "heading_deg": 147.03979376644503,
+      "viewing_position": {
+        "x": 8.75,
+        "y": 0.901,
+        "z": 5.5
+      },
+      "n_sweep_frames": 11,
+      "n_consec_pairs": 10,
+      "consec_cosines_min": 0.8882970809936523,
+      "consec_cosines_max": 0.9528733491897583,
+      "consec_cosines_mean": 0.9198873817920685,
+      "n_bit_identical": 0,
+      "motion_continuity_pass": true,
+      "dinov2_stability_mean": 0.9717604716618856,
+      "dinov2_stability_std": 0.019895356110557528,
+      "passes_stability_threshold": false
+    },
+    {
+      "item_label": "DiningTable",
+      "candidate_id": "DiningTable_h206",
+      "heading_deg": 206.41039834795507,
+      "viewing_position": {
+        "x": 10.5,
+        "y": 0.901,
+        "z": 5.5
+      },
+      "n_sweep_frames": 11,
+      "n_consec_pairs": 10,
+      "consec_cosines_min": 0.9426425695419312,
+      "consec_cosines_max": 0.9830655455589294,
+      "consec_cosines_mean": 0.9681702375411987,
+      "n_bit_identical": 0,
+      "motion_continuity_pass": true,
+      "dinov2_stability_mean": 0.970971922079722,
+      "dinov2_stability_std": 0.013434326322890988,
+      "passes_stability_threshold": false
+    }
+  ],
+  "survivors_ranked": [
+    {
+      "item_label": "DiningTable",
+      "candidate_id": "DiningTable_h118",
+      "heading_deg": 117.56511489014792,
+      "viewing_position": {
+        "x": 8.25,
+        "y": 0.901,
+        "z": 4.75
+      },
+      "n_sweep_frames": 11,
+      "n_consec_pairs": 10,
+      "consec_cosines_min": 0.7645413875579834,
+      "consec_cosines_max": 0.978481650352478,
+      "consec_cosines_mean": 0.9384974777698517,
+      "n_bit_identical": 0,
+      "motion_continuity_pass": true,
+      "dinov2_stability_mean": 0.9826788902282715,
+      "dinov2_stability_std": 0.008167444541654268,
+      "passes_stability_threshold": true
+    }
+  ],
+  "best_candidate": {
+    "item_label": "DiningTable",
+    "candidate_id": "DiningTable_h118",
+    "heading_deg": 117.56511489014792,
+    "viewing_position": {
+      "x": 8.25,
+      "y": 0.901,
+      "z": 4.75
+    },
+    "n_sweep_frames": 11,
+    "n_consec_pairs": 10,
+    "consec_cosines_min": 0.7645413875579834,
+    "consec_cosines_max": 0.978481650352478,
+    "consec_cosines_mean": 0.9384974777698517,
+    "n_bit_identical": 0,
+    "motion_continuity_pass": true,
+    "dinov2_stability_mean": 0.9826788902282715,
+    "dinov2_stability_std": 0.008167444541654268,
+    "passes_stability_threshold": true
+  }
+}
