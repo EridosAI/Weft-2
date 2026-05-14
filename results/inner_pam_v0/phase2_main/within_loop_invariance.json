@@ -1,0 +1,174 @@
+{
+  "method": "For Bed (vp=1) at each Stage B loop in {50, 75, 100}, gather the close-up frames in temporal order; compute pairwise pixel-MD5 hashes and pairwise DINOv2 cosines across the within-loop ordinals. The 11 ordinals are at 11 different agent poses along the close-up sweep, so cosines reflect pose-driven view changes at fixed scene state (RandomizeMaterials fires once per loop).",
+  "item": "Bed",
+  "viewing_position_id": 1,
+  "stage_b_loops_sampled": [
+    50,
+    75,
+    100
+  ],
+  "per_loop": {
+    "50": {
+      "n_ordinals": 11,
+      "frame_idxs": [
+        18000,
+        18001,
+        18002,
+        18003,
+        18004,
+        18005,
+        18006,
+        18007,
+        18008,
+        18009,
+        18010
+      ],
+      "pixel_md5_per_ordinal": [
+        "4779fcf262799658e8aad0e190b5bb14",
+        "36b6a2cb0e28ff5e97cd1f58c5ebdcac",
+        "807004a5c09abd69f5d7c8e5ae9d0434",
+        "f1e98b139f4627c6c920bfbad13f31b8",
+        "0dbebb84eabe4b3d258473bd50f52c31",
+        "4d087b7d9587d2ea486816fc79319caf",
+        "f3011087319559fb4e571070a0ddc8a8",
+        "d69b5937f0a2fdecd97423f5b86485cd",
+        "a1481804ed491d01b336ce490778b8d1",
+        "403d624dd8acdd61702a2fb38c8a7f85",
+        "7497882af923a190c3fc93e5bec8b389"
+      ],
+      "n_unique_pixel_md5": 11,
+      "all_identical_pixel_md5": false,
+      "pairwise_cosines_off_diag": {
+        "n_pairs": 55,
+        "min": 0.31969202944404296,
+        "max": 0.983727915360878,
+        "mean": 0.7340885353383004
+      },
+      "pose_step_distances_m": [
+        0.20000008091365726,
+        0.19999920753073638,
+        0.20000013569206715,
+        0.20000008091365726,
+        0.20000013569206715,
+        0.20000013569206715,
+        0.20000008091365726,
+        0.20000013569206715,
+        0.19999920753073638,
+        0.20000008091365726
+      ],
+      "pose_total_span_m": 1.999999281483652,
+      "rotation_y_min_max": [
+        193.28280639648438,
+        193.28280639648438
+      ]
+    },
+    "75": {
+      "n_ordinals": 11,
+      "frame_idxs": [
+        27000,
+        27001,
+        27002,
+        27003,
+        27004,
+        27005,
+        27006,
+        27007,
+        27008,
+        27009,
+        27010
+      ],
+      "pixel_md5_per_ordinal": [
+        "1f833dd1bb78621974f9631a2af6a326",
+        "58d53a772226bbe23868c3b6decaa3c2",
+        "81c6103e83c99747dbbb1fc702d5f2c6",
+        "2b6f702ab6a6234bdb464959104bd7c4",
+        "180520e59fa1bc25037e559b8de240fd",
+        "d576edfef845e3d2cd1b8b45dbaee7d9",
+        "61bdff18c1dd904e5a5faf8646d25c48",
+        "c2590da8d8c1528c40958b1cd29e02f7",
+        "1492b6bdbc4b063d8f3ca58242c48b62",
+        "403d624dd8acdd61702a2fb38c8a7f85",
+        "7497882af923a190c3fc93e5bec8b389"
+      ],
+      "n_unique_pixel_md5": 11,
+      "all_identical_pixel_md5": false,
+      "pairwise_cosines_off_diag": {
+        "n_pairs": 55,
+        "min": 0.3188235973889426,
+        "max": 0.9841977261963833,
+        "mean": 0.7396518285757347
+      },
+      "pose_step_distances_m": [
+        0.20000008091365726,
+        0.19999920753073638,
+        0.20000013569206715,
+        0.20000008091365726,
+        0.20000013569206715,
+        0.20000013569206715,
+        0.20000008091365726,
+        0.20000013569206715,
+        0.19999920753073638,
+        0.20000008091365726
+      ],
+      "pose_total_span_m": 1.999999281483652,
+      "rotation_y_min_max": [
+        193.28280639648438,
+        193.28280639648438
+      ]
+    },
+    "100": {
+      "n_ordinals": 11,
+      "frame_idxs": [
+        36000,
+        36001,
+        36002,
+        36003,
+        36004,
+        36005,
+        36006,
+        36007,
+        36008,
+        36009,
+        36010
+      ],
+      "pixel_md5_per_ordinal": [
+        "b2c796cd29ab8975e32e2eaff46ee5d4",
+        "537d6622782808e06169b203011c3a7f",
+        "e094082f6c4956938e6ee3c38d4a25dc",
+        "8049ae08166b2c6cc07bef1cf3434053",
+        "6d7abae56b06e4d855a65ff19a07e068",
+        "567d81fb69318535aaa4d4cd27fff666",
+        "83f25dfbad52a928cd6f5c39eb41168e",
+        "c205f21553a917e6afbd8e9bc299ff48",
+        "68888dabc9f15738aa3885f96a4a1792",
+        "403d624dd8acdd61702a2fb38c8a7f85",
+        "7497882af923a190c3fc93e5bec8b389"
+      ],
+      "n_unique_pixel_md5": 11,
+      "all_identical_pixel_md5": false,
+      "pairwise_cosines_off_diag": {
+        "n_pairs": 55,
+        "min": 0.3282948184366046,
+        "max": 0.9869711341038163,
+        "mean": 0.7385266807462216
+      },
+      "pose_step_distances_m": [
+        0.20000008091365726,
+        0.19999920753073638,
+        0.20000013569206715,
+        0.20000008091365726,
+        0.20000013569206715,
+        0.20000013569206715,
+        0.20000008091365726,
+        0.20000013569206715,
+        0.19999920753073638,
+        0.20000008091365726
+      ],
+      "pose_total_span_m": 1.999999281483652,
+      "rotation_y_min_max": [
+        193.28280639648438,
+        193.28280639648438
+      ]
+    }
+  }
+}
