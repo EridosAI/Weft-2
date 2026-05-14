@@ -66,14 +66,19 @@ TAU_CALIB_END_STEP: int = 10_000
 PHASE1_CKPT_EVERY: int = 10_000
 
 # Phase 2 / Phase 3 dense early-phase checkpoints (instr §4.6). Phase-relative steps.
-# Recomputed in session 4 for the new continuous-motion substrate (316 frames/loop
-# vs prior 458). All five rep bins covered; 100+ bin gets 3 checkpoints inside.
+# Re-derived in session 5 for the v2 continuous-motion substrate (360 frames/loop,
+# 30-loop Stage A baseline; Stage B starts at step 10,800). Adds step 12,000 to
+# cover the 1-5 bin which would otherwise fall between the last Stage A checkpoint
+# (10,000) and the first Stage B post-onset checkpoint (15,000). All five rep bins
+# covered; 100+ bin gets 2 checkpoints (55k and end-of-phase).
 PHASE_2_3_CKPT_STEPS: tuple[int, ...] = (
-    0, 1_000, 2_000, 4_000, 6_500, 10_000, 15_000, 20_000, 30_000, 40_000, 55_000,
+    0, 1_000, 2_000, 4_000, 6_500, 10_000, 12_000, 15_000, 20_000, 30_000, 40_000, 55_000,
 )
-# Plus one final checkpoint at end-of-phase (computed at runtime from stream length).
-# Prior schedule (458-frame loop): (0, 1_000, 2_500, 5_000, 9_000, 12_000, 16_000,
-# 23_000, 34_000, 46_000, 55_000). Preserved here as a comment for the audit trail.
+# Prior schedules preserved here as comments for the audit trail:
+#   458-frame loop (session-3): (0, 1_000, 2_500, 5_000, 9_000, 12_000, 16_000,
+#       23_000, 34_000, 46_000, 55_000)
+#   316-frame loop, no Stage A baseline (session-4): (0, 1_000, 2_000, 4_000,
+#       6_500, 10_000, 15_000, 20_000, 30_000, 40_000, 55_000)
 
 # Held-out reservation (instr §6.1, §7.3).
 HELD_OUT_LOOPS: int = 10

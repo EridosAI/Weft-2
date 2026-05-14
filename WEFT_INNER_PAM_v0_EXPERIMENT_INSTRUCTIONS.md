@@ -110,8 +110,14 @@ These are settled. They do not get re-litigated in this batch.
 
 - AI2-THOR seed-7 furniture house, driven by `src/env/continuous_motion_explorer.py`.
 - Five-item route: `Bed → DiningTable → Dresser → Sofa → Television → Bed → ...` (item identities unchanged from the prior Stage-0b run).
+- **Active route file:** `data/route_phase2.json` (replaces the prior repo's `route.json` for Phase 2/3). Identical to the original except for **item 2 (DiningTable)**, whose viewing pose was adjusted 2026-05-14 per the substrate finding below; concrete pose values + provenance recorded inline in the route file.
+- **DiningTable pose adjustment (recorded 2026-05-14, seventh substrate-or-variation finding of the v0 batch):**
+  - **Previous pose** (original route.json): position (11.0, 0.901, 2.75), heading 314.14° — agent approached DT from the southeast looking northwest. FOV included the doorway into the LivingRoom in the upper-left of the frame.
+  - **Current pose** (`data/route_phase2.json`): position (8.25, 0.901, 4.75), heading 117.57° — agent approaches DT from the northwest looking southeast. The LivingRoom doorway is now behind the agent rather than in the FOV. Viewing distance unchanged from the centroid (1.682 m at the new pose vs 1.754 m at the original, both within the SCAFFOLDING tolerance for the close-up framing).
+  - **Verification.** Per-item DINOv2 stability under out-of-scope perturbation (LivingRoom `RandomizeMaterials`, n=3-6 draws): DT mean cosine improved from **0.9448 → 0.9827** (3-call mean; extended diagnostic with 6 draws gave 0.9564 at the original pose). Spec §5.6 makes this a load-bearing substrate gate. Motion-continuity at the new pose verified: 11-point close-up sweep, consec DINOv2 cosines in [0.7645, 0.9785], 0 bit-identical pairs.
+  - The substrate-specific viewing poses are **SCAFFOLDING**; future substrate changes that affect line-of-sight between rooms must re-run the per-item DINOv2 stability check (spec §5.6).
 - **Trajectory: continuous motion throughout.** No held-pose dwell. Each item gets a "close-up" segment: a straight 2 m densified path (0.20 m step → ~10-12 frames) passing through the item's viewing position perpendicular to the item-facing heading, with heading locked at the item-facing bearing so the item enters the frame from one side, centres at the apex, slides out the other side. Transit between items is NavMesh-densified at 0.20 m with corner rotations at 5° (mechanism unchanged from prior explorer).
-- **Loop length:** ~316 frames per loop empirically (5-loop calibration, 2026-05-13). Verified non-bit-identical at the consecutive-frame level inside motion phases (close_up→close_up and transit→transit both have 0 / >1500 bit-identical pairs).
+- **Loop length:** **360 frames per loop** empirically at the v2 substrate (5-loop calibration, 2026-05-14: 1,800 frames / 5 = 360 frames per loop, comprising ~55 close-up + ~305 transit + corner-rotation frames). The +13.9% increase from the v1 substrate's 316 frames/loop is structural to the DT pose change — the new DT position requires longer NavMesh-planned transits to/from Bed and Dresser. Loop length increase accepted on downstream-arithmetic grounds rather than the round-number 10% SCAFFOLDING threshold (see HANDOFF session-5 fourth-STOP entry and the rationale in §8.3's margin discussion).
 - **Tempo:** consistent across loops (spec §6.9). The motion is deterministic given seeds; cross-loop pose variation is supplied by the variation mechanism specified below.
 - **Cross-loop variation.** Continuous motion within a loop is necessary but not sufficient on its own — apex poses across loops at the same item are bit-identical absent some perturbation (AI2-THOR renders deterministically at a fixed pose). **Variation comes from the phase structure itself, not from pose jitter.** Phase 1's Stage A loops are intentionally identical (the baseline state of the curriculum); Stage B onward introduces per-loop variation via `RandomizeMaterials` on the LivingRoom items (Dresser + Sofa); Stage C adds the Phase 3 perturbation on top. Across-loop apex bit-identicity at items 1–5 in Stage A is the curriculum working correctly, not a substrate degeneracy. The Phase 1 within-loop static dwell that needed fixing (a §2.3 violation) is fixed by continuous motion; across-loop pose-determinism is not a separate violation and does not need agent-pose, furniture-position, or per-frame jitter to break it. (Decision recorded 2026-05-14 by experiment-chat review of the session-4 calibration findings, superseding the session-4 jitter proposal. See HANDOFF session-5 entry.)
 - **Room composition** (verified from the seed-7 annotations): **LivingRoom** contains Dresser and Sofa; **Bedroom** contains Bed, DiningTable, and Television.
@@ -345,41 +351,36 @@ Per `CODING_STANDARDS.md` §5.4. A checkpoint that can't be reproduced from its 
 
 ### 4.6 Checkpoint cadence (derived from repetition-bin coverage)
 
-The repetition-stratified metric (spec §10.2, this doc §6.2 M4) requires evaluation at training points where the perturbed shape has been observed at counts spanning {1–5, 6–19, 20–50, 51–99, 100+}.
+The repetition-stratified metric (spec §10.2, this doc §6.2 M4) requires evaluation at training points where the *perturbed* shape has been observed at counts spanning {1–5, 6–19, 20–50, 51–99, 100+}. With the curriculum framing (§1.4), perturbed-shape rep count is `max(0, total_loops_elapsed - 30)` for Phase 2 — the first 30 loops are Stage A (unperturbed) and contribute 0 perturbed-shape reps; perturbed reps accumulate from Stage B loop 1 onward.
 
-**Loop length: ~316 frames** for the continuous-motion substrate (5-loop calibration, 2026-05-13: 1,580 frames / 5 = 316 frames per loop, comprising ~57 close-up + ~260 transit + corner-rotation frames). The prior 458-frame estimate was inherited from the 30-frame-static-dwell Stage-0b substrate and is no longer applicable; see §1.3 and the session-4 HANDOFF entry. For perturbed shapes in Phase 2 and Phase 3, the bins map to training-step ranges as follows:
+**Loop length: 360 frames** for the substrate adjusted in session 5 (DiningTable pose recalibrated to remove doorway view-through; see §1.3, route in `data/route_phase2.json`). v2 5-loop calibration on 2026-05-14 measured 1,800 frames / 5 = 360 frames/loop, an increase of +13.9% over the session-4 v1 calibration's 316 frames/loop — driven by extended NavMesh-planned transits to/from the relocated DiningTable. The increase was evaluated against actual downstream arithmetic and accepted: budget margin halved but well above the architectural-test requirement (see §8.3).
 
-| bin | loops within phase | frames into phase |
-|---|---:|---|
-| 1–5 | 1–5 | 316–1,580 |
-| 6–19 | 6–19 | 1,896–6,004 |
-| 20–50 | 20–50 | 6,320–15,800 |
-| 51–99 | 51–99 | 16,116–31,284 |
-| 100+ | 100+ | 31,600+ |
+Phase-2-step → Stage B rep count mapping at 360 frames/loop, Stage A = 30 loops (Stage B starts at step 30 × 360 = 10,800):
+
+  | Phase 2 step | total loops elapsed | Stage A or B? | perturbed-shape rep count | bin |
+  |---:|---:|---|---:|---|
+  | 1,000 | 2.8 | Stage A | 0 | (Stage A) |
+  | 2,000 | 5.6 | Stage A | 0 | (Stage A) |
+  | 4,000 | 11.1 | Stage A | 0 | (Stage A) |
+  | 6,500 | 18.1 | Stage A | 0 | (Stage A) |
+  | 10,000 | 27.8 | Stage A | 0 | (Stage A) |
+  | **12,000** | 33.3 | Stage B | ~3 | **1-5 ✓** |
+  | 15,000 | 41.7 | Stage B | ~12 | **6-19 ✓** |
+  | 20,000 | 55.6 | Stage B | ~26 | **20-50 ✓** |
+  | 30,000 | 83.3 | Stage B | ~53 | **51-99 ✓** |
+  | 40,000 | 111.1 | Stage B | ~81 | 51-99 |
+  | 55,000 | 152.8 | Stage B | ~123 | **100+ ✓** |
+  | end (~61.2k) | ~170 | Stage B | ~140 | 100+ ✓ |
+
+  **New checkpoint added: 12,000.** The previously-committed schedule (1,000 / 2,000 / 4,000 / 6,500 / 10,000 / 15,000 / 20,000 / 30,000 / 40,000 / 55,000 / end) lost coverage of the 1–5 bin once the curriculum framing pushed perturbed-shape reps out by 30 loops (Stage A baseline) and the v2 substrate stretched the loop length to 360 frames: at step 10,000 the agent is still in Stage A; by step 15,000 it's already at Stage B loop ~12 (bin 6–19). Step 12,000 falls at Stage B loop ~3, restoring the 1–5 bin without disturbing the rest of the schedule. All five bins covered; 100+ has 2 checkpoints (55k and end-of-phase).
 
 Checkpoint cadence is therefore:
 
 - **Phase 1 (existing 100k embeddings, ~218 loops on the *prior* substrate):** every 10,000 steps. Substrate-degenerate baseline per session-4 disposition; not re-run. Cadence preserved for the audit trail.
 
-- **Phase 2 and Phase 3 (perturbed shapes start at 0 reps, new 316-frame substrate):** denser checkpointing in early phase to cover the 1–5 and 6–19 bins. Phase-relative steps: **1,000 / 2,000 / 4,000 / 6,500 / 10,000 / 15,000 / 20,000 / 30,000 / 40,000 / 55,000 / end** — 10 checkpoints plus end-of-phase. Coverage:
+- **Phase 2 and Phase 3 (361-frame v2 substrate, Stage A = 30 loops):** Phase-relative steps **1,000 / 2,000 / 4,000 / 6,500 / 10,000 / 12,000 / 15,000 / 20,000 / 30,000 / 40,000 / 55,000 / end** — 11 checkpoints plus end-of-phase. The pre-Stage-A-baseline schedule (without step 12,000) is preserved in `src/config.py` `PHASE_2_3_CKPT_STEPS` history-comment for the audit trail; the new schedule replaces it for the post-session-5 substrate.
 
-  | step | loops elapsed | bin |
-  |---:|---:|---|
-  | 1,000 | 3.2 | 1-5 ✓ |
-  | 2,000 | 6.3 | 6-19 ✓ |
-  | 4,000 | 12.7 | 6-19 |
-  | 6,500 | 20.6 | 20-50 ✓ |
-  | 10,000 | 31.6 | 20-50 |
-  | 15,000 | 47.5 | 20-50 |
-  | 20,000 | 63.3 | 51-99 ✓ |
-  | 30,000 | 94.9 | 51-99 |
-  | 40,000 | 126.6 | 100+ ✓ |
-  | 55,000 | 174.1 | 100+ |
-  | end (~61.8k) | ~195.7 | 100+ |
-
-  All five bins covered; 100+ bin gets three checkpoints (40k, 55k, end). Old cadence (1k / 2.5k / 5k / 9k / 12k / 16k / 23k / 34k / 46k / 55k / end) preserved in `src/config.py` `PHASE_2_3_CKPT_STEPS` for the audit trail; the new schedule replaces it for v0 work post-session-4.
-
-CC verifies this schedule produces non-empty bins by computing the rep count from the annotations at each checkpoint.
+CC verifies this schedule produces non-empty bins by computing the rep count from the annotations at each checkpoint, and re-derives if the empirical loop length differs materially from the 360 used here.
 
 ### 4.7 Shape assertions and freezing checks (init-time)
 
@@ -656,19 +657,22 @@ Preflight output: `results/inner_pam_v0/phase2_preflight/preflight_report.md` wi
 - Per-frame annotations carry a `perturbation_active: bool` field — `False` for all frames in Stage A loops (loops 1 to `perturbation_start_loop - 1`), `True` for all frames in Stage B loops onward. Downstream analysis disaggregates Stage A vs Stage B frames via this field.
 - No pose jitter of any kind. The cross-loop pose-determinism observed in session-4 calibration on Bed, DiningTable, Sofa, and Dresser apex frames is preserved in Stage A — that is the curriculum's baseline state. The variation in Stage B comes from `RandomizeMaterials` re-texturing the LivingRoom items (Dresser, Sofa) per loop; Bed, DiningTable, and Television remain visually constant across loops as within-experiment controls.
 
-**Frame budget:** **65,000 frames ≈ 205 loops** (at ~316 frames/loop, calibration 2026-05-13). Minus 10 held-out loops, the model trains on **~195 loops** total: **~30 Stage A baseline loops** plus **~165 Stage B perturbed loops** (Dresser + Sofa with fresh LivingRoom textures per loop). Stage B's perturbed-shape rep count at the final eval checkpoint is ~165 — comfortably into the 100+ rep bin with 65+ reps of margin.
+**Frame budget:** **65,000 frames ≈ 181 loops** (at 360 frames/loop, v2 calibration on the substrate-adjusted route, 2026-05-14). Minus 10 held-out loops, the model trains on **~171 loops** total: **30 Stage A baseline loops** plus **~141 Stage B perturbed loops** (Dresser + Sofa with fresh LivingRoom textures per loop). Stage B's perturbed-shape rep count at the final eval checkpoint is **~141** — into the 100+ rep bin with **~42 reps of margin past the 100-rep boundary**.
 
-Derivation: M4 stratifies perturbed-shape recall by repetition count into bins {1–5, 6–19, 20–50, 51–99, 100+}. With the Stage A baseline occupying loops 1–30 (perturbation_active = False), the *perturbed-shape* rep count for Dresser and Sofa accumulates only from loop 31 onward. At the final eval checkpoint, the perturbed-shape rep count equals `trained_loops − (perturbation_start_loop − 1)`. With 195 trained loops and Stage A spanning loops 1–30, Stage B contributes ~165 perturbed-shape reps — comfortably into the 100+ bin with ~65 reps of margin.
+Derivation: M4 stratifies perturbed-shape recall by repetition count into bins {1–5, 6–19, 20–50, 51–99, 100+}. With the Stage A baseline occupying loops 1–30 (perturbation_active = False), the *perturbed-shape* rep count for Dresser and Sofa accumulates only from loop 31 onward. At the final eval checkpoint, the perturbed-shape rep count equals `trained_loops − (perturbation_start_loop − 1)`. With 171 trained loops and Stage A spanning loops 1–30, Stage B contributes ~141 perturbed-shape reps — into the 100+ bin with ~42 reps of margin.
 
-| budget choice | substrate | collected loops | Stage A loops | Stage B trained loops | bin reached at final eval |
+| budget choice | substrate | collected loops | Stage A loops | Stage B trained loops | reps into 100+ at final eval |
 |---|---|---:|---:|---:|---|
-| 65k | new (316 frames/loop, continuous motion) | ~205 | 30 | ~165 (after 10 held-out) | **~65 reps into 100+** ✓ |
+| 65k | v2 (360 frames/loop, adjusted DT pose) | ~181 | 30 | ~141 (after 10 held-out) | **~42 reps** ✓ |
+| 65k | v1 (316 frames/loop, original DT pose, **superseded**) | ~205 | 30 | ~165 (after 10 held-out) | ~65 reps |
 
 The held-out region is the last 10 *collected* loops, all Stage B. Stage A frames are not held out — the Stage A baseline is fully trained on.
 
-The remaining bins are populated within Stage B as before: 1–5 at phase-relative loops 31–35 (~316–1,580 Stage-B frames after the 30-loop Stage A offset of ~9,500 frames), 6–19 at loops 36–49, 20–50 at loops 50–80, 51–99 at loops 81–129, and 100+ from loop 130 onward through the final trained Stage B loop at ~195.
+The remaining bins are populated within Stage B at the v2 substrate as: 1–5 at Stage B loops 1–5 (Phase-2 step range ~10.8k–12.6k), 6–19 at Stage B loops 6–19 (steps ~12.9k–17.6k), 20–50 at Stage B loops 20–50 (steps ~18k–28.8k), 51–99 at Stage B loops 51–99 (steps ~29.2k–46.4k), and 100+ from Stage B loop 100 onward (steps ~46.8k–61.2k).
 
-*Robustness:* CC re-computes the budget from the collected `phase2_annotations.jsonl` before Phase 2 training begins. If actual loop length exceeds 340 frames (≥7.5% above the 316-frame estimate), or if held-out is ever widened beyond 10 loops, the trained-loop count is re-checked against the 100+ boundary; budget is increased to preserve ≥20 reps of margin past 100, with the new value documented in HANDOFF.md.
+**Margin discussion (recorded 2026-05-14 per the option-(a) decision):** at the v2 substrate, ~42 reps in 100+ is well above the architectural-test minimum of ≥20 reps. The locality fix on DiningTable (substrate-adjusted to remove the doorway view-through; see §1.3) is load-bearing for the within-experiment control structure and worth the ~24 lost trained loops vs v1. The 65k frame budget is held; bumping to ~73k to chase the original v1 margin would over-correct for harm that doesn't materialise.
+
+*Robustness:* CC re-computes the budget from the collected `phase2_annotations.jsonl` before Phase 2 training begins. If actual loop length exceeds 380 frames (≥5.5% above the 360-frame v2 estimate), or if held-out is ever widened beyond 10 loops, the trained-loop count is re-checked against the 100+ boundary; budget is increased to preserve ≥20 reps of margin past 100, with the new value documented in HANDOFF.md.
 
 Output: `data/phase2_frames/` (PNG, gitignored) + `data/phase2_annotations.jsonl`. Annotations carry `phase: "phase2"`, `perturbation: "livingroom_retexture"`, and `perturbation_active: bool` (False for Stage A loops, True for Stage B). Per-loop applied materials in `data/phase2_collection_metadata.json`.
 
@@ -775,7 +779,7 @@ Preflight output: `results/inner_pam_v0/phase3_preflight/preflight_report.md` do
 - At scene initialisation: apply Phase 2's RandomizeMaterials (LivingRoom), then apply Phase 3's perturbation (asset replacement or full-house retexture, per preflight).
 - Standard continuous-motion route with the variation mechanism selected per §1.3.
 
-**Frame budget:** **65,000 frames ≈ 205 loops** (same derivation as §8.3 — ~195 trained loops puts the final eval ~95 reps into the 100+ bin). Output: `data/phase3_frames/` + `data/phase3_annotations.jsonl`. Annotations carry `phase: "phase3"` and `perturbation: <selected_mechanism>` fields.
+**Frame budget:** **65,000 frames ≈ 181 loops** at the v2 360-frame/loop substrate (same derivation as §8.3 — ~171 trained loops puts the final eval ~42 reps into the 100+ bin; Phase 3 has no internal Stage A baseline per §9.1, so all 171 trained loops contribute to the perturbed-shape rep count, giving ~71 reps into 100+ if measured against the Phase 3 perturbation only). Output: `data/phase3_frames/` + `data/phase3_annotations.jsonl`. Annotations carry `phase: "phase3"` and `perturbation: <selected_mechanism>` fields.
 
 ### 9.4 Encoding
 Same as Phase 2. Cross-check: 50 sampled Phase 3 Television-position embeddings vs 50 Phase 1 Television-position embeddings — cross-mean cosine should be substantially lower than within-mean cosine. If similar, the perturbation was visually too close to the original; flag and report.
