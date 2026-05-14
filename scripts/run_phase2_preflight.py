@@ -108,8 +108,12 @@ from src.encoder.dinov2_encoder import load_frozen_dinov2  # noqa: E402
 from src.env.procthor_house import load_house, make_controller  # noqa: E402
 
 
+# Active Phase 2 route — v2 substrate (DiningTable pose adjusted 2026-05-14
+# per spec §5.6 + instructions §1.3). The prior repo's original route.json is
+# preserved at its original location for the audit trail but no longer used
+# by the Phase 2 preflight.
 _DEFAULT_ROUTE_JSON = Path(
-    "/mnt/c/Users/Jason/Desktop/Eridos/Weft/results/stage_0b_furniture/route.json"
+    "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/route_phase2.json"
 )
 _DEFAULT_RESULTS_DIR = _ROOT / "results" / "inner_pam_v0" / "phase2_preflight"
 

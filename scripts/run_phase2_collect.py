@@ -59,8 +59,12 @@ from src.env.continuous_motion_env import ContinuousMotionEnv  # noqa: E402
 from src.env.explorer_phase2 import Phase2RetextureEnv  # noqa: E402
 
 
+# Active Phase 2 route — v2 substrate (DiningTable pose adjusted 2026-05-14
+# per spec §5.6 + instructions §1.3). The prior repo's original route.json is
+# preserved at its original location for the audit trail but no longer used
+# by Phase 2/3 collection.
 _DEFAULT_ROUTE_JSON = Path(
-    "/mnt/c/Users/Jason/Desktop/Eridos/Weft/results/stage_0b_furniture/route.json"
+    "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/route_phase2.json"
 )
 _DEFAULT_FRAMES_DIR = _ROOT / "data" / "phase2_frames"
 _DEFAULT_ANNOTATIONS = _ROOT / "data" / "phase2_annotations.jsonl"
