@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** **Phase 2 collection re-launched on the corrected substrate at 2026-05-14 05:10:47Z** (PID 127210, log [logs/phase2_collect_20260514_131019.log](logs/phase2_collect_20260514_131019.log)). The substrate-fix landed in commit `4b38d42` (ContinuousMotionExplorer now derives `_agent_floor_y` as modal NavMesh y at init and uses it for every Teleport; modal-y for this house = 0.9010 across 100% of 1361 reachable positions, unique y count = 1). v3 calibration + analyse + trajectory diagnostic + preflight all PASS at corrected eye-height (commit `3eb89c5`): y range across 1,800 frames is 0.0000 m (single value), zero displacement outliers > 0.25 m, motion-continuity verdict PASS, preflight G_M1+G_M2+G_M3 all PASS with DiningTable now at 0.9817 individually (vs 0.977 at the broken bird's-eye view). 65k Phase 2 collection running at ~16 fps; expected wall-clock ~68 min. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Phase 2 collection completed on the corrected substrate (65,000 frames; 11,160 Stage A + 53,840 Stage B; 150 perturbed loops 31-180; failed=False). Encoding ran cleanly (466 f/s, norms ok) but **§8.4 verification FAILS on both gates**: absolute per-perturbed-item gap is 0.0097/0.0136 vs threshold 0.05; differential ratio is 1.36 vs threshold 2.0. DT's residual doorway-bleed at corrected eye-height (gap 0.0144) is the same magnitude as Sofa's perturbation signal (gap 0.0136); without DT in the control set, the ratio is 2.06 — right at the 2× threshold. The substrate fix worked (DT improved from 0.045 at original pose to 0.014 at corrected eye-height) but did not eliminate the bleed; the DINOv2 perturbation signal from `RandomizeMaterials` at apex frames is also smaller (0.01-0.014) than the 0.05 SCAFFOLDING threshold anticipated. Seventh STOP in session 5. Embeddings.npy NOT written; Phase 2 training NOT launched. Working tree clean; push hold in effect.
 
 ---
 
@@ -75,6 +75,56 @@ autonomous.
 ---
 
 ## Next immediate action
+
+**STOP for experiment-chat review (seventh STOP in session 5).** Phase 2 collection completed cleanly on the corrected substrate (commit `9a3d636` launched; `6d6e58d` recorded the encoding + §8.4 outcome). The §8.4 verification — the load-bearing locality test the modified-(i) gate moved the magnitude question to — **FAILS on both gates with real data**. Embeddings.npy NOT written; Phase 2 training NOT launched.
+
+**§8.4 results (per-item Stage B vs Stage A gap at apex frames, DINOv2 CLS cosines, 25 samples/stage):**
+
+| item | room | role | gap |
+|---|---|---|---:|
+| Bed | Bedroom | control | 0.0045 |
+| **DiningTable** | **Bedroom** | **control** | **0.0144** |
+| Television | Bedroom | control | 0.0068 |
+| Dresser | LivingRoom | perturbed | 0.0097 |
+| Sofa | LivingRoom | perturbed | 0.0136 |
+
+**Gate verdicts:**
+
+- **Absolute gate (per-perturbed-item gap > 0.05):** FAIL — Dresser 0.0097 and Sofa 0.0136 are both well below 0.05.
+- **Differential ratio gate (perturbed_mean_gap / control_mean_gap ≥ 2.0):** FAIL — ratio = 0.0116 / 0.0086 = **1.357**.
+
+**Two findings:**
+
+(1) **The DINOv2 apex-embedding signal from `RandomizeMaterials(inRoomTypes=["LivingRoom"])` is small.** Perturbed items move 0.010–0.014 in apex-cosine space between Stage A and Stage B, on average across 25 samples per stage and 150 Stage B loops. That's a real signal (well above zero) but well below the 0.05 SCAFFOLDING threshold I'd written into instructions §8.4. The threshold was a pre-empirical guess; the empirical magnitude is now known.
+
+(2) **DiningTable's residual doorway-bleed at corrected eye-height is the same magnitude as Sofa's perturbation signal.** DT gap = 0.0144 ≈ Sofa gap = 0.0136. The substrate fix improved DT substantially (gap was 0.045 at the original pose; now 0.014) but didn't eliminate the bleed — DT's FOV at the h118 pose still catches enough of the LivingRoom backdrop that LivingRoom retexturing perturbs DT's DINOv2 embedding by the same amount the actual LivingRoom items' embeddings shift. If DT is excluded from the control set:
+
+  - `control_mean_gap (Bed + Television only)` = (0.0045 + 0.0068) / 2 = **0.00565**
+  - `ratio` = 0.0116 / 0.00565 = **2.06** — right at the 2.0 threshold.
+
+**Sample-size SCAFFOLDING bug noted + fixed mid-run (committed `6d6e58d`).** First encode pass hit the insufficient-frames branch because I'd hardcoded `_PERTURBATION_SAMPLE_N = 50` (inherited from spec §5.1/5.2's pattern) but Stage A only contains 31 loops → 31 apex frames per item per stage. Reduced to 25 (well below Stage A's 31-loop ceiling), instructions §8.4 updated. This change is mechanical bookkeeping (not authorised gate-tuning) — 25 still gives ~500 pairs to the gap estimator and is bounded by the substrate's natural Stage A length.
+
+**Three options for the reviewer (no autonomous resolution per directive's "Not authorised to tune further"):**
+
+(i) **Accept DT as a "noisy control"; redefine the control set as {Bed, Television} only.** This is option (a) from the third STOP — already authorised by the user as the framing-of-record for the §8.4 differential metric. The ratio with that control set is 2.06, right at the 2.0 threshold. The directive language ("≥2× criterion") naturally accommodates this since the original framing already acknowledged DT as a noisy control. **The absolute gate still fails** (both Dresser and Sofa below 0.05); the 0.05 threshold itself would need recalibration against the empirical distribution to interpret the result.
+
+(ii) **Recalibrate both thresholds against the empirical distribution.** Empirical perturbed gaps sit in 0.01–0.014 range; the 0.05 absolute threshold was a guess that the actual perturbation magnitude doesn't reach. The §15 principle ("SCAFFOLDING thresholds get evaluated against what they're protecting") applies — 0.05 was a placeholder; the data now defines the achievable scale. A recalibrated threshold (e.g., absolute > 0.005 + ratio ≥ 1.5) would pass with the current control set, or absolute > 0.005 + ratio ≥ 2.0 would pass without DT.
+
+(iii) **Apply a stronger perturbation mechanism.** Increase the texture variation magnitude per RandomizeMaterials draw, or use multiple perturbation calls per loop, or switch to a perturbation that affects more pixels (e.g., furniture replacement). This addresses the small-DINOv2-signal directly rather than recalibrating the gate. Highest cost — would require re-running collection + encoding.
+
+(iv) **Apply another substrate fix to DT** (further pose change to remove the residual doorway-bleed). The h118 pose reduced bleed from 0.045 to 0.014; another iteration might get it to ~0.005. But the pose-search already identified h118 as the only candidate passing the prior G_M2 > 0.98 threshold; finding a candidate with even better DT-locality would require relaxing the 0.98 stability gate or accepting a different trade-off. Substantial effort with uncertain payoff.
+
+I'd recommend **(i) + (ii) combined**: redefine controls as {Bed, Television} (DT moves to a per-item-disaggregation-only read), recalibrate the absolute threshold from 0.05 to ~0.005 (10× lower, justified by empirical apex-gap distribution), keep the ratio at 2.0. With those changes the §8.4 verdict on the existing collected data would be PASS (ratio 2.06 ≥ 2.0; per-perturbed-item gap 0.0097/0.0136 ≥ 0.005). The §15 discipline says SCAFFOLDING thresholds get evaluated against their protective purpose; the empirical data now defines the scale. (iii) and (iv) are bigger interventions; reserve for if (i)+(ii) leaves the reviewer unsatisfied with the locality signal strength.
+
+What is NOT decided autonomously: lowering the 0.05 absolute or 2.0 ratio thresholds; redefining the control set; changing the perturbation mechanism; re-running collection.
+
+---
+
+### (Earlier sixth STOP in session 5) — resolved by the substrate y-fix; superseded by the seventh STOP above
+
+The sixth STOP raised the `forceAction`/y-bob camera-elevation bug. Resolved by the user's "Apply the three-change fix" authorisation (2026-05-14); fix landed in commit `4b38d42`; v3 verifications PASSed (commit `3eb89c5`); Phase 2 collection on the corrected substrate launched (`9a3d636`) and completed cleanly (`6d6e58d`'s precursor). The §8.4 verdict on the actual collected stream (this STOP) is the next gate.
+
+---
 
 **STOP for experiment-chat review (sixth STOP in session 5).** Phase 2 launch (commit `e3feaa2`) was paused 2026-05-14 ~04:00Z after a reviewer-directed trajectory diagnostic surfaced a substrate-rendering bug. Collection process (PID 109417) killed at frame 6,800; partial Phase 2 frames removed from `data/phase2_frames/`. Diagnostic + recommended fix at [results/phase2_calibration_v2/trajectory_diagnostic.json](results/phase2_calibration_v2/trajectory_diagnostic.json) (committed `29478a2`).
 
