@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Phase 2 collection **launched 2026-05-14 03:49:32Z** (commit `fc95301` modified the preflight gate per the fifth-STOP resolution; preflight on adjusted geometry PASSES; PID 109417; log `logs/phase2_collect_20260514_114932.log`). 65k-frame nohup collection in progress at ~18 fps; expected wall-clock ~60 min; loops 1–30 are the Stage A baseline (perturbation_active=False), loops 31+ fire `RandomizeMaterials(inRoomTypes=["LivingRoom"])` per loop (Stage B). Curriculum framing, DT substrate fix, modified preflight gate (G_M1+G_M2+G_M3, S1/S2 dropped), and promoted §8.4 differential go/no-go all committed; spec §5.6, research_operations §15 (two new universal principles) all landed. Phase 2 collection running; subsequent encoding + §8.4 verification + Phase 2 training launch pending. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** **Phase 2 launch ABORTED at frame 6,800** after a reviewer-directed trajectory diagnostic surfaced a substrate-rendering bug present since the session-4 commit `ec172c7`: `forceAction=True` in `ContinuousMotionExplorer._teleport` bypasses AI2-THOR's floor-snap validation, so the agent base lands at the y supplied in the input position dict. Close-up steps copy y=0.901 from route.json (a snapshot of the prior repo's standing agent.position.y); transit steps use NavMesh-planned waypoints at y≈0.006 (floor). Result: agent base **bobs 0.894 m at every close_up↔transit phase boundary**, rendering close-up frames from a 1.8m bird's-eye camera elevation and transit frames from a normal 0.9m eye-height. The reviewer's "camera height bobs" and "agent jumps through walls" visual observations are both explained by this single mechanism (no horizontal wall-jump found — the displacement histogram is empty in the [0.25, 0.50) and [1.0, 2.0) bins; the "wall-jump" is the visual effect of the camera leaping in elevation). All v1+v2 calibration, preflight runs, pose-search candidates, and the aborted 6,800-frame Phase 2 collection have the bug. Sixth STOP in session 5. Recommended fix written into the trajectory diagnostic and the HANDOFF Next-immediate-action section. Working tree clean; push hold in effect.
 
 ---
 
@@ -76,9 +76,52 @@ autonomous.
 
 ## Next immediate action
 
-**Phase 2 collection in progress.** Launched 2026-05-14 03:49:32Z (PID 109417, log `logs/phase2_collect_20260514_114932.log`) after the modified preflight gate was authorised (fc95301) and PASSED on the adjusted geometry. The collection runs 65k frames at the v2 substrate (360 frames/loop, adjusted DT pose), with `perturbation_start_loop=31` so loops 1–30 are Stage A baseline and loops 31+ fire `RandomizeMaterials(inRoomTypes=["LivingRoom"])` per loop. Expected wall-clock ~60 min at the observed ~18 fps. Once collection completes, CC will: (1) verify the frame count + Stage A/B split + materials_by_loop record, (2) run `scripts/run_phase2_encode.py` which now applies the §8.4 go/no-go gate (per-perturbed-item absolute gap > 0.05 AND differential contrast > 0.01 SCAFFOLDING), (3) update HANDOFF with the §8.4 results and STOP for experiment-chat review before launching Phase 2 training.
+**STOP for experiment-chat review (sixth STOP in session 5).** Phase 2 launch (commit `e3feaa2`) was paused 2026-05-14 ~04:00Z after a reviewer-directed trajectory diagnostic surfaced a substrate-rendering bug. Collection process (PID 109417) killed at frame 6,800; partial Phase 2 frames removed from `data/phase2_frames/`. Diagnostic + recommended fix at [results/phase2_calibration_v2/trajectory_diagnostic.json](results/phase2_calibration_v2/trajectory_diagnostic.json) (committed `29478a2`).
 
-The fifth-STOP framing (S1 trip on contrast magnitude) is now resolved by the modified gate — S1 dropped, differential check promoted to §8.4 go/no-go. The §8.4 verification on the actual collected stream is where the locality magnitude question gets answered with adequate sample size.
+**The bug:** Agent base y oscillates between close-up steps (y = 0.9010) and transit steps (y = 0.0065) at every close_up↔transit phase boundary — a 0.894 m vertical bounce. Because the rendered camera sits at a fixed offset above the agent base in AI2-THOR, the camera elevation oscillates between ~1.8 m (close-up; bird's-eye view of furniture from above) and ~0.9 m (transit; normal eye-height). The reviewer's two observations have a common cause:
+
+- "Camera height bobs unexpectedly" → the literal 0.9 m vertical leap of the camera at every phase boundary.
+- "Agent jumps through walls" → no horizontal wall-jump was found (zero displacement pairs in the [0.25, 0.50), [0.50, 1.00), [1.00, 2.00) bins for x/z-only motion); the "wall-jump" effect is visual artefact of the camera leaping 0.9 m in elevation, which looks like teleportation past a floor/ceiling.
+
+**Diagnostic evidence:**
+
+| diagnostic | finding |
+|---|---|
+| 1. Per-frame y range | **0.0065 to 0.9010**, 0.8945 m range, exactly 2 unique values rounded to 4 decimal places. |
+| 1. y per phase | Close-up frames: y = 0.9010 (from route.json's `viewing_position.y`). Transit frames: y = 0.0065 (from NavMesh-planned waypoints at floor level). |
+| 2. 3D displacement | Bimodal: 1000 pairs near-zero (corner rotations, no x/z displacement), 635 in [0.15, 0.20) (densified motion), 120 in [0.20, 0.25), and **29 outliers at exactly 0.8945 m, all with dx=dz=0 and \|dy\|=0.894**. |
+| 2. x/z wall-jumps | **Zero pairs in [0.25, 0.50), [0.50, 1.00), or [1.00, 2.00) for x/z-only**. No horizontal wall traversal. |
+| 3. Contact sheets | 29 PNG strips at `results/phase2_calibration_v2/discontinuity_frames/` show close-up frames rendered from a bird's-eye angle and transit frames from eye-height — the elevation drop is visually unmistakable. |
+
+**Root cause traced:** `src/env/continuous_motion_explorer.py:426` calls AI2-THOR's `Teleport` with `forceAction=True` AND the input position dict's y value. `forceAction=True` bypasses NavMesh + floor-snap validation, so the agent base lands at whatever y is supplied. The y value comes from two different sources depending on the trajectory phase:
+
+- **Close-up steps** copy y from `route.json` items' `viewing_position.y` (0.9010, which is the prior repo's stage_0b standing agent.position.y, mistakenly persisted into the route).
+- **Transit steps** copy y from `controller.step("GetShortestPathToPoint")` waypoints (~0.0065, NavMesh floor level).
+
+`git blame` shows `forceAction=True` has been in the production explorer since the session-4 commit `ec172c7` — **not** a session-5 leak from pose-search reachability testing; the pose-search and motion-continuity scripts (which I added this session) independently use `forceAction=True`, but the production path predates them.
+
+**Recommended fix (3 changes, ~5 lines):**
+
+1. In `ContinuousMotionExplorer.__init__`, query `controller.step("GetReachablePositions")` once and store a representative floor y on `self._agent_floor_y` (e.g., median of the reported y values).
+2. In `ContinuousMotionExplorer._teleport`, **drop the input position's y** and pass `self._agent_floor_y` to `Teleport`. Keep `forceAction=True` — it's still needed for the close-up path's 0.20 m off-grid x/z steps which don't align to AI2-THOR's 0.25 m grid.
+3. Optionally add `standing=True` to the Teleport call to make the agent's standing posture explicit.
+
+**Downstream invalidation scope:**
+
+- v1 calibration (session-4, 316 fpl, 1,580 frames) — rendered with camera bobbing; close-up apex frames at 1.8 m camera elevation. Used as the substrate baseline that determined 316 fpl + cross-loop apex bit-identicity findings. The bit-identicity finding is still valid (deterministic rendering at fixed pose is deterministic regardless of elevation); the apex visual framing is not "agent eye-level" as the spec intended.
+- v2 calibration (session-5, 360 fpl, 1,800 frames) — same bug; the +13.9 % loop length finding is still valid (transit paths are unchanged), but the rendered frames have the same elevation artefact.
+- Preflight runs (multiple, original-pose + adjusted-pose) — DINOv2 cosines were computed on bird's-eye close-up captures; the per-item Bedroom/LivingRoom contrasts are valid for the data as captured but the substrate they captured isn't the intended one.
+- Pose-search candidate frames — same; the DT_h118 pose was selected as the lone candidate with DINOv2 stability > 0.98 against an out-of-scope perturbation. The stability finding holds for the captures as taken; the DT_h118 verdict should be re-verified at the corrected camera height after the fix.
+- Motion-continuity sweep frames — same; the consec-cosine values were computed at the elevated close-up sweep heights.
+- Aborted Phase 2 collection (6,800 frames) — discarded; not used.
+
+**After the fix lands:** re-run v2 calibration, re-run preflight on adjusted geometry, re-run pose-search verification (or accept the DT_h118 verdict pending re-verification once frames are rendered correctly), then re-launch Phase 2 collection. The §8.4 differential gate threshold (0.01) is SCAFFOLDING that may need recalibration after the corrected frames produce a meaningful empirical distribution.
+
+**STOP for review.** No code changes to the explorer; no re-runs. The diagnostic-and-fix recommendation is the deliverable; the reviewer signs off on the fix before CC implements it.
+
+---
+
+### (Earlier fifth STOP in session 5) — superseded by the sixth STOP above
 
 ---
 
@@ -422,7 +465,11 @@ Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_05
 | `21829f3` | research_operations §15 two new universal principles | `research_operations_v1.md` |
 | `45aca0e` | analyse script verdict refactor + v2 within-loop motion-continuity PASS | `scripts/run_phase2_calibration_analyse.py`, `results/phase2_calibration_v2/continuity_report.json` |
 | `4b1408c` | adjusted-geometry preflight (G_M2 PASS, S1 trip on contrast magnitude) | `results/inner_pam_v0/phase2_preflight/` |
-| pending this entry | session-5 fifth-STOP HANDOFF entry | `HANDOFF.md` |
+| `ceee028` | session-5 fifth-STOP HANDOFF entry | `HANDOFF.md` |
+| `fc95301` | modified preflight gate (S1/S2 dropped, encode differential go/no-go) + adjusted-geometry preflight PASS | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md`, `results/inner_pam_v0/phase2_preflight/` |
+| `e3feaa2` | Phase 2 launch marker (aborted 4 minutes later at frame 6,800 per the sixth STOP) | `HANDOFF.md` |
+| `29478a2` | trajectory diagnostic + recommended fix (sixth STOP) | `scripts/run_phase2_trajectory_diagnostic.py`, `results/phase2_calibration_v2/trajectory_diagnostic.json`, 29 discontinuity contact sheets |
+| pending this entry | session-5 sixth-STOP HANDOFF entry | `HANDOFF.md` |
 
 ### Pose search + motion-continuity outcome (commit `3bd341b`)
 
@@ -448,11 +495,31 @@ Within-loop motion-continuity on the adjusted geometry was NOT checked — stopp
 
 ### Reviewer-action items before session 6
 
-1. **Decide on the S1 contrast threshold + Phase 2 launch question** between options (i) recalibrate S1 from the empirical distribution and launch Phase 2 / (ii) override the S1 trip in writing without changing the threshold and launch / (iii) fall back to original DT locality breach (revert `route_phase2.json` use). See the "Next immediate action" section for per-option reasoning. I recommend (i).
-2. After the decision:
-   - (i) and (ii) both proceed to Phase 2 launch; (i) updates `_S1_CONTRAST_TOO_SMALL` in `scripts/run_phase2_preflight.py` to a value justified by the empirical contrast distribution.
-   - (iii) requires reverting the v2 substrate updates (route_phase2.json + script defaults + the §1.3 / §5.6 / §15 doc entries that record the DT pose adjustment) and proceeding on the original route.
-3. Phase 2 collection launches after the decision; encoding + §8.4 verification (absolute + differential metrics) follows; then STOP for review of §8.4 results before Phase 2 training.
+1. **Approve the trajectory-bug fix** (3 changes to `src/env/continuous_motion_explorer.py` per the diagnostic's `recommended_fix` field — drop input y in `_teleport`, snap to NavMesh floor queried at init, optionally add `standing=True`). The fix is small and conservative; it does not change the trajectory geometry in x/z, only normalises the agent base y to floor level.
+2. After the fix lands:
+   - Re-run the session-4 5-loop calibration (this is required — every prior rendered frame has the camera-elevation bug; we need fresh frames at corrected elevation to verify the fix and to populate the v3 substrate calibration).
+   - Re-run the trajectory diagnostic on the v3 calibration to confirm the y-bob is gone (single y value, no displacement outliers at 0.894 m).
+   - Re-run the preflight on `route_phase2.json` (gates G_M1 / G_M2 / G_M3 against the corrected-elevation captures).
+   - Re-verify the DT_h118 pose stability — the pose-search verdict was made on bird's-eye captures; at correct eye-height the FOV looks different and the DINOv2-stability ranking might shift. Pose-search can be re-run cheaply (one AI2-THOR session, ~2-3 minutes).
+3. After verifications pass: re-launch the 65k Phase 2 collection; encoding + §8.4 verification (absolute + differential metrics, threshold 0.01 SCAFFOLDING) follows; then STOP for review of §8.4 results before Phase 2 training.
+
+### Earlier fifth-STOP reviewer-action items (superseded)
+
+The fifth-STOP question (whether to recalibrate S1, override, or fall back) was resolved by the user's "modified (i)" authorisation 2026-05-14 (drop S1, keep G_M2 and G_M3, promote §8.4 differential to go/no-go). That decision is implemented in commit `fc95301` and remains valid post-fix — the modified gate is independent of the camera-elevation bug.
+
+### Sixth STOP — substrate y-bob trajectory bug surfaced; Phase 2 launch aborted (commits `e3feaa2` → `29478a2`)
+
+After the modified-gate authorisation (commit `fc95301`) cleared the preflight and the 65k Phase 2 collection launched at 2026-05-14 03:49:32Z (commit `e3feaa2`, PID 109417), the reviewer reported two visual concerns from inspection of v2 calibration renders: (1) camera height appears to bob unexpectedly, (2) agent appears to jump through walls. Phase 2 was paused at frame 6,800 (~4 min into the 60-min run) for a targeted diagnostic.
+
+Trajectory diagnostic (committed `29478a2`):
+- Diagnostic 1 (per-frame y): two unique y values (0.0065 floor + 0.9010 eye-height); 0.8945 m range; the agent base oscillates between values at every close_up↔transit phase boundary.
+- Diagnostic 2 (3D displacement): 29 outliers at exactly 0.8945 m with dx=dz=0; no horizontal wall-jumps anywhere in the histogram.
+- Diagnostic 3 (contact sheets): 29 4-frame strips confirm close-up frames render at bird's-eye camera elevation (~1.8 m) and transit frames at normal eye-height (~0.9 m).
+- Root cause: `forceAction=True` in `ContinuousMotionExplorer._teleport` (line 426) bypasses AI2-THOR's floor-snap validation; the agent base lands at whatever y is supplied. Present since session-4 commit `ec172c7` — not a session-5 leak.
+
+Recommended fix (3 lines in the explorer; details in trajectory_diagnostic.json's `recommended_fix` field). Downstream invalidation scope: all rendered frames to date have the elevation artefact, but most analyses are computed on within-phase pairs or apex-only frames where y is constant; the headline impact is that all close-up framings have been bird's-eye rather than eye-height. Phase 2 collection re-runs after the fix lands.
+
+Aborted Phase 2 collection (6,800 frames in `data/phase2_frames/`, partial annotations) cleaned up — gitignored anyway.
 
 ### v2 substrate doc + verification pass — fifth STOP (commits `71f7693` → `4b1408c`)
 
@@ -462,11 +529,12 @@ The substrate-fix-and-verification cycle is complete. The remaining decision is 
 
 ### Operational state (end of session 5)
 
-- Working tree: clean modulo this HANDOFF entry. 33 commits on `main` after this entry lands (12 session-5 commits + the pending HANDOFF entry).
+- Working tree: clean modulo this HANDOFF entry. 36 commits on `main` after this entry lands (15 session-5 commits + the pending HANDOFF entry).
 - Push hold: in effect.
-- No running jobs.
+- No running jobs (Phase 2 collection was killed at frame 6,800 per the sixth STOP).
 - Phase 1 artefacts: unchanged from session 4 (substrate-degenerate baseline; not re-run).
-- Phase 2 substrate: adjusted route at `data/route_phase2.json` is the active configuration; v2 calibration analyse confirmed within-loop motion-continuity PASS at the curriculum-aligned verdict. Preflight at the adjusted geometry: G_M2 PASS (Bedroom mean 0.9822), G_M3 S1 trip (contrast magnitude +0.0062 below the SCAFFOLDING 0.02 threshold but in the locality-correct direction). Full Phase 2 collection has NOT begun.
+- Phase 2 substrate: adjusted route at `data/route_phase2.json` is the active configuration. v2 calibration analyse confirmed within-loop motion-continuity PASS at the curriculum-aligned verdict; trajectory diagnostic revealed the y-bob camera-elevation bug (sixth STOP). Preflight at adjusted geometry passes the modified gate (G_M1+G_M2+G_M3, S1/S2 dropped). The explorer's `_teleport` is awaiting the floor-snap fix; once fixed, v3 calibration + re-run preflight + Phase 2 launch follow.
+- Aborted Phase 2 partial collection (6,800 frames) cleaned up from `data/phase2_frames/` and `data/phase2_annotations.jsonl` (both gitignored).
 
 ---
 
