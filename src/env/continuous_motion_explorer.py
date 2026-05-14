@@ -188,6 +188,20 @@ class ContinuousMotionExplorer:
         self._densify_step_m = float(densify_step_m)
         self._corner_rot_step = float(corner_rotation_step_deg)
 
+        # Derive the agent's NavMesh floor y. Required because _teleport uses
+        # forceAction=True (needed for off-grid 0.20 m close-up steps), which
+        # bypasses AI2-THOR's floor-snap validation. Without an explicit floor
+        # y, the agent base would land at whatever y is supplied in the input
+        # position dict — which is 0.901 for close-up steps (from route.json's
+        # viewing_position.y, a stage_0b standing snapshot) and ~0.006 for
+        # transit steps (NavMesh-planned waypoint y). That oscillation caused
+        # the camera-elevation bug surfaced in the 2026-05-14 sixth-STOP
+        # trajectory diagnostic (see results/phase2_calibration_v2/
+        # trajectory_diagnostic.json). Modal-y across all reachable positions
+        # is robust to scenes with stairs or sloped floors (it picks the
+        # dominant floor level the route's items live on).
+        self._agent_floor_y, self.floor_y_summary = self._derive_floor_y()
+
         # Precompute close-up endpoints for each item.
         self._close_up_endpoints: List[Tuple[Dict[str, float], Dict[str, float]]] = []
         for it in self._items:
@@ -413,21 +427,70 @@ class ContinuousMotionExplorer:
     # ---- low-level controller ops --------------------------------------
 
     def _teleport(self, position: Dict[str, float], heading_deg: float) -> bool:
+        # Always teleport the agent base to the NavMesh floor y derived at
+        # init (self._agent_floor_y). Drop the input position's y entirely —
+        # forceAction=True bypasses AI2-THOR's floor-snap validation, so the
+        # base lands wherever y is specified; routing the input y straight
+        # through caused the camera-elevation bug fixed in the post-sixth-
+        # STOP commit. forceAction=True is retained because the close-up's
+        # 0.20 m step grid doesn't align to AI2-THOR's 0.25 m navigation
+        # grid. `standing=True` makes the agent posture explicit (eye-height
+        # camera offset above the base).
         try:
             event = self._controller.step(
                 action="Teleport",
                 position={
                     "x": float(position["x"]),
-                    "y": float(position.get("y", 0.9)),
+                    "y": float(self._agent_floor_y),
                     "z": float(position["z"]),
                 },
                 rotation={"x": 0.0, "y": float(heading_deg) % 360.0, "z": 0.0},
                 horizon=0.0,
+                standing=True,
                 forceAction=True,
             )
         except Exception:
             return False
         return bool(event.metadata.get("lastActionSuccess"))
+
+    def _derive_floor_y(self) -> Tuple[float, Dict[str, Any]]:
+        """Query the NavMesh once, derive the modal floor y for the agent base.
+
+        Returns (modal_y, summary_dict) where summary_dict captures the
+        y-distribution for HANDOFF/audit-trail logging (n unique values, min,
+        max, count at the mode, fraction of reachable positions at the mode).
+        """
+        from collections import Counter
+
+        event = self._controller.step(action="GetReachablePositions")
+        if not event.metadata.get("lastActionSuccess", False):
+            raise RuntimeError(
+                "ContinuousMotionExplorer: GetReachablePositions failed at init; "
+                "cannot derive agent floor y."
+            )
+        reach = event.metadata.get("actionReturn") or []
+        if not reach:
+            raise RuntimeError(
+                "ContinuousMotionExplorer: GetReachablePositions returned an "
+                "empty set; cannot derive agent floor y."
+            )
+        ys_rounded = [round(float(p["y"]), 4) for p in reach]
+        y_counter = Counter(ys_rounded)
+        modal_y, n_modal = y_counter.most_common(1)[0]
+        summary: Dict[str, Any] = {
+            "n_reachable_positions": int(len(reach)),
+            "modal_y": float(modal_y),
+            "n_positions_at_modal_y": int(n_modal),
+            "fraction_at_modal_y": float(n_modal) / float(len(reach)),
+            "n_unique_y_values_rounded_4dp": int(len(y_counter)),
+            "y_min": float(min(ys_rounded)),
+            "y_max": float(max(ys_rounded)),
+            "y_histogram_top5": [
+                {"y": float(y), "n": int(c)}
+                for y, c in y_counter.most_common(5)
+            ],
+        }
+        return float(modal_y), summary
 
     def _observation(
         self,
