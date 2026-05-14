@@ -242,20 +242,64 @@ def main() -> int:
         return 2
 
     rng = np.random.default_rng(int(args.seed))
+
+    # ---- §8.4 absolute metric (gated): perturbed items' Stage B vs Stage A gap.
+    perturbed_items: list[tuple[str, int]] = [("Dresser", 3), ("Sofa", 4)]
     pert_checks: Dict[str, Any] = {}
-    for label, vp in (("Dresser", 3), ("Sofa", 4)):
+    for label, vp in perturbed_items:
         pert_checks[label] = _perturbation_effect_check(
             emb, annotations, label, vp,
             sample_n=_PERTURBATION_SAMPLE_N,
             gap_threshold=_PERTURBATION_GAP_THRESHOLD,
             rng=rng,
         )
-        print(f"[encode2] perturbation effect check {label}: "
+        print(f"[encode2] [absolute] perturbed {label}: "
               f"passed={pert_checks[label]['passed']} "
               f"gap={pert_checks[label].get('within_avg_minus_cross', float('nan')):.4f}",
               flush=True)
-
     pert_pass = all(c["passed"] for c in pert_checks.values())
+
+    # ---- §8.4 differential metric (record-only, per 2026-05-14 directive).
+    # Compute the same Stage B vs Stage A gap on the control items (Bed,
+    # DiningTable, Television). Under the locality claim, control items
+    # should show gap ≈ 0 — they aren't visually re-textured by the
+    # LivingRoom-scoped RandomizeMaterials call. Any non-zero gap captures
+    # global drift across the Stage A/B boundary (lighting, shadows,
+    # background bleed). The contrast = perturbed_mean_gap - control_mean_gap
+    # isolates the perturbation-specific component.
+    control_items: list[tuple[str, int]] = [
+        ("Bed", 1), ("DiningTable", 2), ("Television", 5),
+    ]
+    control_checks: Dict[str, Any] = {}
+    for label, vp in control_items:
+        control_checks[label] = _perturbation_effect_check(
+            emb, annotations, label, vp,
+            sample_n=_PERTURBATION_SAMPLE_N,
+            gap_threshold=_PERTURBATION_GAP_THRESHOLD,   # same threshold for symmetry; not gated
+            rng=rng,
+        )
+        gap_val = control_checks[label].get("within_avg_minus_cross", float("nan"))
+        print(f"[encode2] [differential] control {label}: "
+              f"gap={gap_val:.4f} (record-only; not gated)",
+              flush=True)
+
+    perturbed_gaps = [
+        c["within_avg_minus_cross"] for c in pert_checks.values()
+        if "within_avg_minus_cross" in c
+    ]
+    control_gaps = [
+        c["within_avg_minus_cross"] for c in control_checks.values()
+        if "within_avg_minus_cross" in c
+    ]
+    perturbed_mean_gap = float(np.mean(perturbed_gaps)) if perturbed_gaps else float("nan")
+    control_mean_gap = float(np.mean(control_gaps)) if control_gaps else float("nan")
+    contrast = perturbed_mean_gap - control_mean_gap
+    print(
+        f"[encode2] [contrast] perturbed_mean_gap={perturbed_mean_gap:.4f} "
+        f"control_mean_gap={control_mean_gap:.4f} "
+        f"contrast={contrast:.4f}  (perturbed - control; record-only)",
+        flush=True,
+    )
 
     overall_pass = norm["passed"] and pert_pass
     report = {
@@ -273,7 +317,23 @@ def main() -> int:
         "n_frames_encoded": int(emb.shape[0]),
         "encode_seconds": float(encode_seconds),
         "norm_check": norm,
-        "perturbation_effect_checks": pert_checks,
+        # Absolute (gated): per-perturbed-item gap; gate passes if both > threshold.
+        "absolute_perturbation_effect_checks": pert_checks,
+        # Differential (record-only): same metric on control items + contrast.
+        "differential_control_item_effect_checks": control_checks,
+        "differential_summary": {
+            "perturbed_items": [label for label, _ in perturbed_items],
+            "control_items": [label for label, _ in control_items],
+            "perturbed_mean_gap": perturbed_mean_gap,
+            "control_mean_gap": control_mean_gap,
+            "contrast_perturbed_minus_control": contrast,
+            "note": (
+                "Differential metrics are record-only — the gate is on the "
+                "absolute perturbed-item gap. The experiment chat reviews both "
+                "absolute and differential metrics at the §8.4 STOP point "
+                "before authorising Phase 2 training launch."
+            ),
+        },
         "overall_pass": bool(overall_pass),
     }
     args.report.write_text(json.dumps(report, indent=2))

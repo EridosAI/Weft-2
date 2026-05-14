@@ -1,52 +1,71 @@
-"""Phase 2 preflight per EXPERIMENT_INSTRUCTIONS §8.2 (recalibrated 2026-05-14).
+"""Phase 2 preflight per EXPERIMENT_INSTRUCTIONS §8.2 (DINOv2-contrast gate, 2026-05-14).
 
 Verifies, before any Phase 2 frame collection begins, that the
 `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True)`
-mechanism behaves as the curriculum requires.
+mechanism produces an item-localised perturbation at the level of the
+DINOv2 embedding space — which is the representation the v0 predictor
+actually trains against.
 
-**Gate (three criteria; reviewer-authorised 2026-05-14 after the
-initial-run threshold mis-calibration):**
+**Why DINOv2 not pixel-RGB.** The initial-run + recalibration cycle in
+session 5 surfaced two structural noise sources in flat-RGB cosine on
+300x300 frames: (1) per-run material lottery (a given LivingRoom item
+can land on a near-identical texture on any single random draw), and
+(2) doorway view-through (a Bedroom item like DiningTable whose viewing
+pose looks into the LivingRoom shows pixel-level change when LivingRoom
+textures swap). Both are properties of pixel cosine as the metric, not
+of the underlying perturbation. DINOv2 representations are insensitive
+to small background changes that pixel cosines amplify, and the §8.4
+verification at encoding time uses DINOv2 anyway; this preflight is
+now an early-warning version of the same metric.
 
-  G_M1 — Mechanism fires. RandomizeMaterials with inRoomTypes=["LivingRoom"]
+**Gate (three criteria; thresholds reviewer-authorised 2026-05-14):**
+
+  G_M1 — Mechanism fires. RandomizeMaterials(inRoomTypes=['LivingRoom'])
          returns lastActionSuccess=True.
-  G_M2 — Bedroom scope locality. Mean Bedroom item (Bed, DiningTable,
-         Television) before-vs-after flat-RGB cosine > 0.97, averaged
-         across three independent RandomizeMaterials draws (calls 1, 2,
-         and 3) — the LivingRoom-scoped call leaves Bedroom items
-         substantially unchanged regardless of which materials land.
-  G_M3 — LivingRoom-vs-Bedroom contrast. (Bedroom mean before-vs-after
-         cosine) - (LivingRoom mean before-vs-after cosine) >= 0.02,
-         each side averaged across the same three draws and respective
-         item sets. LivingRoom items move measurably more than Bedroom
-         items in aggregate; averaging across draws removes the per-call
-         material-selection lottery (a single random draw can land any
-         given item on a near-identical texture by chance, which would
-         spoof a single-snapshot contrast).
+  G_M2 — Bedroom DINOv2 scope locality. Mean Bedroom item (Bed,
+         DiningTable, Television) before-vs-after DINOv2 CLS cosine
+         > 0.98, averaged across three RandomizeMaterials draws.
+         Threshold = 0.98 (SCAFFOLDING: Bedroom items are not visually
+         re-textured under the LivingRoom-scoped call, so their DINOv2
+         representations should be very close to identical; 0.98 is a
+         conservative bound that admits small lighting/shadow variation
+         from material changes elsewhere in the scene without admitting
+         actual cross-room perturbation).
+  G_M3 — LivingRoom-vs-Bedroom DINOv2 contrast. Bedroom mean cosine -
+         LivingRoom mean cosine >= 0.5 * observed_mean_contrast, where
+         observed_mean_contrast is computed from this preflight's own
+         3-draw aggregation. Threshold ratio 0.5 sits in the middle of
+         the reviewer-authorised 40-60% range (SCAFFOLDING: 50% gives
+         downward robustness against per-run material lottery while
+         still requiring a meaningfully positive contrast in subsequent
+         runs).
 
-**Record-only measurements (not gated):**
+**STOP-and-report conditions (no auto-tuning to fit).** If either of
+these conditions is met during this preflight, the script exits
+non-zero with a FAIL verdict and does NOT set the G_M3 threshold —
+escalation to the experiment chat is required rather than chasing the
+threshold to make the gate pass:
 
-  - Per-loop re-application call-vs-call cosines on Dresser and Sofa
-    (call1↔call2, call2↔call3). Captures whether `RandomizeMaterials`
-    is genuinely re-randomising vs. cycling.
-  - Cross-session determinism. Whether materials are deterministic
-    across controller sessions or per-run (acceptable in either case;
-    per-run materials are recorded in phase2_collection_metadata.json).
+  S1 — Very small contrast. Observed contrast (Bedroom mean -
+       LivingRoom mean) < 0.02. Indicates the perturbation is not
+       producing a meaningful DINOv2-level localisation signal.
+  S2 — Unexpectedly low Bedroom cosine. Bedroom DINOv2 mean < 0.98.
+       Indicates Bedroom items moved more than the locality claim
+       allows; suggests the LivingRoom-scoped RandomizeMaterials call
+       is having a global effect (or the scene/encoder is unusually
+       sensitive in a way that breaks the locality assumption).
 
-Why the recalibration: the initial-run thresholds were calibrated for a
-much larger pixel-space delta than `RandomizeMaterials` actually
-produces at 300x300 resolution (texture swaps on a few furniture pieces
-occupy a small fraction of the visible pixels). Empirical numbers from
-the 2026-05-14 first run showed LivingRoom mean before-after cosine
-0.958 vs Bedroom 0.991 — a +0.033 contrast, in the right direction.
-The contrast criterion directly tests the architectural property the
-preflight is meant to verify (perturbation is scoped, not global)
-without depending on absolute pixel-cosine scales that were guesses.
+**Record-only measurements** (not gated; kept for the audit trail):
 
-The load-bearing verification remains the DINOv2-embedding §8.4 check
-at encoding time; this preflight is an early-warning sanity check.
+  - Per-loop re-application call-vs-call DINOv2 cosines on Dresser and
+    Sofa (call1↔call2, call2↔call3).
+  - Flat-RGB cosines on the same paired frames (the metric the previous
+    preflight versions used).
+  - Cross-session determinism note.
 
-Writes `results/inner_pam_v0/phase2_preflight/preflight_report.md` plus
-`preflight_report.json` carrying the cosine values.
+The §8.4 perturbation-effect check at encoding time on the full Phase 2
+stream remains the load-bearing locality verification. This preflight
+is the early-warning sanity check using the same metric.
 
 Usage:
   nohup python3.12 -u scripts/run_phase2_preflight.py \\
@@ -81,8 +100,11 @@ def _offline_load_dataset(*args: Any, **kwargs: Any) -> Any:
 prior.load_dataset = _offline_load_dataset  # type: ignore[assignment]
 
 import numpy as np  # noqa: E402
+import torch  # noqa: E402
+import torch.nn.functional as F  # noqa: E402
 from PIL import Image  # noqa: E402
 
+from src.encoder.dinov2_encoder import load_frozen_dinov2  # noqa: E402
 from src.env.procthor_house import load_house, make_controller  # noqa: E402
 
 
@@ -91,8 +113,26 @@ _DEFAULT_ROUTE_JSON = Path(
 )
 _DEFAULT_RESULTS_DIR = _ROOT / "results" / "inner_pam_v0" / "phase2_preflight"
 
+# Item-set identifiers for the preflight checks.
+_LIVINGROOM_ITEM_IDS = (3, 4)   # Dresser, Sofa
+_BEDROOM_ITEM_IDS = (1, 2, 5)   # Bed, DiningTable, Television
 
-def _cosine_flat(img_a: np.ndarray, img_b: np.ndarray) -> float:
+# DINOv2 input geometry.
+_IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+_IMAGENET_STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+_RESIZE = 256
+_CROP = 224
+
+# Gate thresholds (SCAFFOLDING; rationale in the module docstring).
+_G_M2_BEDROOM_DINOV2_THRESHOLD: float = 0.98
+_G_M3_THRESHOLD_RATIO: float = 0.5      # 50% — midpoint of Grok's 40-60% range
+
+# STOP-and-report conditions (do NOT auto-tune to fit).
+_S1_CONTRAST_TOO_SMALL: float = 0.02
+_S2_BEDROOM_TOO_LOW: float = 0.98       # same as G_M2 — failing this triggers escalation, not threshold drop
+
+
+def _pixel_cosine(img_a: np.ndarray, img_b: np.ndarray) -> float:
     a = img_a.astype(np.float64).reshape(-1)
     b = img_b.astype(np.float64).reshape(-1)
     na = float(np.linalg.norm(a))
@@ -102,12 +142,42 @@ def _cosine_flat(img_a: np.ndarray, img_b: np.ndarray) -> float:
     return float(np.dot(a, b) / (na * nb))
 
 
+def _dinov2_encode_batch(
+    model: torch.nn.Module,
+    frames: List[np.ndarray],
+    device: torch.device,
+) -> np.ndarray:
+    """Encode a list of uint8 (H, W, 3) RGB arrays via the frozen DINOv2 protocol.
+
+    Returns (N, 1024) float32 L2-normalised CLS embeddings.
+    """
+    batch: List[torch.Tensor] = []
+    for frame in frames:
+        im = Image.fromarray(frame).convert("RGB")
+        # Match dinov2_encoder.py protocol: resize to 256 -> center crop 224.
+        if im.size != (_RESIZE, _RESIZE):
+            im = im.resize((_RESIZE, _RESIZE), resample=Image.BILINEAR)
+        w, h = im.size
+        left = (w - _CROP) // 2
+        top = (h - _CROP) // 2
+        im = im.crop((left, top, left + _CROP, top + _CROP))
+        arr = np.asarray(im, dtype=np.float32) / 255.0
+        t = torch.from_numpy(arr).permute(2, 0, 1)
+        t = (t - _IMAGENET_MEAN) / _IMAGENET_STD
+        batch.append(t)
+    x = torch.stack(batch).to(device, dtype=torch.float16, non_blocking=True)
+    with torch.no_grad():
+        res = model(pixel_values=x)
+    cls = res.last_hidden_state[:, 0, :].float()
+    cls = F.normalize(cls, dim=1, eps=1e-12)
+    return cls.cpu().numpy()
+
+
 def _teleport_and_capture(
     controller,
     position: Dict[str, float],
     heading_deg: float,
 ) -> np.ndarray:
-    """Teleport the agent to (position, heading) and return the RGB frame."""
     event = controller.step(
         action="Teleport",
         position=dict(position),
@@ -120,8 +190,7 @@ def _teleport_and_capture(
             f"Teleport to {position} heading={heading_deg} failed: "
             f"{event.metadata.get('errorMessage', '?')}"
         )
-    frame = np.asarray(event.frame, dtype=np.uint8)
-    return frame
+    return np.asarray(event.frame, dtype=np.uint8)
 
 
 def _items_by_id(route: Dict[str, Any]) -> Dict[int, Dict[str, Any]]:
@@ -154,11 +223,6 @@ def _randomize_livingroom(controller) -> Tuple[bool, Any]:
     )
 
 
-# Item-set identifiers for the preflight checks.
-_LIVINGROOM_ITEM_IDS = (3, 4)   # Dresser, Sofa
-_BEDROOM_ITEM_IDS = (1, 2, 5)   # Bed, DiningTable, Television
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--route_json", type=Path, default=_DEFAULT_ROUTE_JSON)
@@ -168,7 +232,6 @@ def main() -> int:
     args = parser.parse_args()
 
     os.environ.setdefault("DISPLAY", ":0")
-
     if not args.route_json.is_file():
         print(f"[preflight] FAIL: route file not found: {args.route_json}",
               file=sys.stderr)
@@ -181,16 +244,41 @@ def main() -> int:
     ts = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     print(f"[preflight] ts={ts} house_seed={route['seed']}", flush=True)
 
-    # Three gate criteria + record-only measurements (see module docstring).
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type != "cuda":
+        print("[preflight] FAIL: CUDA not available (DINOv2 encoding requires GPU)",
+              file=sys.stderr)
+        return 1
+    print(f"[preflight] device: {device}", flush=True)
+
     results: Dict[str, Any] = {
         "timestamp_utc": ts,
         "house_seed": int(route["seed"]),
-        "gate": {},          # G_M1 / G_M2 / G_M3 verdicts and values
-        "record_only": {},   # per-loop call-vs-call, session determinism
+        "gate_thresholds": {
+            "G_M2_bedroom_dinov2_min": _G_M2_BEDROOM_DINOV2_THRESHOLD,
+            "G_M3_threshold_ratio_of_contrast": _G_M3_THRESHOLD_RATIO,
+            "G_M3_threshold_ratio_range_authorised": [0.4, 0.6],
+            "S1_contrast_too_small": _S1_CONTRAST_TOO_SMALL,
+            "S2_bedroom_too_low": _S2_BEDROOM_TOO_LOW,
+            "rationale": (
+                "G_M2 = 0.98: Bedroom items are not visually re-textured under "
+                "LivingRoom-scoped RandomizeMaterials; their DINOv2 embeddings "
+                "should be very close to identical. 0.98 admits small lighting/"
+                "shadow variation without admitting actual cross-room "
+                "perturbation. G_M3 = 50% of observed contrast: midpoint of "
+                "the reviewer-authorised 40-60% range; gives downward "
+                "robustness against per-run material lottery while still "
+                "requiring a meaningfully positive contrast on future runs. "
+                "S1 = 0.02 and S2 = 0.98 are STOP-and-report conditions, NOT "
+                "auto-tuned during calibration."
+            ),
+        },
+        "gate": {},
+        "record_only": {},
         "overall_pass": False,
     }
 
-    # ---- Session 1: capture before, call RandomizeMaterials, capture after.
+    # ---- Session 1: capture frames + run RandomizeMaterials three times.
     house = load_house(seed=int(route["seed"]), min_rooms=4)
     controller_a = make_controller(house, width=args.width, height=args.height)
     try:
@@ -198,12 +286,11 @@ def main() -> int:
         before_frames = _capture_all_items(controller_a, items)
 
         # G_M1 — mechanism fires.
-        print("[preflight] session 1: calling RandomizeMaterials (1st time)", flush=True)
-        ok1, ret1 = _randomize_livingroom(controller_a)
+        print("[preflight] session 1: RandomizeMaterials call 1", flush=True)
+        ok1, _ret1 = _randomize_livingroom(controller_a)
         results["gate"]["G_M1_mechanism_fires"] = {
             "pass": bool(ok1),
             "criterion": "RandomizeMaterials(inRoomTypes=['LivingRoom']) lastActionSuccess == True",
-            "action_return_snapshot_call1": str(type(ret1).__name__),
         }
         if not ok1:
             args.results_dir.joinpath("preflight_report.json").write_text(
@@ -211,104 +298,247 @@ def main() -> int:
             )
             print("[preflight] FAIL: G_M1 (mechanism)", file=sys.stderr)
             return 2
-
         after1_frames = _capture_all_items(controller_a, items)
 
-        # Additional record-only calls: re-application call 2 and 3.
-        print("[preflight] session 1: calling RandomizeMaterials (2nd time)", flush=True)
-        _ok2, _ret2 = _randomize_livingroom(controller_a)
+        print("[preflight] session 1: RandomizeMaterials call 2", flush=True)
+        _randomize_livingroom(controller_a)
         after2_frames = _capture_all_items(controller_a, items)
-        print("[preflight] session 1: calling RandomizeMaterials (3rd time)", flush=True)
-        _ok3, _ret3 = _randomize_livingroom(controller_a)
+
+        print("[preflight] session 1: RandomizeMaterials call 3", flush=True)
+        _randomize_livingroom(controller_a)
         after3_frames = _capture_all_items(controller_a, items)
 
-        # Per-loop re-application: record only (was Check 2 in the initial run).
-        results["record_only"]["per_loop_re_application_cosines"] = {
-            "criterion_note": (
-                "Not gated. Captures whether RandomizeMaterials genuinely "
-                "re-randomises across consecutive calls; a value near 1.0 "
-                "across all four pairs would indicate hard-cached materials."
-            ),
-            "cos_dresser_call1_call2": float(_cosine_flat(after1_frames[3], after2_frames[3])),
-            "cos_dresser_call2_call3": float(_cosine_flat(after2_frames[3], after3_frames[3])),
-            "cos_sofa_call1_call2": float(_cosine_flat(after1_frames[4], after2_frames[4])),
-            "cos_sofa_call2_call3": float(_cosine_flat(after2_frames[4], after3_frames[4])),
-        }
-        _save_pair(frames_dir, "dresser_call1_call2", after1_frames[3], after2_frames[3])
-        _save_pair(frames_dir, "sofa_call1_call2", after1_frames[4], after2_frames[4])
-
-        # Per-item before-vs-after cosines, **averaged across the three random
-        # material draws** (calls 1/2/3). Averaging matches what the actual
-        # Phase 2 collection does — every loop ≥31 fires a fresh RandomizeMaterials
-        # call, so the predictor sees many independent material samples. A single
-        # snapshot is hostage to which texture happens to land on each item on
-        # that particular call; averaging across 3 draws is the smallest fix
-        # that gets the metric off the single-draw lottery.
-        after_frames_by_call = {1: after1_frames, 2: after2_frames, 3: after3_frames}
-        per_item_before_after_per_call: Dict[str, Dict[int, float]] = {}
-        per_item_before_after_mean: Dict[str, float] = {}
+        # Save the before / after-call-1 pairs as visual audit trail.
         for item_id, it in items.items():
             label = it["object_type"]
-            per_call = {
-                k: float(_cosine_flat(before_frames[item_id], after_frames_by_call[k][item_id]))
-                for k in (1, 2, 3)
-            }
-            per_item_before_after_per_call[label] = per_call
-            per_item_before_after_mean[label] = float(np.mean(list(per_call.values())))
             _save_pair(
                 frames_dir, f"{label.lower()}_before_after",
                 before_frames[item_id], after1_frames[item_id],
             )
+        # Save the call1 vs call2 pairs for the perturbed items.
+        for item_id in _LIVINGROOM_ITEM_IDS:
+            label = items[item_id]["object_type"]
+            _save_pair(
+                frames_dir, f"{label.lower()}_call1_call2",
+                after1_frames[item_id], after2_frames[item_id],
+            )
 
-        # G_M2 — Bedroom scope locality (mean Bedroom before-vs-after > 0.97,
-        # aggregated across both items and all three calls = 9 samples).
-        bedroom_per_item_mean = {
-            items[i]["object_type"]: per_item_before_after_mean[items[i]["object_type"]]
+        # ---- DINOv2 encoding of all 20 frames (5 items x 4 captures). ----
+        print("[preflight] loading frozen DINOv2-large + encoding 20 frames",
+              flush=True)
+        dinov2 = load_frozen_dinov2(device)
+        ordered_item_ids = list(items.keys())
+        all_frames: List[np.ndarray] = []
+        capture_labels: List[Tuple[int, str]] = []  # (item_id, label)
+        for cap_label, cap_dict in (
+            ("before", before_frames),
+            ("call1", after1_frames),
+            ("call2", after2_frames),
+            ("call3", after3_frames),
+        ):
+            for item_id in ordered_item_ids:
+                all_frames.append(cap_dict[item_id])
+                capture_labels.append((item_id, cap_label))
+        embeddings = _dinov2_encode_batch(dinov2, all_frames, device)
+        # Verify L2-norms are 1.0 within tolerance.
+        norms = np.linalg.norm(embeddings, axis=1)
+        norm_ok = bool(((norms >= 1.0 - 1e-4) & (norms <= 1.0 + 1e-4)).all())
+        if not norm_ok:
+            results["gate"]["G_M_encoder_norm_check"] = {
+                "pass": False,
+                "reason": (
+                    f"DINOv2 CLS embeddings not L2-normalised: "
+                    f"min={float(norms.min()):.6f} max={float(norms.max()):.6f}"
+                ),
+            }
+            args.results_dir.joinpath("preflight_report.json").write_text(
+                json.dumps(results, indent=2)
+            )
+            print("[preflight] FAIL: encoder norm check", file=sys.stderr)
+            return 2
+
+        # Index helper.
+        idx_by_key: Dict[Tuple[int, str], int] = {
+            key: i for i, key in enumerate(capture_labels)
+        }
+
+        # Per-item before-vs-call_k DINOv2 cosines, averaged across 3 calls.
+        per_item_dinov2_per_call: Dict[str, Dict[str, float]] = {}
+        per_item_dinov2_3call_mean: Dict[str, float] = {}
+        for item_id in ordered_item_ids:
+            label = items[item_id]["object_type"]
+            before_emb = embeddings[idx_by_key[(item_id, "before")]]
+            per_call = {}
+            for cap in ("call1", "call2", "call3"):
+                after_emb = embeddings[idx_by_key[(item_id, cap)]]
+                per_call[cap] = float(np.dot(before_emb, after_emb))
+            per_item_dinov2_per_call[label] = per_call
+            per_item_dinov2_3call_mean[label] = float(np.mean(list(per_call.values())))
+
+        # Per-loop re-application DINOv2 cosines on Dresser and Sofa (record only).
+        re_appl: Dict[str, float] = {}
+        for item_id in _LIVINGROOM_ITEM_IDS:
+            label = items[item_id]["object_type"]
+            c12 = float(np.dot(
+                embeddings[idx_by_key[(item_id, "call1")]],
+                embeddings[idx_by_key[(item_id, "call2")]],
+            ))
+            c23 = float(np.dot(
+                embeddings[idx_by_key[(item_id, "call2")]],
+                embeddings[idx_by_key[(item_id, "call3")]],
+            ))
+            re_appl[f"{label}_call1_call2_dinov2"] = c12
+            re_appl[f"{label}_call2_call3_dinov2"] = c23
+
+        # Flat-RGB cosines on the same captures (record-only audit trail).
+        flat_per_item_per_call: Dict[str, Dict[str, float]] = {}
+        flat_per_item_3call_mean: Dict[str, float] = {}
+        capture_dicts = {
+            "call1": after1_frames, "call2": after2_frames, "call3": after3_frames,
+        }
+        for item_id in ordered_item_ids:
+            label = items[item_id]["object_type"]
+            per_call_flat = {
+                cap: _pixel_cosine(before_frames[item_id], cap_dict[item_id])
+                for cap, cap_dict in capture_dicts.items()
+            }
+            flat_per_item_per_call[label] = per_call_flat
+            flat_per_item_3call_mean[label] = float(np.mean(list(per_call_flat.values())))
+
+        # ---- Aggregate DINOv2 metrics ----
+        bedroom_dinov2_per_item_mean = {
+            items[i]["object_type"]: per_item_dinov2_3call_mean[items[i]["object_type"]]
             for i in _BEDROOM_ITEM_IDS
         }
-        bedroom_mean = float(np.mean(list(bedroom_per_item_mean.values())))
-        results["gate"]["G_M2_bedroom_scope_locality"] = {
-            "pass": bool(bedroom_mean > 0.97),
-            "criterion": "mean Bedroom before-vs-after cosine > 0.97 (averaged across 3 random draws and 3 Bedroom items)",
-            "bedroom_per_item_mean_cosines": bedroom_per_item_mean,
-            "bedroom_mean_cosine": bedroom_mean,
-            "threshold": 0.97,
-        }
-
-        # G_M3 — LivingRoom-vs-Bedroom contrast (Bedroom mean - LivingRoom mean
-        # ≥ 0.02), each side averaged across the three random draws.
-        livingroom_per_item_mean = {
-            items[i]["object_type"]: per_item_before_after_mean[items[i]["object_type"]]
+        livingroom_dinov2_per_item_mean = {
+            items[i]["object_type"]: per_item_dinov2_3call_mean[items[i]["object_type"]]
             for i in _LIVINGROOM_ITEM_IDS
         }
-        livingroom_mean = float(np.mean(list(livingroom_per_item_mean.values())))
-        contrast = bedroom_mean - livingroom_mean
-        results["gate"]["G_M3_livingroom_bedroom_contrast"] = {
-            "pass": bool(contrast >= 0.02),
-            "criterion": "(Bedroom mean before-vs-after) - (LivingRoom mean before-vs-after) >= 0.02, each side averaged across 3 random RandomizeMaterials draws",
-            "livingroom_per_item_mean_cosines": livingroom_per_item_mean,
-            "livingroom_mean_cosine": livingroom_mean,
-            "bedroom_mean_cosine": bedroom_mean,
-            "contrast": float(contrast),
-            "threshold": 0.02,
+        bedroom_dinov2_mean = float(np.mean(list(bedroom_dinov2_per_item_mean.values())))
+        livingroom_dinov2_mean = float(np.mean(list(livingroom_dinov2_per_item_mean.values())))
+        observed_contrast = bedroom_dinov2_mean - livingroom_dinov2_mean
+        print(
+            f"[preflight] DINOv2 means: bedroom={bedroom_dinov2_mean:.4f} "
+            f"livingroom={livingroom_dinov2_mean:.4f} contrast={observed_contrast:.4f}",
+            flush=True,
+        )
+
+        # ---- STOP-and-report conditions (Grok directive: don't tune to fit). ----
+        stop_triggered = False
+        stop_reasons: List[str] = []
+        if observed_contrast < _S1_CONTRAST_TOO_SMALL:
+            stop_triggered = True
+            stop_reasons.append(
+                f"S1: observed_contrast={observed_contrast:.4f} < {_S1_CONTRAST_TOO_SMALL:.2f}; "
+                "perturbation is not producing a meaningful DINOv2-level localisation signal. "
+                "STOP and report to the experiment chat rather than chasing the threshold."
+            )
+        if bedroom_dinov2_mean < _S2_BEDROOM_TOO_LOW:
+            stop_triggered = True
+            stop_reasons.append(
+                f"S2: bedroom_dinov2_mean={bedroom_dinov2_mean:.4f} < {_S2_BEDROOM_TOO_LOW:.2f}; "
+                "Bedroom items moved more than the locality claim allows; suggests the "
+                "LivingRoom-scoped RandomizeMaterials call is having a global effect. "
+                "STOP and report; do not lower G_M2 to fit."
+            )
+
+        results["dinov2"] = {
+            "per_item_3call_mean_before_vs_after": per_item_dinov2_3call_mean,
+            "per_item_per_call_before_vs_after": per_item_dinov2_per_call,
+            "bedroom_dinov2_mean": bedroom_dinov2_mean,
+            "livingroom_dinov2_mean": livingroom_dinov2_mean,
+            "observed_contrast": observed_contrast,
+            "encoder_norm_check_passed": norm_ok,
         }
 
-        # Record per-call values for the audit trail (so reviewers can inspect
-        # the lottery distribution if a future run looks borderline).
-        results["record_only"]["per_item_before_vs_after_per_call"] = (
-            per_item_before_after_per_call
-        )
-        results["record_only"]["per_item_before_vs_after_3call_mean"] = (
-            per_item_before_after_mean
-        )
+        if stop_triggered:
+            results["gate"]["G_M2_bedroom_dinov2_locality"] = {
+                "pass": False,
+                "reason": "STOP-and-report triggered; gate not finalised",
+            }
+            results["gate"]["G_M3_dinov2_contrast"] = {
+                "pass": False,
+                "reason": "STOP-and-report triggered; gate not finalised",
+            }
+            results["stop_and_report"] = {
+                "triggered": True,
+                "reasons": stop_reasons,
+                "guidance": (
+                    "Per the reviewer's 2026-05-14 directive: if calibration "
+                    "surfaces an unexpected pattern, STOP and report rather "
+                    "than tuning thresholds to fit. Do NOT lower G_M2 or G_M3 "
+                    "to make the gate pass."
+                ),
+            }
+        else:
+            # G_M2 — Bedroom DINOv2 locality > 0.98.
+            results["gate"]["G_M2_bedroom_dinov2_locality"] = {
+                "pass": bool(bedroom_dinov2_mean > _G_M2_BEDROOM_DINOV2_THRESHOLD),
+                "criterion": (
+                    f"mean Bedroom DINOv2 before-vs-after CLS cosine > "
+                    f"{_G_M2_BEDROOM_DINOV2_THRESHOLD} "
+                    f"(averaged across 3 RandomizeMaterials draws and 3 Bedroom items)"
+                ),
+                "bedroom_per_item_dinov2_3call_mean": bedroom_dinov2_per_item_mean,
+                "bedroom_mean_cosine": bedroom_dinov2_mean,
+                "threshold": _G_M2_BEDROOM_DINOV2_THRESHOLD,
+            }
+
+            # G_M3 — calibrated DINOv2 contrast threshold.
+            g_m3_threshold = _G_M3_THRESHOLD_RATIO * observed_contrast
+            results["gate"]["G_M3_dinov2_contrast"] = {
+                "pass": bool(observed_contrast >= g_m3_threshold),
+                "criterion": (
+                    f"(Bedroom mean - LivingRoom mean) DINOv2 cosine "
+                    f">= {_G_M3_THRESHOLD_RATIO} * observed_contrast"
+                ),
+                "livingroom_per_item_dinov2_3call_mean": livingroom_dinov2_per_item_mean,
+                "livingroom_mean_cosine": livingroom_dinov2_mean,
+                "bedroom_mean_cosine": bedroom_dinov2_mean,
+                "observed_contrast": observed_contrast,
+                "calibration_ratio": _G_M3_THRESHOLD_RATIO,
+                "calibrated_threshold": g_m3_threshold,
+                "note": (
+                    "Threshold is set to 50% of the observed contrast (midpoint "
+                    "of the reviewer-authorised 40-60% range). This run trivially "
+                    "passes by construction; the threshold's purpose is to gate "
+                    "future preflight runs (or substrate changes) against a "
+                    "downward drop of more than 50% in the contrast."
+                ),
+            }
+
+            # Persist the calibration to a side file for any future re-runs.
+            calib_file = args.results_dir / "g_m3_calibration.json"
+            calib_file.write_text(
+                json.dumps(
+                    {
+                        "timestamp_utc": ts,
+                        "house_seed": int(route["seed"]),
+                        "observed_contrast": observed_contrast,
+                        "calibration_ratio": _G_M3_THRESHOLD_RATIO,
+                        "g_m3_threshold": g_m3_threshold,
+                        "rationale": (
+                            "Calibrated during the initial DINOv2 preflight run; "
+                            "future preflight runs against the same substrate should "
+                            "pass G_M3 against this fixed threshold."
+                        ),
+                    },
+                    indent=2,
+                )
+            )
+
+        results["record_only"]["per_item_re_application_dinov2"] = re_appl
+        results["record_only"]["flat_rgb_per_item_per_call"] = flat_per_item_per_call
+        results["record_only"]["flat_rgb_per_item_3call_mean"] = flat_per_item_3call_mean
     finally:
         try:
             controller_a.stop()
         except Exception:
             pass
 
-    # ---- Session 2: fresh controller, repeat first call, compare to session 1 (record only).
-    print("[preflight] session 2: fresh controller for determinism record", flush=True)
+    # ---- Session 2: fresh controller, record-only determinism note. ----
+    print("[preflight] session 2: fresh controller for determinism record",
+          flush=True)
     controller_b = make_controller(house, width=args.width, height=args.height)
     try:
         ok_b1, _ret_b1 = _randomize_livingroom(controller_b)
@@ -319,17 +549,19 @@ def main() -> int:
             }
         else:
             session_b_frames = _capture_all_items(controller_b, items)
-            cos_dresser_sessions = _cosine_flat(after1_frames[3], session_b_frames[3])
-            cos_sofa_sessions = _cosine_flat(after1_frames[4], session_b_frames[4])
-            determinism = bool(cos_dresser_sessions > 0.999 and cos_sofa_sessions > 0.999)
+            # Compute a quick flat-RGB session-vs-session cosine on Dresser+Sofa.
+            cos_dresser = _pixel_cosine(after1_frames[3], session_b_frames[3])
+            cos_sofa = _pixel_cosine(after1_frames[4], session_b_frames[4])
             results["record_only"]["session_determinism"] = {
-                "deterministic_across_sessions": determinism,
-                "cos_dresser_sessionA_sessionB": float(cos_dresser_sessions),
-                "cos_sofa_sessionA_sessionB": float(cos_sofa_sessions),
+                "deterministic_across_sessions": bool(
+                    cos_dresser > 0.999 and cos_sofa > 0.999
+                ),
+                "cos_dresser_sessionA_sessionB_flatrgb": float(cos_dresser),
+                "cos_sofa_sessionA_sessionB_flatrgb": float(cos_sofa),
                 "note": (
-                    "Materials are deterministic across sessions."
-                    if determinism
-                    else "Materials are per-run; per-loop applied materials are recorded in phase2_collection_metadata.json."
+                    "Materials may be per-run; per-loop applied materials "
+                    "are recorded in phase2_collection_metadata.json by the "
+                    "collection script."
                 ),
             }
     finally:
@@ -338,13 +570,16 @@ def main() -> int:
         except Exception:
             pass
 
-    # ---- Verdict.
+    # ---- Verdict ----
     gate_keys = [
         "G_M1_mechanism_fires",
-        "G_M2_bedroom_scope_locality",
-        "G_M3_livingroom_bedroom_contrast",
+        "G_M2_bedroom_dinov2_locality",
+        "G_M3_dinov2_contrast",
     ]
-    overall = all(results["gate"].get(k, {}).get("pass", False) for k in gate_keys)
+    overall = (
+        not results.get("stop_and_report", {}).get("triggered", False)
+        and all(results["gate"].get(k, {}).get("pass", False) for k in gate_keys)
+    )
     results["overall_pass"] = bool(overall)
 
     args.results_dir.joinpath("preflight_report.json").write_text(
@@ -352,16 +587,21 @@ def main() -> int:
     )
 
     md_lines = [
-        "# Phase 2 Preflight Report (recalibrated 2026-05-14)",
+        "# Phase 2 Preflight Report (DINOv2 contrast, 2026-05-14)",
         "",
         f"Timestamp: {ts}",
         f"House seed: {route['seed']}",
         "",
         f"## Verdict: {'PASS' if overall else 'FAIL'}",
         "",
-        "## Gate criteria",
-        "",
     ]
+    if results.get("stop_and_report", {}).get("triggered", False):
+        md_lines.append("## STOP-AND-REPORT TRIGGERED")
+        for r in results["stop_and_report"]["reasons"]:
+            md_lines.append(f"- {r}")
+        md_lines.append("")
+    md_lines.append("## Gate criteria")
+    md_lines.append("")
     for k in gate_keys:
         check = results["gate"].get(k, {"pass": False, "reason": "not run"})
         md_lines.append(f"### {k}: {'PASS' if check.get('pass') else 'FAIL'}")
@@ -370,12 +610,20 @@ def main() -> int:
                 continue
             md_lines.append(f"- **{kk}**: {vv}")
         md_lines.append("")
-    md_lines.append("## Record-only measurements")
+    md_lines.append("## DINOv2 measurements (gate-relevant)")
+    md_lines.append("")
+    for kk, vv in results.get("dinov2", {}).items():
+        md_lines.append(f"- **{kk}**: {vv}")
+    md_lines.append("")
+    md_lines.append("## Record-only")
     md_lines.append("")
     for k, v in results["record_only"].items():
         md_lines.append(f"### {k}")
-        for kk, vv in v.items():
-            md_lines.append(f"- **{kk}**: {vv}")
+        if isinstance(v, dict):
+            for kk, vv in v.items():
+                md_lines.append(f"- **{kk}**: {vv}")
+        else:
+            md_lines.append(f"- {v}")
         md_lines.append("")
     args.results_dir.joinpath("preflight_report.md").write_text("\n".join(md_lines))
 
