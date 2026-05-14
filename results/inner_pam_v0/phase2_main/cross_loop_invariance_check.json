@@ -1,0 +1,1327 @@
+{
+  "method": "For each (item, loop) collect close-up frames in temporal order. Group by within-close-up ordinal index. At each ordinal i, compute pairwise pixel-MD5 matches and pairwise DINOv2 cosines across the sampled loops. Also report the apex frame's stats separately.",
+  "sample_loops": [
+    1,
+    5,
+    10,
+    15,
+    20,
+    25,
+    28
+  ],
+  "items": {
+    "Bed": 1,
+    "Television": 5
+  },
+  "skipped": [
+    "DiningTable"
+  ],
+  "per_item": {
+    "Bed": {
+      "viewing_position_id": 1,
+      "loops_sampled": [
+        1,
+        5,
+        10,
+        15,
+        20,
+        25,
+        28
+      ],
+      "pose_match": {
+        "all_lengths_equal": true,
+        "close_up_length_at_ref_loop": 11,
+        "max_xz_displacement_across_loops_max_over_ordinals": 0.0,
+        "max_rotation_deviation_across_loops_max_over_ordinals_deg": 0.0
+      },
+      "summary": {
+        "n_ordinals_compared": 11,
+        "n_loops_compared": 7,
+        "all_ordinals_pixel_md5_identical_across_loops": true,
+        "any_ordinal_pixel_md5_identical_across_loops": true,
+        "n_ordinals_with_all_pixel_md5_identical": 11,
+        "cosine_per_ordinal_off_diag_min": 0.9999999362264542,
+        "cosine_per_ordinal_off_diag_max": 1.0000001157271423,
+        "cosine_per_ordinal_off_diag_mean_of_means": 1.000000017453752
+      },
+      "apex": {
+        "apex_frame_idxs_per_loop": [
+          {
+            "loop": 1,
+            "frame_idx": 365
+          },
+          {
+            "loop": 5,
+            "frame_idx": 1805
+          },
+          {
+            "loop": 10,
+            "frame_idx": 3605
+          },
+          {
+            "loop": 15,
+            "frame_idx": 5405
+          },
+          {
+            "loop": 20,
+            "frame_idx": 7205
+          },
+          {
+            "loop": 25,
+            "frame_idx": 9005
+          },
+          {
+            "loop": 28,
+            "frame_idx": 10085
+          }
+        ],
+        "n_loops_sampled": 7,
+        "n_unique_pixel_md5": 1,
+        "n_unique_raw_md5": 1,
+        "pixel_md5_all_identical": true,
+        "pixel_md5_per_loop": [
+          "4032f98cbaa64ade7e27616e7b6c5133",
+          "4032f98cbaa64ade7e27616e7b6c5133",
+          "4032f98cbaa64ade7e27616e7b6c5133",
+          "4032f98cbaa64ade7e27616e7b6c5133",
+          "4032f98cbaa64ade7e27616e7b6c5133",
+          "4032f98cbaa64ade7e27616e7b6c5133",
+          "4032f98cbaa64ade7e27616e7b6c5133"
+        ],
+        "pairwise_cosines_off_diag": {
+          "n": 21,
+          "min": 0.9999999658252392,
+          "max": 0.9999999658252392,
+          "mean": 0.9999999658252392
+        }
+      },
+      "per_ordinal": [
+        {
+          "ordinal": 0,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 360
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1800
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3600
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5400
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7200
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9000
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10080
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "30c2195e92c819e12d78409262af399f",
+            "30c2195e92c819e12d78409262af399f",
+            "30c2195e92c819e12d78409262af399f",
+            "30c2195e92c819e12d78409262af399f",
+            "30c2195e92c819e12d78409262af399f",
+            "30c2195e92c819e12d78409262af399f",
+            "30c2195e92c819e12d78409262af399f"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 1.0000000886393963,
+            "max": 1.0000000886393963,
+            "mean": 1.0000000886393963
+          }
+        },
+        {
+          "ordinal": 1,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 361
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1801
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3601
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5401
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7201
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9001
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10081
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9",
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9",
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9",
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9",
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9",
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9",
+            "5ef2cc0de4ad45c019f48b8ebe6ceea9"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 1.0000000419567165,
+            "max": 1.0000000419567165,
+            "mean": 1.0000000419567165
+          }
+        },
+        {
+          "ordinal": 2,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 362
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1802
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3602
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5402
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7202
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9002
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10082
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "569339bf519e63389b012051c89aa6a3",
+            "569339bf519e63389b012051c89aa6a3",
+            "569339bf519e63389b012051c89aa6a3",
+            "569339bf519e63389b012051c89aa6a3",
+            "569339bf519e63389b012051c89aa6a3",
+            "569339bf519e63389b012051c89aa6a3",
+            "569339bf519e63389b012051c89aa6a3"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 1.0000000985950854,
+            "max": 1.0000000985950854,
+            "mean": 1.0000000985950854
+          }
+        },
+        {
+          "ordinal": 3,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 363
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1803
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3603
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5403
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7203
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9003
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10083
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "7abed977a46f93c94eb2720ea0cdffbc",
+            "7abed977a46f93c94eb2720ea0cdffbc",
+            "7abed977a46f93c94eb2720ea0cdffbc",
+            "7abed977a46f93c94eb2720ea0cdffbc",
+            "7abed977a46f93c94eb2720ea0cdffbc",
+            "7abed977a46f93c94eb2720ea0cdffbc",
+            "7abed977a46f93c94eb2720ea0cdffbc"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 1.0000001157271423,
+            "max": 1.0000001157271423,
+            "mean": 1.0000001157271423
+          }
+        },
+        {
+          "ordinal": 4,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 364
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1804
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3604
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5404
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7204
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9004
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10084
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "db0ca7e0f1c82019a39687a456f77f9a",
+            "db0ca7e0f1c82019a39687a456f77f9a",
+            "db0ca7e0f1c82019a39687a456f77f9a",
+            "db0ca7e0f1c82019a39687a456f77f9a",
+            "db0ca7e0f1c82019a39687a456f77f9a",
+            "db0ca7e0f1c82019a39687a456f77f9a",
+            "db0ca7e0f1c82019a39687a456f77f9a"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999999362264542,
+            "max": 0.9999999362264542,
+            "mean": 0.9999999362264541
+          }
+        },
+        {
+          "ordinal": 5,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 365
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1805
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3605
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5405
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7205
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9005
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10085
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "4032f98cbaa64ade7e27616e7b6c5133",
+            "4032f98cbaa64ade7e27616e7b6c5133",
+            "4032f98cbaa64ade7e27616e7b6c5133",
+            "4032f98cbaa64ade7e27616e7b6c5133",
+            "4032f98cbaa64ade7e27616e7b6c5133",
+            "4032f98cbaa64ade7e27616e7b6c5133",
+            "4032f98cbaa64ade7e27616e7b6c5133"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999999658252392,
+            "max": 0.9999999658252392,
+            "mean": 0.9999999658252392
+          }
+        },
+        {
+          "ordinal": 6,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 366
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1806
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3606
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5406
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7206
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9006
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10086
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "9b1fc78b88e8ff1376803b3e7a72fd34",
+            "9b1fc78b88e8ff1376803b3e7a72fd34",
+            "9b1fc78b88e8ff1376803b3e7a72fd34",
+            "9b1fc78b88e8ff1376803b3e7a72fd34",
+            "9b1fc78b88e8ff1376803b3e7a72fd34",
+            "9b1fc78b88e8ff1376803b3e7a72fd34",
+            "9b1fc78b88e8ff1376803b3e7a72fd34"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.999999968792348,
+            "max": 0.999999968792348,
+            "mean": 0.9999999687923479
+          }
+        },
+        {
+          "ordinal": 7,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 367
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1807
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3607
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5407
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7207
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9007
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10087
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "632c13e8e0cc668e2f302088cef648af",
+            "632c13e8e0cc668e2f302088cef648af",
+            "632c13e8e0cc668e2f302088cef648af",
+            "632c13e8e0cc668e2f302088cef648af",
+            "632c13e8e0cc668e2f302088cef648af",
+            "632c13e8e0cc668e2f302088cef648af",
+            "632c13e8e0cc668e2f302088cef648af"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999999492947578,
+            "max": 0.9999999492947578,
+            "mean": 0.9999999492947579
+          }
+        },
+        {
+          "ordinal": 8,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 368
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1808
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3608
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5408
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7208
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9008
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10088
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "61b96bd68d0134380cf86f30b5d7cba5",
+            "61b96bd68d0134380cf86f30b5d7cba5",
+            "61b96bd68d0134380cf86f30b5d7cba5",
+            "61b96bd68d0134380cf86f30b5d7cba5",
+            "61b96bd68d0134380cf86f30b5d7cba5",
+            "61b96bd68d0134380cf86f30b5d7cba5",
+            "61b96bd68d0134380cf86f30b5d7cba5"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 1.000000008465614,
+            "max": 1.000000008465614,
+            "mean": 1.000000008465614
+          }
+        },
+        {
+          "ordinal": 9,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 369
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1809
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3609
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5409
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7209
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9009
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10089
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "403d624dd8acdd61702a2fb38c8a7f85",
+            "403d624dd8acdd61702a2fb38c8a7f85",
+            "403d624dd8acdd61702a2fb38c8a7f85",
+            "403d624dd8acdd61702a2fb38c8a7f85",
+            "403d624dd8acdd61702a2fb38c8a7f85",
+            "403d624dd8acdd61702a2fb38c8a7f85",
+            "403d624dd8acdd61702a2fb38c8a7f85"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 1.0000000199063344,
+            "max": 1.0000000199063344,
+            "mean": 1.0000000199063344
+          }
+        },
+        {
+          "ordinal": 10,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 370
+            },
+            {
+              "loop": 5,
+              "frame_idx": 1810
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3610
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5410
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7210
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9010
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10090
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 1,
+          "n_unique_raw_md5": 1,
+          "pixel_md5_all_identical": true,
+          "pixel_md5_per_loop": [
+            "7497882af923a190c3fc93e5bec8b389",
+            "7497882af923a190c3fc93e5bec8b389",
+            "7497882af923a190c3fc93e5bec8b389",
+            "7497882af923a190c3fc93e5bec8b389",
+            "7497882af923a190c3fc93e5bec8b389",
+            "7497882af923a190c3fc93e5bec8b389",
+            "7497882af923a190c3fc93e5bec8b389"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999999985621855,
+            "max": 0.9999999985621855,
+            "mean": 0.9999999985621855
+          }
+        }
+      ]
+    },
+    "Television": {
+      "viewing_position_id": 5,
+      "loops_sampled": [
+        1,
+        5,
+        10,
+        15,
+        20,
+        25,
+        28
+      ],
+      "pose_match": {
+        "all_lengths_equal": true,
+        "close_up_length_at_ref_loop": 11,
+        "max_xz_displacement_across_loops_max_over_ordinals": 0.0,
+        "max_rotation_deviation_across_loops_max_over_ordinals_deg": 0.0
+      },
+      "summary": {
+        "n_ordinals_compared": 11,
+        "n_loops_compared": 7,
+        "all_ordinals_pixel_md5_identical_across_loops": false,
+        "any_ordinal_pixel_md5_identical_across_loops": false,
+        "n_ordinals_with_all_pixel_md5_identical": 0,
+        "cosine_per_ordinal_off_diag_min": 0.9998314860321982,
+        "cosine_per_ordinal_off_diag_max": 1.0000001358236514,
+        "cosine_per_ordinal_off_diag_mean_of_means": 0.9999898292260234
+      },
+      "apex": {
+        "apex_frame_idxs_per_loop": [
+          {
+            "loop": 1,
+            "frame_idx": 687
+          },
+          {
+            "loop": 5,
+            "frame_idx": 2127
+          },
+          {
+            "loop": 10,
+            "frame_idx": 3927
+          },
+          {
+            "loop": 15,
+            "frame_idx": 5727
+          },
+          {
+            "loop": 20,
+            "frame_idx": 7527
+          },
+          {
+            "loop": 25,
+            "frame_idx": 9327
+          },
+          {
+            "loop": 28,
+            "frame_idx": 10407
+          }
+        ],
+        "n_loops_sampled": 7,
+        "n_unique_pixel_md5": 2,
+        "n_unique_raw_md5": 2,
+        "pixel_md5_all_identical": false,
+        "pixel_md5_per_loop": [
+          "c467c7eee30fe915cc57808d48994133",
+          "ed1ed0d539b2953a6aec2b3acd8e9230",
+          "ed1ed0d539b2953a6aec2b3acd8e9230",
+          "ed1ed0d539b2953a6aec2b3acd8e9230",
+          "ed1ed0d539b2953a6aec2b3acd8e9230",
+          "ed1ed0d539b2953a6aec2b3acd8e9230",
+          "ed1ed0d539b2953a6aec2b3acd8e9230"
+        ],
+        "pairwise_cosines_off_diag": {
+          "n": 21,
+          "min": 0.9999839120009792,
+          "max": 1.0000000968054552,
+          "mean": 0.999995472575605
+        }
+      },
+      "per_ordinal": [
+        {
+          "ordinal": 0,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 682
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2122
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3922
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5722
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7522
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9322
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10402
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 2,
+          "n_unique_raw_md5": 2,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "93cf8bbbef0f9f40e4cee5abf1dc0f6e",
+            "7f98ae7dc8239a60402cf557e468192f",
+            "7f98ae7dc8239a60402cf557e468192f",
+            "7f98ae7dc8239a60402cf557e468192f",
+            "7f98ae7dc8239a60402cf557e468192f",
+            "7f98ae7dc8239a60402cf557e468192f",
+            "7f98ae7dc8239a60402cf557e468192f"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999782380689821,
+            "max": 1.000000105793153,
+            "mean": 0.9999938578719613
+          }
+        },
+        {
+          "ordinal": 1,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 683
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2123
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3923
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5723
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7523
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9323
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10403
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 5,
+          "n_unique_raw_md5": 5,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "77c0c64059b227ff987e4b13dc89fc06",
+            "9c1ff29fb2eb30013c0f8706c42fa2f7",
+            "21063cd26ee4da5977f5d630c957d3e3",
+            "21063cd26ee4da5977f5d630c957d3e3",
+            "21063cd26ee4da5977f5d630c957d3e3",
+            "8750b2c22865f088065c88b17e30cd97",
+            "ad0bdc30f5d750d85deea56e8d708dd4"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999862642268968,
+            "max": 1.000000060095553,
+            "mean": 0.999995527407588
+          }
+        },
+        {
+          "ordinal": 2,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 684
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2124
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3924
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5724
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7524
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9324
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10404
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 4,
+          "n_unique_raw_md5": 4,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "29ca07b09f4196ee64f6540bcb48cea4",
+            "e6ee9817530f155a45f0a0cb9defb87d",
+            "e6ee9817530f155a45f0a0cb9defb87d",
+            "209010a38e1268f2f36d75bf75d45413",
+            "209010a38e1268f2f36d75bf75d45413",
+            "209010a38e1268f2f36d75bf75d45413",
+            "73b520ad1aa75d671385724b7c4165d4"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999238853922594,
+            "max": 1.0000000650007728,
+            "mean": 0.9999780308123072
+          }
+        },
+        {
+          "ordinal": 3,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 685
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2125
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3925
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5725
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7525
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9325
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10405
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 4,
+          "n_unique_raw_md5": 4,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "066614ea1c179baa8738df4870d18a20",
+            "8b56ac65336f013d1da12dbefa6b8758",
+            "f1cfc7884dfdfcd6e1a53cdf1f5b004b",
+            "f1cfc7884dfdfcd6e1a53cdf1f5b004b",
+            "f1cfc7884dfdfcd6e1a53cdf1f5b004b",
+            "f1cfc7884dfdfcd6e1a53cdf1f5b004b",
+            "d8b29cb8e93c9a3a354c7072557f633e"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999928308826049,
+            "max": 1.000000031391148,
+            "mean": 0.999997376328759
+          }
+        },
+        {
+          "ordinal": 4,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 686
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2126
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3926
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5726
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7526
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9326
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10406
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 3,
+          "n_unique_raw_md5": 3,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "6684a01e945d2b27e5608ac5730bd563",
+            "75453790f610e0487a0b5e6f5af6c6d1",
+            "75453790f610e0487a0b5e6f5af6c6d1",
+            "75453790f610e0487a0b5e6f5af6c6d1",
+            "75453790f610e0487a0b5e6f5af6c6d1",
+            "70a79f6c3f92c36ccfc973b572ce956a",
+            "75453790f610e0487a0b5e6f5af6c6d1"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999947053338549,
+            "max": 1.0000000793586843,
+            "mean": 0.9999982499687972
+          }
+        },
+        {
+          "ordinal": 5,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 687
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2127
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3927
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5727
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7527
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9327
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10407
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 2,
+          "n_unique_raw_md5": 2,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "c467c7eee30fe915cc57808d48994133",
+            "ed1ed0d539b2953a6aec2b3acd8e9230",
+            "ed1ed0d539b2953a6aec2b3acd8e9230",
+            "ed1ed0d539b2953a6aec2b3acd8e9230",
+            "ed1ed0d539b2953a6aec2b3acd8e9230",
+            "ed1ed0d539b2953a6aec2b3acd8e9230",
+            "ed1ed0d539b2953a6aec2b3acd8e9230"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999839120009792,
+            "max": 1.0000000968054552,
+            "mean": 0.999995472575605
+          }
+        },
+        {
+          "ordinal": 6,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 688
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2128
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3928
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5728
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7528
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9328
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10408
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 3,
+          "n_unique_raw_md5": 3,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "854b266e36751b3a8667c40e4ecf7408",
+            "7f1b6ea5aef89fb9632ab88d2654cc12",
+            "35518e5dc622e22009cea3a1e173ab61",
+            "35518e5dc622e22009cea3a1e173ab61",
+            "35518e5dc622e22009cea3a1e173ab61",
+            "35518e5dc622e22009cea3a1e173ab61",
+            "35518e5dc622e22009cea3a1e173ab61"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999957737185985,
+            "max": 0.9999999921233129,
+            "mean": 0.9999985350045144
+          }
+        },
+        {
+          "ordinal": 7,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 689
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2129
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3929
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5729
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7529
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9329
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10409
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 4,
+          "n_unique_raw_md5": 4,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "63802b4faa0d71fb20f9610995ec59c2",
+            "eb39581fbeae1eb5308fbc0bf2392db9",
+            "7c27672509d292315c19d4fe5db7ff80",
+            "eb39581fbeae1eb5308fbc0bf2392db9",
+            "eb39581fbeae1eb5308fbc0bf2392db9",
+            "0e6313aa82ee42cba9c08e55a8ff8565",
+            "0e6313aa82ee42cba9c08e55a8ff8565"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999643961714813,
+            "max": 1.0000001014151016,
+            "mean": 0.9999896123084516
+          }
+        },
+        {
+          "ordinal": 8,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 690
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2130
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3930
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5730
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7530
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9330
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10410
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 3,
+          "n_unique_raw_md5": 3,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "0f0252f9f1451205cf419eaf1b580a53",
+            "27e714648d3235a1db2cf1f1473c42bc",
+            "27e714648d3235a1db2cf1f1473c42bc",
+            "27e714648d3235a1db2cf1f1473c42bc",
+            "27e714648d3235a1db2cf1f1473c42bc",
+            "c501af8d58b25bc6ce716eafd4d83ba7",
+            "c501af8d58b25bc6ce716eafd4d83ba7"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999763712865606,
+            "max": 1.0000001358236514,
+            "mean": 0.999993024690516
+          }
+        },
+        {
+          "ordinal": 9,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 691
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2131
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3931
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5731
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7531
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9331
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10411
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 3,
+          "n_unique_raw_md5": 3,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "5b705a34e6ca28921a16689d9daf14f9",
+            "c3bd9b27c05f344c8e4454ca9635de61",
+            "c3bd9b27c05f344c8e4454ca9635de61",
+            "c3bd9b27c05f344c8e4454ca9635de61",
+            "c3bd9b27c05f344c8e4454ca9635de61",
+            "c3bd9b27c05f344c8e4454ca9635de61",
+            "544150e3b7dacf4e5abbe8fad9e03457"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9999864766524365,
+            "max": 0.9999999367300971,
+            "mean": 0.9999960536352769
+          }
+        },
+        {
+          "ordinal": 10,
+          "frame_idxs_per_loop": [
+            {
+              "loop": 1,
+              "frame_idx": 692
+            },
+            {
+              "loop": 5,
+              "frame_idx": 2132
+            },
+            {
+              "loop": 10,
+              "frame_idx": 3932
+            },
+            {
+              "loop": 15,
+              "frame_idx": 5732
+            },
+            {
+              "loop": 20,
+              "frame_idx": 7532
+            },
+            {
+              "loop": 25,
+              "frame_idx": 9332
+            },
+            {
+              "loop": 28,
+              "frame_idx": 10412
+            }
+          ],
+          "n_loops_sampled": 7,
+          "n_unique_pixel_md5": 6,
+          "n_unique_raw_md5": 6,
+          "pixel_md5_all_identical": false,
+          "pixel_md5_per_loop": [
+            "8c72d35274774b531d194ea0add50122",
+            "c3b81dd09d88b21642ba8f03cba4dbc4",
+            "c3b81dd09d88b21642ba8f03cba4dbc4",
+            "b578424617dc5b616aefc26ccb96a109",
+            "a69578c4bdc5fcb358e7d98dd3d27a6e",
+            "a2323936460811e83ed92abad0990245",
+            "eceb18520d4cb3dfb1c06f8d4c4a572f"
+          ],
+          "pairwise_cosines_off_diag": {
+            "n": 21,
+            "min": 0.9998314860321982,
+            "max": 0.9999999854064743,
+            "mean": 0.9999523808824806
+          }
+        }
+      ]
+    }
+  }
+}
