@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Phase 2 collection completed on the corrected substrate (65,000 frames; 11,160 Stage A + 53,840 Stage B; 150 perturbed loops 31-180; failed=False). Encoding ran cleanly (466 f/s, norms ok) but **§8.4 verification FAILS on both gates**: absolute per-perturbed-item gap is 0.0097/0.0136 vs threshold 0.05; differential ratio is 1.36 vs threshold 2.0. DT's residual doorway-bleed at corrected eye-height (gap 0.0144) is the same magnitude as Sofa's perturbation signal (gap 0.0136); without DT in the control set, the ratio is 2.06 — right at the 2× threshold. The substrate fix worked (DT improved from 0.045 at original pose to 0.014 at corrected eye-height) but did not eliminate the bleed; the DINOv2 perturbation signal from `RandomizeMaterials` at apex frames is also smaller (0.01-0.014) than the 0.05 SCAFFOLDING threshold anticipated. Seventh STOP in session 5. Embeddings.npy NOT written; Phase 2 training NOT launched. Working tree clean; push hold in effect.
+**Status at end of session 5 (2026-05-14):** Seventh-STOP §8.4 verification reviewed; reviewer authorised the next session's restructuring and (conditional) Phase 2 training launch but stopped THIS session for context-budget reasons (`CODING_STANDARDS.md` §9.6 — compacted context can produce fabricated numbers during statistical-test computation). Phase 2 collected data on the corrected substrate is on disk (65k frames + annotations + materials metadata; `encode_report.json` committed at `6d6e58d`; embeddings.npy not yet written — pending the restructured §8.4 gate). Phase 2 training NOT launched. Next session has authorised tasks captured in detail in the "Next immediate action" block below. Working tree clean; push hold in effect.
 
 ---
 
@@ -75,6 +75,46 @@ autonomous.
 ---
 
 ## Next immediate action
+
+**Seventh-STOP resolved; next-session load-bearing work authorised but DEFERRED to next session for context-budget reasons.** The reviewer's authorisation arrived alongside an explicit instruction not to begin the work this session (`CODING_STANDARDS.md` §9.6: compacted context can produce fabricated numbers during statistical-test computation; the §8.4 restructuring + statistical test + training launch are exactly the class of work that should not run on a compacted-context turn).
+
+**Next session — concrete authorised tasks, in order:**
+
+**(a) Restructure §8.4 to drop the 0.05 absolute floor and replace with two parallel criteria:**
+
+  1. **Relative criterion** (refined from the present 2× ratio gate): perturbed_mean_gap / control_mean_gap ≥ **2.0**, where `control_mean_gap` is computed across **{Bed, Television} only**. DiningTable is excluded from the control set as a "noisy control" — its h118-corrected pose still leaks residual doorway-bleed (gap 0.0144 ≈ Sofa 0.0136); it's tracked separately as a per-item diagnostic. This {Bed, TV} control framing is the third-STOP option (a) the experiment chat already authorised; the present §8.4 implementation needs to be updated to match.
+
+  2. **Statistical-distinguishability criterion** (new; architecturally-meaningful version of "is the signal real"): **Mann-Whitney U test** per perturbed item, comparing the within-Stage-A apex-cosine sample to the within-Stage-B apex-cosine sample. Required: **Bonferroni-corrected p < 0.001** across the 2 perturbed items (Dresser, Sofa) — i.e., raw `p < 0.0005` per item (0.001 / 2 = 0.0005). The MWU formulation tests whether the perturbed-item gap distribution is statistically distinguishable from the matched control distribution; the absolute magnitude (which 0.05 was guessing at without empirical grounding) is irrelevant — what matters architecturally is "is the perturbation producing a signal the predictor can learn from, or not?"
+
+**(b) Run the new gates on the existing collected data.** No new collection needed. The 65k Phase 2 frames + annotations are on disk; the encoder runs in ~140s; the statistical test on the apex-frame subsets runs in seconds. `scripts/run_phase2_encode.py` is the natural place to add the new criteria (replacing the current absolute-floor + 2×-ratio-with-DT-in-controls gate).
+
+**(c) Update `research_operations_v1.md` §15** with the institutional-memory entry on absolute-magnitude thresholds: a-priori absolute thresholds on metric magnitudes (the 0.05 §8.4 case) don't survive empirical contact with encoders whose distributional behaviour on the actual substrate isn't known in advance. The architecturally-meaningful criterion is usually *relative* (perturbed-vs-control ratio) or *statistical* (is the signal distinguishable from null) rather than absolute. Pattern: when you find yourself writing `metric > 0.05` as a SCAFFOLDING gate, ask whether the gate would survive a 5× shift in the metric's natural scale — if not, prefer ratio/statistical formulations.
+
+**(d) If both new gates pass, launch Phase 2 training** on the existing collected data. The trainer (`scripts/run_phase2_train.py`) is already written with the in-flight transition diagnostic (G2.T1 loss spike / G2.T2 perturbed widening / G2.T3 control drift) wired per §8.7a. Predictor starts fresh (Phase 1 is substrate-degenerate; no checkpoint inheritance). Phase 2 takes ~30–90 min wall-clock per the instructions.
+
+**(e) STOP at loops 28–35** of Phase 2 training for experiment-chat review of the in-flight transition diagnostic. The diagnostic's three gates (loss spike check at G2.T1, perturbed-item log_var widening at G2.T2, control-item log_var drift at G2.T3) are evaluated automatically at end-of-loop-35 by the trainer; if any trips, the trainer writes a `transition_diagnostic_TRIPPED.txt` marker file and exits non-zero. Regardless of pass/trip, the loops-28–35 window is the architecturally load-bearing observation point — first 5 Stage A baseline loops + first 5 Stage B perturbed loops — and the reviewer wants explicit eyes on the per-loop trajectory before training continues past it.
+
+**Stop conditions during the next session's execution:**
+
+  - **Statistical-distinguishability test returns corrected `p > 0.001` on either perturbed item**: STOP and report. The perturbation is not producing a statistically real signal at the apex-embedding level. Option (iii) from the seventh-STOP options (stronger perturbation mechanism — texture-variation magnitude increase, multiple `RandomizeMaterials` calls per loop, or asset replacement) becomes the live path. Re-collection would be required.
+  - **Training produces NaN/Inf in loss or predictor weights**: standard `CODING_STANDARDS.md` §9.4 stop.
+  - **G2.T2 (perturbed-item log_var widening ≥ 0.5 by end of loop 35) fails**: STOP for experiment-chat review with the full transition_diagnostic.json. The signal exists at the encoder level (the statistical test would have caught its absence at step (b)) but the predictor isn't absorbing it. Could indicate the architecture's confidence-graded mechanism isn't operating as the spec predicts on the empirical signal magnitudes; reviewer judgement on whether to continue, pause, or reframe.
+  - **G2.T1 (loss spike) or G2.T3 (control drift) trips**: also STOP per the §8.7a directive.
+
+**Authorisation reasoning to carry into next session** (in the reviewer's framing):
+
+  - **0.05 was a-priori SCAFFOLDING** that didn't survive empirical contact with DINOv2 magnitudes on this scene. The threshold was inherited from spec §5.1/5.2's pair-cosine threshold for cross-element distinguishability — a context where the cosines being thresholded are gross scene-level differences (~0.5 magnitude), not within-item perturbation responses (~0.01 magnitude). Wrong scale; the empirical data now defines the achievable scale.
+  - **Statistical-distinguishability is the architecturally-meaningful version of "is the signal real"**: per spec §4.1, the predictor learns shape representations from path-prediction with Gaussian NLL; the load-bearing question is whether the perturbation produces a distinguishable distributional shift the predictor can absorb. Mann-Whitney U on the apex-cosine samples directly tests that; an absolute magnitude threshold doesn't.
+  - **{Bed, Television} as clean controls with DT tracked separately as noisy-control diagnostic** is the third-STOP framing the experiment chat already authorised (option (a) — "Treat DiningTable as a non-clean control; keep {Bed, Television} as the clean Bedroom controls. The §8.4 differential metric handles per-item disaggregation naturally"). The §8.4 implementation just needs to be updated to reflect that already-decided framing.
+  - **The in-flight transition diagnostic is the load-bearing architectural-strength check**, not §8.4. §8.4 answers "is there a signal at the encoder level"; G2.T1/T2/T3 answer "is the predictor absorbing the signal in a way consistent with spec §2.2 (repetition tightens shape clusters) and §3.4 (variance responds to surprise)". The architectural test is at G2.T2; §8.4 is the prerequisite gate.
+
+**Why this session stops here:** the next session's tasks involve (1) implementing a new statistical-test code path, (2) running it on encoder embeddings, (3) interpreting p-values against a Bonferroni-corrected threshold, (4) gating a ~hour-long training launch on the result. The risk-profile of doing that on a compacted context is exactly what `CODING_STANDARDS.md` §9.6 names — fabricated numbers in summaries are the failure mode the discipline guards against. A fresh-context session can read this HANDOFF entry, the seventh-STOP §8.4 report (`data/phase2_embeddings/encode_report.json`), and the directive in this block, and execute the work cleanly.
+
+The seventh-STOP §8.4 report at [data/phase2_embeddings/encode_report.json](data/phase2_embeddings/encode_report.json) carries the per-item gaps the next session uses as input for the statistical test (encoded embeddings can be re-derived from the 65k Phase 2 frames; the encode script's first 140s rebuild them; the statistical test then runs on the apex-cosine subsets in seconds).
+
+---
+
+### (Earlier seventh STOP — reviewer authorisation captured above; details below)
 
 **STOP for experiment-chat review (seventh STOP in session 5).** Phase 2 collection completed cleanly on the corrected substrate (commit `9a3d636` launched; `6d6e58d` recorded the encoding + §8.4 outcome). The §8.4 verification — the load-bearing locality test the modified-(i) gate moved the magnitude question to — **FAILS on both gates with real data**. Embeddings.npy NOT written; Phase 2 training NOT launched.
 
