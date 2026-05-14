@@ -1,0 +1,388 @@
+{
+  "method": "For each ordinal i in Bed's 11 close-up positions, compute pairwise DINOv2 cosines across the four sample loops {30, 50, 75, 100} (6 loop pairs per ordinal). Compute per-ordinal pixel-MD5 at loop 30 and cross-reference against the 50/75/100 hashes captured in within_loop_invariance.json. Primary discriminator at ords 9 and 10 (established as pixel-identical across loops 50/75/100): (MD5 identical at loop 30 too?) AND (cos(loop_30, loop_100) >= 0.9999?) AND (variance drift within Bed's mean \u00b1 2*std band?). Supplementary: Pearson r between (1 - mean cross-loop cosine) and |variance drift| across the 11 ordinals.",
+  "item": "Bed",
+  "viewing_position_id": 1,
+  "loops_sampled": [
+    30,
+    50,
+    75,
+    100
+  ],
+  "notes": {
+    "embedding_path_used": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_embeddings/embeddings.npy",
+    "embedding_path_note": "Spec mentioned data/dinov2_embeddings/embeddings.npy but that is the Phase-1 substrate-degenerate baseline (100k rows; different frame set). Phase 2 frame indices align with data/phase2_embeddings/embeddings.npy (65k rows; matches phase2_annotations.jsonl row count). All prior Phase-2 diagnostics use the latter; we do the same."
+  },
+  "sanity_checks": {
+    "frame_indices_match_variance_by_ordinal": true,
+    "embedding_L2_norms_in_tolerance": true,
+    "ord_9_10_md5_match_within_loop_invariance": true,
+    "norms_min": 0.9999999436667821,
+    "norms_max": 1.000000064716515,
+    "md5_recheck": {
+      "loop50_ord9": {
+        "frame_idx": 18009,
+        "stored": "403d624dd8acdd61702a2fb38c8a7f85",
+        "recomputed": "403d624dd8acdd61702a2fb38c8a7f85",
+        "match": true
+      },
+      "loop50_ord10": {
+        "frame_idx": 18010,
+        "stored": "7497882af923a190c3fc93e5bec8b389",
+        "recomputed": "7497882af923a190c3fc93e5bec8b389",
+        "match": true
+      },
+      "loop75_ord9": {
+        "frame_idx": 27009,
+        "stored": "403d624dd8acdd61702a2fb38c8a7f85",
+        "recomputed": "403d624dd8acdd61702a2fb38c8a7f85",
+        "match": true
+      },
+      "loop75_ord10": {
+        "frame_idx": 27010,
+        "stored": "7497882af923a190c3fc93e5bec8b389",
+        "recomputed": "7497882af923a190c3fc93e5bec8b389",
+        "match": true
+      },
+      "loop100_ord9": {
+        "frame_idx": 36009,
+        "stored": "403d624dd8acdd61702a2fb38c8a7f85",
+        "recomputed": "403d624dd8acdd61702a2fb38c8a7f85",
+        "match": true
+      },
+      "loop100_ord10": {
+        "frame_idx": 36010,
+        "stored": "7497882af923a190c3fc93e5bec8b389",
+        "recomputed": "7497882af923a190c3fc93e5bec8b389",
+        "match": true
+      }
+    }
+  },
+  "primary_discriminator": {
+    "ord_9": {
+      "frame_idxs_per_loop": {
+        "30": 10809,
+        "50": 18009,
+        "75": 27009,
+        "100": 36009
+      },
+      "pixel_md5_per_loop": {
+        "30": "403d624dd8acdd61702a2fb38c8a7f85",
+        "50": "403d624dd8acdd61702a2fb38c8a7f85",
+        "75": "403d624dd8acdd61702a2fb38c8a7f85",
+        "100": "403d624dd8acdd61702a2fb38c8a7f85"
+      },
+      "md5_identical_across_4_loops": true,
+      "cos_loop30_loop100": 1.0000000199063344,
+      "variance_drift_loop30_to_loop100": -0.4356198310852051,
+      "within_drift_band_2sigma": true
+    },
+    "ord_10": {
+      "frame_idxs_per_loop": {
+        "30": 10810,
+        "50": 18010,
+        "75": 27010,
+        "100": 36010
+      },
+      "pixel_md5_per_loop": {
+        "30": "7497882af923a190c3fc93e5bec8b389",
+        "50": "7497882af923a190c3fc93e5bec8b389",
+        "75": "7497882af923a190c3fc93e5bec8b389",
+        "100": "7497882af923a190c3fc93e5bec8b389"
+      },
+      "md5_identical_across_4_loops": true,
+      "cos_loop30_loop100": 0.9999999985621855,
+      "variance_drift_loop30_to_loop100": -0.40585994720458984,
+      "within_drift_band_2sigma": true
+    }
+  },
+  "bed_drift_distribution_across_11_ordinals": {
+    "mean": -0.4229176261208274,
+    "std_population": 0.03257780185943228,
+    "band_2sigma_lo": -0.4880732298396919,
+    "band_2sigma_hi": -0.35776202240196286,
+    "per_ordinal_drifts": [
+      -0.4296865463256836,
+      -0.4943199157714844,
+      -0.4473590850830078,
+      -0.3885917663574219,
+      -0.4113273620605469,
+      -0.42127561569213867,
+      -0.40604496002197266,
+      -0.44667720794677734,
+      -0.36533164978027344,
+      -0.4356198310852051,
+      -0.40585994720458984
+    ]
+  },
+  "per_ordinal": [
+    {
+      "ordinal": 0,
+      "frame_idxs_per_loop": {
+        "30": 10800,
+        "50": 18000,
+        "75": 27000,
+        "100": 36000
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9948807748407957,
+        "30_75": 0.9976287432028734,
+        "30_100": 0.9950068290170373,
+        "50_75": 0.9926786269435253,
+        "50_100": 0.9917708250957438,
+        "75_100": 0.9975466876939502
+      },
+      "mean_cross_loop_cosine": 0.9949187477989877,
+      "min_cross_loop_cosine": 0.9917708250957438,
+      "variance_drift_loop30_to_loop100": -0.4296865463256836
+    },
+    {
+      "ordinal": 1,
+      "frame_idxs_per_loop": {
+        "30": 10801,
+        "50": 18001,
+        "75": 27001,
+        "100": 36001
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9865600876973504,
+        "30_75": 0.9970851053622294,
+        "30_100": 0.9896062105463852,
+        "50_75": 0.9843755156367977,
+        "50_100": 0.9926844343276735,
+        "75_100": 0.991550406156229
+      },
+      "mean_cross_loop_cosine": 0.9903102932877775,
+      "min_cross_loop_cosine": 0.9843755156367977,
+      "variance_drift_loop30_to_loop100": -0.4943199157714844
+    },
+    {
+      "ordinal": 2,
+      "frame_idxs_per_loop": {
+        "30": 10802,
+        "50": 18002,
+        "75": 27002,
+        "100": 36002
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9955341314234588,
+        "30_75": 0.9978908026464838,
+        "30_100": 0.9940638757426005,
+        "50_75": 0.9957432597226366,
+        "50_100": 0.9962559352975324,
+        "75_100": 0.9973646379720844
+      },
+      "mean_cross_loop_cosine": 0.9961421071341326,
+      "min_cross_loop_cosine": 0.9940638757426005,
+      "variance_drift_loop30_to_loop100": -0.4473590850830078
+    },
+    {
+      "ordinal": 3,
+      "frame_idxs_per_loop": {
+        "30": 10803,
+        "50": 18003,
+        "75": 27003,
+        "100": 36003
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9957025972168394,
+        "30_75": 0.9957663184171723,
+        "30_100": 0.9915706153692703,
+        "50_75": 0.9968704904901085,
+        "50_100": 0.9959927686600972,
+        "75_100": 0.9971178062591501
+      },
+      "mean_cross_loop_cosine": 0.9955034327354397,
+      "min_cross_loop_cosine": 0.9915706153692703,
+      "variance_drift_loop30_to_loop100": -0.3885917663574219
+    },
+    {
+      "ordinal": 4,
+      "frame_idxs_per_loop": {
+        "30": 10804,
+        "50": 18004,
+        "75": 27004,
+        "100": 36004
+      },
+      "pairwise_cosines": {
+        "30_50": 0.99130381494322,
+        "30_75": 0.9958354748844473,
+        "30_100": 0.9910766595653153,
+        "50_75": 0.9942172894267808,
+        "50_100": 0.9942907428295764,
+        "75_100": 0.995816495534746
+      },
+      "mean_cross_loop_cosine": 0.9937567461973477,
+      "min_cross_loop_cosine": 0.9910766595653153,
+      "variance_drift_loop30_to_loop100": -0.4113273620605469
+    },
+    {
+      "ordinal": 5,
+      "frame_idxs_per_loop": {
+        "30": 10805,
+        "50": 18005,
+        "75": 27005,
+        "100": 36005
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9921045217380562,
+        "30_75": 0.9969627731184247,
+        "30_100": 0.9897092690186314,
+        "50_75": 0.993894767570259,
+        "50_100": 0.9947765746779399,
+        "75_100": 0.9942361763386065
+      },
+      "mean_cross_loop_cosine": 0.993614013743653,
+      "min_cross_loop_cosine": 0.9897092690186314,
+      "variance_drift_loop30_to_loop100": -0.42127561569213867
+    },
+    {
+      "ordinal": 6,
+      "frame_idxs_per_loop": {
+        "30": 10806,
+        "50": 18006,
+        "75": 27006,
+        "100": 36006
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9946841126686079,
+        "30_75": 0.996981781237366,
+        "30_100": 0.9908215512615675,
+        "50_75": 0.9943587873709119,
+        "50_100": 0.9947298094184145,
+        "75_100": 0.9955668384617307
+      },
+      "mean_cross_loop_cosine": 0.9945238134030997,
+      "min_cross_loop_cosine": 0.9908215512615675,
+      "variance_drift_loop30_to_loop100": -0.40604496002197266
+    },
+    {
+      "ordinal": 7,
+      "frame_idxs_per_loop": {
+        "30": 10807,
+        "50": 18007,
+        "75": 27007,
+        "100": 36007
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9880027756841708,
+        "30_75": 0.9951034173891787,
+        "30_100": 0.9898710173618983,
+        "50_75": 0.9826900950378432,
+        "50_100": 0.9869296311577452,
+        "75_100": 0.9943242472976221
+      },
+      "mean_cross_loop_cosine": 0.9894868639880765,
+      "min_cross_loop_cosine": 0.9826900950378432,
+      "variance_drift_loop30_to_loop100": -0.44667720794677734
+    },
+    {
+      "ordinal": 8,
+      "frame_idxs_per_loop": {
+        "30": 10808,
+        "50": 18008,
+        "75": 27008,
+        "100": 36008
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9844533165461962,
+        "30_75": 0.9944090574379087,
+        "30_100": 0.9784595782931474,
+        "50_75": 0.9844497972192148,
+        "50_100": 0.991687034232025,
+        "75_100": 0.9875098301701019
+      },
+      "mean_cross_loop_cosine": 0.9868281023164323,
+      "min_cross_loop_cosine": 0.9784595782931474,
+      "variance_drift_loop30_to_loop100": -0.36533164978027344
+    },
+    {
+      "ordinal": 9,
+      "frame_idxs_per_loop": {
+        "30": 10809,
+        "50": 18009,
+        "75": 27009,
+        "100": 36009
+      },
+      "pairwise_cosines": {
+        "30_50": 1.0000000199063344,
+        "30_75": 1.0000000199063344,
+        "30_100": 1.0000000199063344,
+        "50_75": 1.0000000199063344,
+        "50_100": 1.0000000199063344,
+        "75_100": 1.0000000199063344
+      },
+      "mean_cross_loop_cosine": 1.0000000199063344,
+      "min_cross_loop_cosine": 1.0000000199063344,
+      "variance_drift_loop30_to_loop100": -0.4356198310852051
+    },
+    {
+      "ordinal": 10,
+      "frame_idxs_per_loop": {
+        "30": 10810,
+        "50": 18010,
+        "75": 27010,
+        "100": 36010
+      },
+      "pairwise_cosines": {
+        "30_50": 0.9999999985621855,
+        "30_75": 0.9999999985621855,
+        "30_100": 0.9999999985621855,
+        "50_75": 0.9999999985621855,
+        "50_100": 0.9999999985621855,
+        "75_100": 0.9999999985621855
+      },
+      "mean_cross_loop_cosine": 0.9999999985621856,
+      "min_cross_loop_cosine": 0.9999999985621855,
+      "variance_drift_loop30_to_loop100": -0.40585994720458984
+    }
+  ],
+  "supplementary_pearson": {
+    "x_per_ordinal": [
+      0.0050812522010122985,
+      0.009689706712222468,
+      0.0038578928658673517,
+      0.0044965672645602695,
+      0.006243253802652338,
+      0.006385986256347009,
+      0.005476186596900301,
+      0.010513136011923496,
+      0.013171897683567746,
+      -1.9906334358665845e-08,
+      1.4378144230775547e-09
+    ],
+    "y_per_ordinal": [
+      0.4296865463256836,
+      0.4943199157714844,
+      0.4473590850830078,
+      0.3885917663574219,
+      0.4113273620605469,
+      0.42127561569213867,
+      0.40604496002197266,
+      0.44667720794677734,
+      0.36533164978027344,
+      0.4356198310852051,
+      0.40585994720458984
+    ],
+    "r": -0.012783156770432597,
+    "p": 0.9702438067892936,
+    "in_non_load_bearing_band": false,
+    "non_load_bearing_band": [
+      0.3,
+      0.7
+    ]
+  },
+  "verdict_branch_pointer": "reading_i_supported",
+  "verdict_branch_logic_evaluation": {
+    "reading_i_supported": true,
+    "reading_i_components": {
+      "ord_9_10_md5_identical_all_4_loops": true,
+      "ord_9_10_cos_30_100_>=_0.9999": true,
+      "ord_9_10_drift_within_2sigma_band": true
+    },
+    "reading_ii_supported": false,
+    "reading_ii_components": {
+      "ord_9_or_10_cos_<_0.999": false,
+      "pearson_r_>=_0.7_and_p_<_0.05": false
+    }
+  }
+}
