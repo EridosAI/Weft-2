@@ -1,0 +1,8 @@
+{
+  "tau": 7.721485376358032,
+  "calibration_window_steps": [
+    5000,
+    10000
+  ],
+  "git_commit": "4435696f41464374b86a85957fbae1de8b13d2f9"
+}

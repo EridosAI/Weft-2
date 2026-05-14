@@ -1,0 +1,34 @@
+{
+  "phase": "phase2",
+  "final_step": 61559,
+  "n_train": 61560,
+  "held_out_region": [
+    61560,
+    65000
+  ],
+  "elapsed_seconds": 124.22404170036316,
+  "n_gradient_steps_actual": 12930,
+  "last_step_done": 12960,
+  "last_loop_seen": 36,
+  "max_loops": 35,
+  "stopped_at_max_loops": true,
+  "resume_step": null,
+  "resume_from": null,
+  "transition_diagnostic_enabled": true,
+  "transition_diagnostic_gate_tripped": true,
+  "transition_diagnostic_trip_record": {
+    "gate_tripped": true,
+    "gate_name": "G2.T2_perturbed_widening_insufficient",
+    "perturbed_items_vp_ids": [
+      3,
+      4
+    ],
+    "log_var_at_baseline_end_loop": 30,
+    "log_var_baseline_end": -8.04037373716181,
+    "log_var_at_post_end_loop": 35,
+    "log_var_post_end": -8.017903674732555,
+    "delta_observed": 0.022470062429254867,
+    "delta_required_min": 0.5
+  },
+  "git_commit": "4435696f41464374b86a85957fbae1de8b13d2f9"
+}

@@ -1,0 +1,14 @@
+{
+  "gate_tripped": true,
+  "gate_name": "G2.T2_perturbed_widening_insufficient",
+  "perturbed_items_vp_ids": [
+    3,
+    4
+  ],
+  "log_var_at_baseline_end_loop": 30,
+  "log_var_baseline_end": -8.04037373716181,
+  "log_var_at_post_end_loop": 35,
+  "log_var_post_end": -8.017903674732555,
+  "delta_observed": 0.022470062429254867,
+  "delta_required_min": 0.5
+}

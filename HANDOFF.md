@@ -2,6 +2,8 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
+**Status at end of session 6 (2026-05-14):** Eighth STOP. §8.4 gate restructured and PASSED on the existing collected data (ratio = 2.107 vs threshold 2.0 with clean controls = {Bed, Television}; Wilcoxon corrected_p < 1e-300 on both perturbed items vs 0.001 threshold). Trainer extended with `--max_loops` and `--resume_from`; resume smoke-tested on real data. Phase 2 training launched with `--max_loops 35` and ran cleanly to step 12,960 (loop 36 boundary). **§8.7a G2.T2 TRIPPED**: perturbed-item log_var widening = +0.022 between loop 30 and loop 35, vs required ≥ 0.5 SCAFFOLDING threshold. Trainer wrote `transition_diagnostic_TRIPPED.txt`, exit code 3. G2.T1 (loss-spike) and G2.T3 (control-drift) both clean. This is the documented session-6 STOP-for-review condition — training STOPPED, reviewer judgement requested. Working tree clean; push hold in effect.
+
 **Status at end of session 5 (2026-05-14):** Seventh-STOP §8.4 verification reviewed; reviewer authorised the next session's restructuring and (conditional) Phase 2 training launch but stopped THIS session for context-budget reasons (`CODING_STANDARDS.md` §9.6 — compacted context can produce fabricated numbers during statistical-test computation). Phase 2 collected data on the corrected substrate is on disk (65k frames + annotations + materials metadata; `encode_report.json` committed at `6d6e58d`; embeddings.npy not yet written — pending the restructured §8.4 gate). Phase 2 training NOT launched. Next session has authorised tasks captured in detail in the "Next immediate action" block below. Working tree clean; push hold in effect.
 
 ---
@@ -76,47 +78,122 @@ autonomous.
 
 ## Next immediate action
 
-**Seventh-STOP resolved; next-session load-bearing work authorised but DEFERRED to next session for context-budget reasons.** The reviewer's authorisation arrived alongside an explicit instruction not to begin the work this session (`CODING_STANDARDS.md` §9.6: compacted context can produce fabricated numbers during statistical-test computation; the §8.4 restructuring + statistical test + training launch are exactly the class of work that should not run on a compacted-context turn).
+**Eighth STOP (session 6 outcome).** §8.4 restructured and PASSED on the existing collected data; Phase 2 training launched with `--max_loops 35` per the session-6 authorisation; the in-flight transition diagnostic's **G2.T2 (perturbed log_var widening) tripped** with widening = 0.022 versus the 0.5 SCAFFOLDING threshold. G2.T1 (loss spike) and G2.T3 (control drift) both clean. This is the explicit STOP-for-review condition recorded in the session-5 handoff's "Stop conditions during the next session's execution" block. Training stopped at loop 36 boundary (step 12,960); `transition_diagnostic_TRIPPED.txt` written; trainer exited non-zero (status 3). **No autonomous resolution.** Next session waits on experiment-chat review of the trip data and the four options below.
 
-**Next session — concrete authorised tasks, in order:**
+### Session 6 outcomes (load-bearing summary)
 
-**(a) Restructure §8.4 to drop the 0.05 absolute floor and replace with two parallel criteria:**
+**§8.4 restructured (commit `58548d0`).** Encode script rewritten so embeddings.npy is saved unconditionally (save-first / gate-second) and the gate suite is:
+- **Ratio gate** with clean controls = {Bed, Television}, DT recorded as record-only noisy-control diagnostic. Threshold ≥ 2.0.
+- **Wilcoxon signed-rank gate** (Reading C per session-6 authorisation): per perturbed item, run `scipy.stats.wilcoxon((1 − cross_stage_cosine), alternative='greater', method='approx')` over the full n_a × n_b apex-pair grid; Bonferroni-correct by 2 (perturbed items); gate at corrected p < 0.001. Bed, TV, DT each run record-only.
 
-  1. **Relative criterion** (refined from the present 2× ratio gate): perturbed_mean_gap / control_mean_gap ≥ **2.0**, where `control_mean_gap` is computed across **{Bed, Television} only**. DiningTable is excluded from the control set as a "noisy control" — its h118-corrected pose still leaks residual doorway-bleed (gap 0.0144 ≈ Sofa 0.0136); it's tracked separately as a per-item diagnostic. This {Bed, TV} control framing is the third-STOP option (a) the experiment chat already authorised; the present §8.4 implementation needs to be updated to match.
+Spec/instructions §8.4 + SCAFFOLDING inventory §12 updated to match.
 
-  2. **Statistical-distinguishability criterion** (new; architecturally-meaningful version of "is the signal real"): **Mann-Whitney U test** per perturbed item, comparing the within-Stage-A apex-cosine sample to the within-Stage-B apex-cosine sample. Required: **Bonferroni-corrected p < 0.001** across the 2 perturbed items (Dresser, Sofa) — i.e., raw `p < 0.0005` per item (0.001 / 2 = 0.0005). The MWU formulation tests whether the perturbed-item gap distribution is statistically distinguishable from the matched control distribution; the absolute magnitude (which 0.05 was guessing at without empirical grounding) is irrelevant — what matters architecturally is "is the perturbation producing a signal the predictor can learn from, or not?"
+**§8.4 verdict on existing data (commit `c127457`).** Both gates PASS:
+| metric | value | threshold | verdict |
+|---|---:|---|---|
+| `perturbed_mean_gap` | 0.01165 (Dresser 0.0097, Sofa 0.0136) | — | — |
+| `clean_control_mean_gap` | 0.00553 (Bed 0.0045, TV 0.0065) | — | — |
+| ratio | **2.107** | ≥ 2.0 | PASS (~5% margin) |
+| DT noisy-control gap | 0.01362 | record-only | (≈ Sofa magnitude; doorway-bleed unchanged from session-5) |
+| Wilcoxon Dresser corrected_p | < 1e-300 (floored) | < 0.001 | PASS |
+| Wilcoxon Sofa corrected_p | < 1e-300 (floored) | < 0.001 | PASS |
+| Wilcoxon Bed corrected_p | < 1e-300 (record-only) | n/a | drift exists but small (median 0.0065) |
+| Wilcoxon TV corrected_p | < 1e-300 (record-only) | n/a | drift exists but small (median 0.0137) |
+| Wilcoxon DT corrected_p | < 1e-300 (record-only) | n/a | drift larger (median 0.0232) — consistent with noisy-control framing |
 
-**(b) Run the new gates on the existing collected data.** No new collection needed. The 65k Phase 2 frames + annotations are on disk; the encoder runs in ~140s; the statistical test on the apex-frame subsets runs in seconds. `scripts/run_phase2_encode.py` is the natural place to add the new criteria (replacing the current absolute-floor + 2×-ratio-with-DT-in-controls gate).
+Encode used the saved (65000, 1024) fp32 matrix at `data/phase2_embeddings/embeddings.npy`. Encoding took 141.8s on the RTX 4080 Super (458 f/s).
 
-**(c) Update `research_operations_v1.md` §15** with the institutional-memory entry on absolute-magnitude thresholds: a-priori absolute thresholds on metric magnitudes (the 0.05 §8.4 case) don't survive empirical contact with encoders whose distributional behaviour on the actual substrate isn't known in advance. The architecturally-meaningful criterion is usually *relative* (perturbed-vs-control ratio) or *statistical* (is the signal distinguishable from null) rather than absolute. Pattern: when you find yourself writing `metric > 0.05` as a SCAFFOLDING gate, ask whether the gate would survive a 5× shift in the metric's natural scale — if not, prefer ratio/statistical formulations.
+**Trainer changes (commit `4435696`).** Added `--max_loops` and `--resume_from` to `scripts/run_phase2_train.py`; corresponding `TrainerConfig.max_loops` and `TrainerConfig.resume_step` in `src/trainer/online_trainer.py`. Smoke-tested both on the real Phase 2 data (fresh run with `--max_loops 1` stopped at step 720; resume from `ckpt_720.pt` with `--max_loops 2` continued for 360 more gradient steps and stopped at step 1080; RNG-restore fixed to handle GPU→CPU map_location). Resume disables the §8.7a diagnostic by construction (its evaluation window has already passed at any resume point).
 
-  *(Note: this entry was added to research_operations §15 by the user during this handoff session — see the bullet starting "When a SCAFFOLDING threshold has the form 'absolute magnitude ≥ K'…". Task (c) is therefore **already complete**; the next session can skip it and proceed straight to (a)+(b).)*
+**Phase 2 training launch (no further commit needed; results in `results/inner_pam_v0/phase2_main/`).** Launched at 2026-05-14, `--max_loops 35`. Ran 124.2s, 12,930 gradient steps, stopped at step 12,960 (first step of loop 36). Predictor params: 21,555,728 (within tolerance). Tau calibrated to 7.721485 over the 5k–10k window. Checkpoints at steps {1000, 2000, 4000, 6500, 10000, 12000} on disk (`*.pt` + `ckpt_<step>/` bank dirs); no checkpoint at the actual stop step 12,960 because the trainer breaks on §8.7a trip without writing a final checkpoint. **Last reliable resume point is `ckpt_12000.pt`** (loop 33; 960 steps / ~2.5 loops before the trip).
 
-**(d) If both new gates pass, launch Phase 2 training** on the existing collected data. The trainer (`scripts/run_phase2_train.py`) is already written with the in-flight transition diagnostic (G2.T1 loss spike / G2.T2 perturbed widening / G2.T3 control drift) wired per §8.7a. Predictor starts fresh (Phase 1 is substrate-degenerate; no checkpoint inheritance). Phase 2 takes ~30–90 min wall-clock per the instructions.
+### G2.T2 trip — the full data
 
-**(e) STOP at loops 28–35** of Phase 2 training for experiment-chat review of the in-flight transition diagnostic. The diagnostic's three gates (loss spike check at G2.T1, perturbed-item log_var widening at G2.T2, control-item log_var drift at G2.T3) are evaluated automatically at end-of-loop-35 by the trainer; if any trips, the trainer writes a `transition_diagnostic_TRIPPED.txt` marker file and exits non-zero. Regardless of pass/trip, the loops-28–35 window is the architecturally load-bearing observation point — first 5 Stage A baseline loops + first 5 Stage B perturbed loops — and the reviewer wants explicit eyes on the per-loop trajectory before training continues past it.
+**Trip record** at [results/inner_pam_v0/phase2_main/transition_diagnostic_TRIPPED.txt](results/inner_pam_v0/phase2_main/transition_diagnostic_TRIPPED.txt):
+```json
+{
+  "gate_tripped": true,
+  "gate_name": "G2.T2_perturbed_widening_insufficient",
+  "perturbed_items_vp_ids": [3, 4],
+  "log_var_at_baseline_end_loop": 30,
+  "log_var_baseline_end": -8.040,
+  "log_var_at_post_end_loop": 35,
+  "log_var_post_end": -8.018,
+  "delta_observed": 0.022,
+  "delta_required_min": 0.5
+}
+```
 
-**Stop conditions during the next session's execution:**
+**Per-loop trajectory (loops 25..36):** `mean_log_var` columns are perturbed (D = Dresser/vp=3, S = Sofa/vp=4) and controls (B = Bed/vp=1, DT = DiningTable/vp=2, TV = Television/vp=5). Stage A baseline = loops 25–30; perturbation onset at loop 31; Stage B post-onset window = loops 31–35.
 
-  - **Statistical-distinguishability test returns corrected `p > 0.001` on either perturbed item**: STOP and report. The perturbation is not producing a statistically real signal at the apex-embedding level. Option (iii) from the seventh-STOP options (stronger perturbation mechanism — texture-variation magnitude increase, multiple `RandomizeMaterials` calls per loop, or asset replacement) becomes the live path. Re-collection would be required.
-  - **Training produces NaN/Inf in loss or predictor weights**: standard `CODING_STANDARDS.md` §9.4 stop.
-  - **G2.T2 (perturbed-item log_var widening ≥ 0.5 by end of loop 35) fails**: STOP for experiment-chat review with the full transition_diagnostic.json. The signal exists at the encoder level (the statistical test would have caught its absence at step (b)) but the predictor isn't absorbing it. Could indicate the architecture's confidence-graded mechanism isn't operating as the spec predicts on the empirical signal magnitudes; reviewer judgement on whether to continue, pause, or reframe.
-  - **G2.T1 (loss spike) or G2.T3 (control drift) trips**: also STOP per the §8.7a directive.
+| loop | mean_loss | lv3 D | lv4 S | lv1 B | lv2 DT | lv5 TV |
+|---:|---:|---:|---:|---:|---:|---:|
+| 25 | -55251 | -7.96 | -7.73 | -8.02 | -7.93 | -7.75 |
+| 26 | -55687 | -8.11 | -7.95 | -8.13 | -7.82 | -7.92 |
+| 27 | -55449 | -8.14 | -7.88 | -8.22 | -7.89 | -7.72 |
+| 28 | -55562 | -8.19 | -7.95 | -8.15 | -8.02 | -7.61 |
+| 29 | -55626 | -8.18 | -7.99 | -8.17 | -7.94 | -7.91 |
+| 30 | -55407 | -8.11 | -7.97 | -8.03 | -7.99 | -7.92 |
+| **31** | -55588 | -8.10 | -7.83 | -8.23 | -8.08 | -7.80 | ← Stage B onset
+| 32 | -55756 | -8.04 | -7.87 | -8.12 | -7.88 | -7.85 |
+| 33 | -55946 | -8.19 | -7.94 | -8.19 | -7.99 | -7.70 |
+| 34 | -56043 | -8.23 | -7.92 | -8.11 | -8.04 | -7.83 |
+| 35 | -55798 | -8.09 | -7.94 | -8.26 | -7.78 | -7.70 |
+| 36 | -56482 | nan   | nan   | -8.05 | nan   | nan   | ← partial; one Bed step before max_loops break
 
-**Authorisation reasoning to carry into next session** (in the reviewer's framing):
+G2.T1: baseline_loss_mean(loops 25–30) = -55,497.02; post_loss_max(loops 31–35) = -55,588.48; spike_threshold (3× sign-safe form) = -55,497.02 + 2 × |baseline| = +55,497.02; post_loss_max ≪ spike_threshold → **G2.T1 PASS**.
+G2.T3: control-item |drift| across loops 30→35: Bed = 0.229 (lv30=-8.029, lv35=-8.258), DT = 0.218 (lv30=-7.993, lv35=-7.775), TV = 0.229 (lv30=-7.924, lv35=-7.695) — all below the 0.3 threshold → **G2.T3 PASS**.
+G2.T2: perturbed mean log_var at loop 30 = -8.0404; at loop 35 = -8.0179; delta = +0.0225 ≪ 0.5 → **G2.T2 FAIL**.
 
-  - **0.05 was a-priori SCAFFOLDING** that didn't survive empirical contact with DINOv2 magnitudes on this scene. The threshold was inherited from spec §5.1/5.2's pair-cosine threshold for cross-element distinguishability — a context where the cosines being thresholded are gross scene-level differences (~0.5 magnitude), not within-item perturbation responses (~0.01 magnitude). Wrong scale; the empirical data now defines the achievable scale.
-  - **Statistical-distinguishability is the architecturally-meaningful version of "is the signal real"**: per spec §4.1, the predictor learns shape representations from path-prediction with Gaussian NLL; the load-bearing question is whether the perturbation produces a distinguishable distributional shift the predictor can absorb. Mann-Whitney U on the apex-cosine samples directly tests that; an absolute magnitude threshold doesn't.
-  - **{Bed, Television} as clean controls with DT tracked separately as noisy-control diagnostic** is the third-STOP framing the experiment chat already authorised (option (a) — "Treat DiningTable as a non-clean control; keep {Bed, Television} as the clean Bedroom controls. The §8.4 differential metric handles per-item disaggregation naturally"). The §8.4 implementation just needs to be updated to reflect that already-decided framing.
-  - **The in-flight transition diagnostic is the load-bearing architectural-strength check**, not §8.4. §8.4 answers "is there a signal at the encoder level"; G2.T1/T2/T3 answer "is the predictor absorbing the signal in a way consistent with spec §2.2 (repetition tightens shape clusters) and §3.4 (variance responds to surprise)". The architectural test is at G2.T2; §8.4 is the prerequisite gate.
+### Reading
 
-**Why this session stops here:** the next session's tasks involve (1) implementing a new statistical-test code path, (2) running it on encoder embeddings, (3) interpreting p-values against a Bonferroni-corrected threshold, (4) gating a ~hour-long training launch on the result. The risk-profile of doing that on a compacted context is exactly what `CODING_STANDARDS.md` §9.6 names — fabricated numbers in summaries are the failure mode the discipline guards against. A fresh-context session can read this HANDOFF entry, the seventh-STOP §8.4 report (`data/phase2_embeddings/encode_report.json`), and the directive in this block, and execute the work cleanly.
+**The perturbation produces a measurable encoder-level signal (§8.4 Wilcoxon corrected_p < 1e-300 on Dresser and Sofa, ratio 2.1 vs clean controls), but the predictor is not absorbing that signal as a widening of its predicted variance.** The predictor's log_var on perturbed items at loop 30 sits at -8.04 (σ ≈ 0.018) — already very tight after 30 loops of Stage A repetition. Across the five post-onset loops, that log_var barely moves (+0.022), staying inside the same -8.0..-8.2 band that controls also occupy.
 
-The seventh-STOP §8.4 report at [data/phase2_embeddings/encode_report.json](data/phase2_embeddings/encode_report.json) carries the per-item gaps the next session uses as input for the statistical test (encoded embeddings can be re-derived from the 65k Phase 2 frames; the encode script's first 140s rebuild them; the statistical test then runs on the apex-cosine subsets in seconds).
+A few mechanisms could be in play, all worth the reviewer's judgement:
+
+1. **The architecture's variance is per-K-step scalar, isotropic, averaged over the embedding dimension** (spec §3.3). The Stage B perturbation magnitude at the encoder (cross-stage cosine ~0.98–0.99, equivalent to per-frame L2 ~0.18–0.20 against unit vectors) is small relative to the predictor's typical step-to-step path geometry. The Gaussian NLL's surprise signal from such a small drift may be too diffuse to drive a 0.5-unit log_var widening within 5 loops × 360 steps = 1,800 gradient updates.
+
+2. **The 0.5 log_var-widening threshold may be wrong-scale** (analogous to the 0.05 §8.4 case caught in session 5). 0.5 in log_var units = `e^0.5 ≈ 1.65×` widening in σ². Whether that's the architecturally-correct expectation for *this* magnitude of perturbation has not been empirically grounded — the SCAFFOLDING was set pre-substrate-empirical-data. Per `research_operations_v1.md` §15's absolute-magnitude-threshold pattern, this is the same class of structural vulnerability.
+
+3. **The post-onset window may be too short.** 5 loops (~1,800 gradient steps) might be insufficient for the predictor to register and accumulate variance updates against perturbation evidence; spec §3.4's "variance responds to surprise" mechanism may be slower than the SCAFFOLDING window assumed.
+
+4. **The architecture's confidence-graded mechanism may not be operating as the spec predicts on this signal magnitude** (the framing recorded in session-5's session-6 stop conditions). This is the architecturally-load-bearing interpretation — if the predictor simply *can't* widen variance on small-but-real perturbation, the whole curriculum's premise needs reframing.
+
+### Four options for the reviewer (no autonomous resolution)
+
+(i) **Recalibrate the G2.T2 threshold against the empirical loop-level distribution and continue training.** Loops 25–35 give an empirical baseline for "what log_var width does this predictor produce, and how much can it move per N loops". An empirically-grounded threshold (e.g. "widening ≥ 1σ of the loop-level log_var noise") would be a more architecturally-honest gate than the pre-empirical 0.5. Per `research_operations_v1.md` §15 ("SCAFFOLDING thresholds get evaluated against what they're protecting"), the 0.5 was meant to detect "predictor absorbs perturbation as widening" — if the empirical signal *exists* but at a smaller scale, the threshold needs recalibrating rather than the experiment failing. Recommended if the reviewer judges that mechanism 1 or 3 above is the load-bearing one.
+
+(ii) **Extend the post-onset observation window and re-evaluate at a later loop.** Resume from `ckpt_12000.pt` with the diagnostic disabled, run another N loops (e.g. to loop 60 or loop 100), then re-evaluate G2.T2 on that extended window. Predicted log_var changes can be slow under continuous training; the 5-loop window may simply be too small to read.
+
+(iii) **Reframe: switch to a stronger perturbation mechanism.** This is option (iii) from the seventh-STOP options carried forward. Texture-variation magnitude increase, multiple `RandomizeMaterials` calls per loop, or per-loop asset replacement at Dresser+Sofa. Highest cost — requires re-running Phase 2 collection on a new substrate parameterisation. Reserve for if (i) and (ii) leave the architectural-strength question unresolved.
+
+(iv) **Reframe deeper: declare the architecture's confidence-graded mechanism falsified at this signal magnitude.** Move to V2 (Shape-learning falsified) territory with the documented evidence. Earliest possible declaration; consult the verdict structure in §11 of the instructions.
+
+I'd lean **(i) and (ii) before (iii) or (iv)**: the §8.4 gate confirms the encoder signal is real and statistically distinguishable, so the question is purely whether the predictor's variance-response mechanism is registering it at this magnitude. (i) tests "is the threshold wrong-scale"; (ii) tests "is the window too short". Either can be done without re-collection. (iii) is much more expensive; (iv) is a strong claim that the reviewer should make only after exhausting the cheaper investigations.
+
+What is **NOT** decided autonomously: recalibrating the G2.T2 threshold, extending the training window past loop 35, switching the perturbation mechanism, or declaring a verdict. All four go to experiment-chat review.
+
+### Stop conditions for the next session (if the reviewer authorises continuation)
+
+- If option (i) is authorised: re-run the diagnostic with the new threshold on the existing JSON (no training; record-only). Document the empirical loop-level log_var noise in a HANDOFF entry. Standard CC stop discipline (`CODING_STANDARDS.md` §9.4) applies to anything beyond that.
+- If option (ii) is authorised: resume from `ckpt_12000.pt` with `--resume_from results/inner_pam_v0/phase2_main/ckpt_12000.pt` and no `--max_loops` (full phase) or a new max_loops cap. The §8.7a diagnostic is disabled in resume mode by construction; the trainer will run to phase end. Monitor the per-loop log_var trajectory (the trainer keeps logging via `transition_diagnostic.json` in the existing run dir — but note that on resume the diag is disabled so `per_loop` will not be appended to; if extended logging is wanted, that needs a small code change first).
+- If option (iii) is authorised: stop the current line; the seventh-STOP option-(iii) re-collection path becomes live. Substantial work.
+- If option (iv) is authorised: produce the V2 evidence package per §11; no further training.
+
+### Working-tree state at end of session 6
+
+Working tree clean. Push hold in effect per project standing instruction (no `git push` without explicit authorisation). Commits this session:
+- `58548d0` — feat(encode) + docs(instructions): §8.4 restructured per session-6 directive.
+- `c127457` — exp(phase2): §8.4 restructured gate verdict — PASS on existing collected data.
+- `4435696` — feat(trainer): --max_loops + --resume_from for session-6 STOP-and-resume.
+
+Plus the session-6 closing commit will add this HANDOFF update.
+
+No running jobs. GPU clear (`nvidia-smi --query-gpu=utilization.gpu` returned 9% at launch; encode + training both completed cleanly). Disk: 112 GB free on `/mnt/c` at training-launch time (well above the 50 GB session floor). PID 160900 (training) exited at completion; PID 158359 (encode) exited at completion.
 
 ---
 
-### (Earlier seventh STOP — reviewer authorisation captured above; details below)
+### (Earlier — session 5 directive that authorised session 6; superseded by the session 6 outcome above)
 
 **STOP for experiment-chat review (seventh STOP in session 5).** Phase 2 collection completed cleanly on the corrected substrate (commit `9a3d636` launched; `6d6e58d` recorded the encoding + §8.4 outcome). The §8.4 verification — the load-bearing locality test the modified-(i) gate moved the magnitude question to — **FAILS on both gates with real data**. Embeddings.npy NOT written; Phase 2 training NOT launched.
 
