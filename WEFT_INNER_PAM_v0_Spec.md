@@ -146,6 +146,12 @@ Any threshold recalibration (per §5.1, §5.2) must be reported in the experimen
 
 **5.7 Agent height is set to NavMesh floor, not inherited from the route.** A separate, related substrate property: the agent's base y-coordinate (and therefore the rendered camera elevation, which sits at a fixed offset above the base) must be set explicitly to the substrate's NavMesh floor, not copied from arbitrary y values in the route's viewing positions. The derivation is **modal y across all `controller.step("GetReachablePositions")` results at controller-init time**, captured once and stored on the explorer instance; every subsequent `Teleport` call uses that fixed y. The modal-y method is robust to scenes with stairs or sloped floors (it picks the dominant floor level that the route's items live on); the y-distribution summary is logged for audit-trail sanity. The 2026-05-14 sixth-STOP trajectory diagnostic surfaced this requirement when the original ContinuousMotionExplorer copied y from the route's `viewing_position.y` (a stage_0b agent-position snapshot of ~0.901, eye-height-level) at close-up steps and from NavMesh waypoints (~0.006, floor level) at transit steps, producing a 0.894 m camera-elevation oscillation at every phase boundary. The fix is unrelated to the architecture (which is scene-geometry-agnostic) but load-bearing for the *rendered substrate* the encoder sees.
 
+**5.8 Cross-scope perturbation locality (rendered-frame / observation-frame level).** Where the experimental design relies on perturbations being scoped to a subset of items, scenes, or environment regions (and other items/regions serving as within-experiment controls), perturbation locality must be verified at the observation-frame level before the design depends on it. The verification is procedurally similar to §5.6: encode frames from out-of-scope control items before and after the perturbation under N independent draws; require per-control-item mean cosine across draws to exceed an appropriate threshold (approaching 1.0 for truly invariant inputs to a deterministic encoder).
+
+The failure mode this guards against: environmental simulators maintain global state — rendering engines (indirect lighting, reflection probes, shadow caching, atmospheric effects), physics engines (collision and contact propagation, force-field effects), audio environments (reflections off untouched geometry), or policy and reward systems (gradient updates propagating beyond intended scope) — that propagates the consequences of 'locally scoped' perturbations into regions the perturbation API claims not to affect. The material change is correctly scoped; the rendering of unmodified items against a changed lighting environment is not. The substrate's locality and the API's locality are two different properties.
+
+When this verification fails, the experiment cannot rely on the named controls being clean. Options: (a) revise the perturbation mechanism to one with verified observation-frame locality (e.g. per-object material setting where the API supports it, asset replacement at fixed coordinates with rendered-frame verification); (b) revise the evaluation framework to not depend on uncoupled controls; (c) treat locality as partial and report results conditional on measured coupling magnitude.
+
 ---
 
 ## 6. What Inner PAM is not, and what is deferred
@@ -264,6 +270,20 @@ The new architecture introduces specific failure modes that should be added to o
 - **Drift from architectural commitment to familiar shape.** The Tier A specs under-articulated the architecture and the implementation drifted into next-frame prediction. v0 implementation must be reviewed specifically for whether each component aligns with §2's commitments, not whether it matches a familiar pattern.
 - **Encoder-substrate failures masquerading as architecture failures.** §5 establishes what the encoder must support. Failures attributable to encoder limitations are encoder failures, not Inner PAM failures.
 - **Aggregate metrics hiding shape-vs-frame distinctions.** Inner PAM is evaluated on shape-level recall. Shape-level metrics must be reported before any aggregate metric. Any aggregate number that looks good while per-shape recall is broken must be flagged as invalid.
+
+### V0 verdict (recorded 2026-05-14)
+
+V2 — Shape-learning falsified, with coupling-mechanism caveat.
+
+The path-prediction mechanism fit and learned (loss decreased, predicted means tracked centrelines, cluster structure formed on TV/Dresser/Sofa). The variance head learned. But the variance updates propagate uniformly across the predictor's state rather than tracking the inputs that produced the surprise. Decisive evidence: on Bed close-up ordinals 9 and 10 — frames pixel-MD5 identical across all four sampled Stage B loops with cos(loop_30, loop_100) = 1.000000 — the predictor's variance still drifted by ~0.42 nat, indistinguishable from drifts at the 9 other ordinals whose inputs did change across loops. Variance change without input change can only come from gradient updates on other frames.
+
+§2.2's prediction (variance responds to per-item surprise) is not supported on this substrate with this loss formulation. The failure is specifically the per-K-step isotropic scalar variance gradient's cross-position coupling, not the path-prediction mechanism itself. This is a sharper diagnosis than V2's existing language anticipates: the specific mechanism identified (uniform gradient propagation in the variance head) is the architectural lever v1 should target.
+
+Substrate caveats:
+- AI2-THOR RandomizeMaterials(inRoomTypes=[X]) produced visual side-effects on out-of-scope rooms via global rendering state, so the named controls (Bed, TV) had small real Stage B input variation. The coupling finding above is independent of this caveat — the ord-9/10 discriminator established zero-input-variation at specific control positions, which the variance drift ignored.
+- DINOv2-frozen as the encoder substrate is one of multiple plausible substrates for the architectural claim; v1 scopes whether the coupling result generalises.
+
+A localised positive (widening) drift at Sofa ord-1 (+0.056) was observed and not resolved by v0 — see WEFT_INNER_PAM_v0_CLOSING.md for the v1 disambiguation question this raises.
 
 ---
 
