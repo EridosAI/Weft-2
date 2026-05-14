@@ -1,0 +1,37 @@
+{
+  "stage_tag": "phase2_calibration",
+  "launch_timestamp_utc": "2026-05-14T05:00:44Z",
+  "wall_clock_seconds": 110.06883978843689,
+  "frames_written": 1800,
+  "num_loops_requested": 5,
+  "close_up_length_m": 2.0,
+  "close_up_step_m": 0.2,
+  "densify_step_m": 0.2,
+  "close_up_frames_per_item": {
+    "1": 55,
+    "2": 55,
+    "3": 55,
+    "4": 55,
+    "5": 55
+  },
+  "transit_frames": 1525,
+  "explorer_stats": {
+    "frames_emitted": 1801,
+    "close_up_frames_emitted": 276,
+    "transit_frames_emitted": 1525,
+    "loops_completed": 5,
+    "transitions_planned": 25,
+    "transitions_planner_fallback": 10,
+    "teleport_failures": 0
+  },
+  "house_seed": 7,
+  "items": [
+    "Bed",
+    "DiningTable",
+    "Dresser",
+    "Sofa",
+    "Television"
+  ],
+  "failed": false,
+  "fail_msg": ""
+}

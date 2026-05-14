@@ -490,6 +490,17 @@ class ContinuousMotionExplorer:
                 for y, c in y_counter.most_common(5)
             ],
         }
+        # Log to stdout so the calibration / collection / preflight scripts'
+        # log files capture the derivation for HANDOFF audit (per the
+        # reviewer's 2026-05-14 directive).
+        print(
+            f"[ContinuousMotionExplorer] floor_y_summary: modal_y={summary['modal_y']:.4f} "
+            f"({summary['n_positions_at_modal_y']}/{summary['n_reachable_positions']} = "
+            f"{summary['fraction_at_modal_y']*100:.1f}% of reachable positions), "
+            f"unique_y_count={summary['n_unique_y_values_rounded_4dp']}, "
+            f"y_range=[{summary['y_min']:.4f}, {summary['y_max']:.4f}]",
+            flush=True,
+        )
         return float(modal_y), summary
 
     def _observation(

@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -62,14 +63,19 @@ _NORM_TOL = 1e-5
 _PERTURBATION_GAP_THRESHOLD = 0.05  # instr §8.4 (absolute per-perturbed-item gap)
 _PERTURBATION_SAMPLE_N = 50         # instr §8.4
 
-# Differential go/no-go gate (promoted 2026-05-14, fifth STOP resolution).
-# (perturbed_mean_gap - control_mean_gap) must exceed this for Phase 2 training
-# to launch. SCAFFOLDING: the threshold has no prior empirical grounding for
-# the §8.4 metric on the actual collected stream; 0.01 is a starting value
-# that admits ~one σ of measurement noise on the per-item gap while still
-# requiring perturbed items to separate meaningfully more than controls.
-# Recalibratable from the empirical §8.4 distribution after the first run.
-_DIFFERENTIAL_CONTRAST_GAP_MIN: float = 0.01
+# Differential go/no-go gate — ratio criterion (reviewer-authorised 2026-05-14
+# post-sixth-STOP fix). perturbed_mean_gap must be at least
+# _DIFFERENTIAL_RATIO_MIN times control_mean_gap. The ratio formulation is
+# robust to the absolute scale of the gaps: small absolute gaps with strong
+# locality still pass (perturbed clearly separates more than controls), while
+# large gaps without locality (everything moves together) fail.
+#
+# Edge case: if control_mean_gap is near zero (≤ _CONTROL_GAP_NEAR_ZERO), the
+# ratio is unbounded; we treat that as PASS by short-circuit (controls show
+# essentially no Stage A vs Stage B drift, so locality is clean by
+# construction).
+_DIFFERENTIAL_RATIO_MIN: float = 2.0
+_CONTROL_GAP_NEAR_ZERO: float = 1e-3
 
 
 def _load_annotations(path: Path) -> List[Dict[str, Any]]:
@@ -303,16 +309,37 @@ def main() -> int:
     perturbed_mean_gap = float(np.mean(perturbed_gaps)) if perturbed_gaps else float("nan")
     control_mean_gap = float(np.mean(control_gaps)) if control_gaps else float("nan")
     contrast = perturbed_mean_gap - control_mean_gap
-    # Promoted to go/no-go gate 2026-05-14 (fifth STOP resolution; the preflight's
-    # S1 was dropped in favour of validating the localisation signal on the actual
-    # collected stream here, where the sample size is much larger).
-    differential_pass = bool(contrast > _DIFFERENTIAL_CONTRAST_GAP_MIN)
+    # ≥2× ratio gate (reviewer-authorised 2026-05-14, post-sixth-STOP). The
+    # ratio formulation is robust to absolute scale: locality is established
+    # by perturbed items separating proportionally more than controls, not
+    # by the absolute magnitude of the gap. Edge case: control_mean_gap
+    # essentially zero (≤ _CONTROL_GAP_NEAR_ZERO) short-circuits to PASS
+    # — controls show no Stage A vs Stage B drift, locality is clean by
+    # construction.
+    if not math.isfinite(perturbed_mean_gap) or not math.isfinite(control_mean_gap):
+        ratio = float("nan")
+        differential_pass = False
+        gate_reason = "non-finite gap value (degenerate sample)"
+    elif control_mean_gap <= _CONTROL_GAP_NEAR_ZERO:
+        ratio = float("inf")
+        differential_pass = bool(perturbed_mean_gap > _PERTURBATION_GAP_THRESHOLD)
+        gate_reason = (
+            f"control_mean_gap <= {_CONTROL_GAP_NEAR_ZERO} (controls essentially "
+            f"unmoved); locality clean by construction; pass iff perturbed_mean_gap "
+            f"clears the absolute gate threshold {_PERTURBATION_GAP_THRESHOLD}"
+        )
+    else:
+        ratio = perturbed_mean_gap / control_mean_gap
+        differential_pass = bool(ratio >= _DIFFERENTIAL_RATIO_MIN)
+        gate_reason = (
+            f"perturbed_mean_gap / control_mean_gap = {ratio:.3f} "
+            f"vs threshold {_DIFFERENTIAL_RATIO_MIN}"
+        )
     print(
         f"[encode2] [contrast] perturbed_mean_gap={perturbed_mean_gap:.4f} "
         f"control_mean_gap={control_mean_gap:.4f} "
-        f"contrast={contrast:.4f}  "
-        f"(differential gate threshold {_DIFFERENTIAL_CONTRAST_GAP_MIN}, "
-        f"{'PASS' if differential_pass else 'FAIL'})",
+        f"ratio={ratio:.3f}  {'PASS' if differential_pass else 'FAIL'} "
+        f"({gate_reason})",
         flush=True,
     )
 
@@ -327,7 +354,8 @@ def main() -> int:
             "seed": int(args.seed),
             "perturbation_gap_threshold": float(_PERTURBATION_GAP_THRESHOLD),
             "perturbation_sample_n": int(_PERTURBATION_SAMPLE_N),
-            "differential_contrast_gap_min": float(_DIFFERENTIAL_CONTRAST_GAP_MIN),
+            "differential_ratio_min": float(_DIFFERENTIAL_RATIO_MIN),
+            "control_gap_near_zero": float(_CONTROL_GAP_NEAR_ZERO),
             "norm_tolerance": float(_NORM_TOL),
         },
         "n_frames_encoded": int(emb.shape[0]),
@@ -344,15 +372,19 @@ def main() -> int:
             "perturbed_mean_gap": perturbed_mean_gap,
             "control_mean_gap": control_mean_gap,
             "contrast_perturbed_minus_control": contrast,
-            "differential_gate_threshold": float(_DIFFERENTIAL_CONTRAST_GAP_MIN),
+            "ratio_perturbed_over_control": ratio,
+            "ratio_threshold_min": float(_DIFFERENTIAL_RATIO_MIN),
+            "control_gap_near_zero": float(_CONTROL_GAP_NEAR_ZERO),
             "differential_gate_pass": differential_pass,
+            "differential_gate_reason": gate_reason,
             "note": (
-                "Differential go/no-go gate promoted 2026-05-14 from record-only "
-                "(fifth STOP resolution; replaces the dropped preflight S1). "
-                "Phase 2 training launches only if perturbed_mean_gap - "
-                f"control_mean_gap > {_DIFFERENTIAL_CONTRAST_GAP_MIN}. "
-                "Threshold is SCAFFOLDING; recalibratable from the empirical "
-                "§8.4 distribution after the first run."
+                "Differential go/no-go gate (ratio criterion, "
+                "reviewer-authorised 2026-05-14 post-sixth-STOP fix). "
+                f"Phase 2 training launches only if perturbed_mean_gap / "
+                f"control_mean_gap >= {_DIFFERENTIAL_RATIO_MIN}, or "
+                f"control_mean_gap <= {_CONTROL_GAP_NEAR_ZERO} (clean "
+                "locality by construction). Ratio formulation is robust to "
+                "absolute scale of the gaps."
             ),
         },
         "overall_pass": bool(overall_pass),
@@ -367,11 +399,7 @@ def main() -> int:
         if not pert_pass:
             reasons.append("absolute per-perturbed-item gap")
         if not differential_pass:
-            reasons.append(
-                f"differential contrast ({contrast:.4f} <= "
-                f"{_DIFFERENTIAL_CONTRAST_GAP_MIN}, perturbed items not separating "
-                f"sufficiently from controls)"
-            )
+            reasons.append(f"differential ratio gate: {gate_reason}")
         print(f"[encode2] FAIL: {'; '.join(reasons)}. NOT writing embeddings.",
               file=sys.stderr)
         return 2

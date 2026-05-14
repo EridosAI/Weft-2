@@ -1,0 +1,109 @@
+{
+  "n_frames": 1800,
+  "norm_check": {
+    "min": 0.9999998807907104,
+    "max": 1.0000001192092896,
+    "all_in_[1-1e-5, 1+1e-5]": true
+  },
+  "consecutive_frame_cosine": {
+    "n_pairs": 1799,
+    "mean": 0.9238404805144049,
+    "std": 0.10500126163758848,
+    "min": 0.1194128692150116,
+    "max": 1.000000238418579,
+    "n_bit_identical_gt_0.9999_total": 24,
+    "n_bit_identical_in_motion_pairs": 0,
+    "n_bit_identical_boundary_pairs": 24,
+    "fraction_bit_identical_total": 0.013340744858254585,
+    "by_phase_pair": {
+      "close_up->close_up": {
+        "n": 250,
+        "mean": 0.9276577515602111,
+        "std": 0.12949589833760888,
+        "min": 0.3164428472518921,
+        "max": 0.9908603429794312,
+        "median": 0.9672150909900665,
+        "n_bit_identical_gt_0.9999": 0
+      },
+      "close_up->transit": {
+        "n": 25,
+        "mean": 0.8924861001968384,
+        "std": 0.09558134660272877,
+        "min": 0.7144944667816162,
+        "max": 0.9853973388671875,
+        "median": 0.9105029702186584,
+        "n_bit_identical_gt_0.9999": 0
+      },
+      "transit->transit": {
+        "n": 1500,
+        "mean": 0.9225082884132862,
+        "std": 0.10080896352947555,
+        "min": 0.1194128692150116,
+        "max": 0.9937940835952759,
+        "median": 0.9482895135879517,
+        "n_bit_identical_gt_0.9999": 0
+      },
+      "transit->close_up": {
+        "n": 24,
+        "mean": 1.0000000596046448,
+        "std": 1.4188743489072422e-07,
+        "min": 0.9999997615814209,
+        "max": 1.000000238418579,
+        "median": 1.0000001192092896,
+        "n_bit_identical_gt_0.9999": 24
+      }
+    }
+  },
+  "cross_loop_apex_comparison": {
+    "1": {
+      "n_apex_instances": 5,
+      "mean_cosine_across_loops": 0.9999998211860657,
+      "std": 5.960464477539063e-08,
+      "min": 0.9999997615814209,
+      "max": 0.9999997615814209,
+      "n_bit_identical_gt_0.9999": 10
+    },
+    "2": {
+      "n_apex_instances": 5,
+      "mean_cosine_across_loops": 0.9996422529220581,
+      "std": 0.0004314110556151718,
+      "min": 0.9991094470024109,
+      "max": 0.9999997019767761,
+      "n_bit_identical_gt_0.9999": 6
+    },
+    "3": {
+      "n_apex_instances": 5,
+      "mean_cosine_across_loops": 0.9999998807907104,
+      "std": 0.0,
+      "min": 0.9999998807907104,
+      "max": 0.9999998807907104,
+      "n_bit_identical_gt_0.9999": 10
+    },
+    "4": {
+      "n_apex_instances": 5,
+      "mean_cosine_across_loops": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "n_bit_identical_gt_0.9999": 10
+    },
+    "5": {
+      "n_apex_instances": 5,
+      "mean_cosine_across_loops": 0.99980229139328,
+      "std": 0.00023707216314505786,
+      "min": 0.9994792938232422,
+      "max": 0.9999999403953552,
+      "n_bit_identical_gt_0.9999": 6
+    }
+  },
+  "motion_continuity_verdict": "pass",
+  "verdict_criteria": "PASS iff norms in [1-1e-5, 1+1e-5] AND zero bit-identical (cos>0.9999) pairs within in-motion phase pairs (close_up->close_up, transit->transit). Boundary pairs (close_up->transit, transit->close_up) reported separately as cosmetic; cross-loop apex bit-identicity is the curriculum's Stage A baseline (informational, not gated).",
+  "items_with_bit_identical_cross_loop_apex": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "items_with_bit_identical_cross_loop_apex_note": "Bit-identicity across Stage A loops at the same viewing pose is the curriculum's expected baseline (no jitter; deterministic rendering at fixed pose). This list is informational; the motion_continuity_verdict does not depend on it."
+}

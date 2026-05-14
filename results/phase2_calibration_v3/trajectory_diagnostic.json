@@ -1,0 +1,71 @@
+{
+  "annotations_path": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_calibration_v3/annotations.jsonl",
+  "frames_dir": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_calibration_v3/frames",
+  "n_frames": 1800,
+  "diagnostic_1_y_coordinate": {
+    "y_overall": {
+      "min": 0.9010000228881836,
+      "max": 0.9010000228881836,
+      "mean": 0.9010000228881836,
+      "std": 0.0,
+      "range": 0.0
+    },
+    "n_unique_y_values_rounded_4dp": 1,
+    "unique_y_values_rounded_4dp": [
+      0.901
+    ],
+    "y_first_loop_stats": {
+      "loop_index": 0,
+      "n_frames": 360,
+      "min": 0.9010000228881836,
+      "max": 0.9010000228881836,
+      "range": 0.0
+    },
+    "flag_threshold_m": 0.05,
+    "flagged": false
+  },
+  "diagnostic_2_displacement": {
+    "flag_threshold_m": 0.25,
+    "distribution": {
+      "n_pairs": 1799,
+      "mean": 0.08271299211138969,
+      "median": 0.0,
+      "std": 0.09598890296441233,
+      "min": 0.0,
+      "max": 0.20000022799247938,
+      "p99": 0.20000013569206715,
+      "histogram_bin_labels": [
+        "[0.00, 0.05)",
+        "[0.05, 0.10)",
+        "[0.10, 0.15)",
+        "[0.15, 0.20)",
+        "[0.20, 0.25)",
+        "[0.25, 0.50)",
+        "[0.50, 1.00)",
+        "[1.00, 2.00)",
+        "[2.00, inf)"
+      ],
+      "histogram_counts": [
+        1029,
+        0,
+        15,
+        635,
+        120,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "n_flagged": 0,
+    "flagged_pairs_count_by_loop": {},
+    "flagged_pairs": []
+  },
+  "diagnostic_3_contact_sheets": {
+    "max_rendered": 30,
+    "n_rendered": 0,
+    "out_dir": "results/phase2_calibration_v3/discontinuity_frames",
+    "sheets": []
+  },
+  "forceAction_usage_note": "ContinuousMotionExplorer._teleport calls controller.step(action='Teleport', ..., forceAction=True) at src/env/continuous_motion_explorer.py:426. forceAction bypasses AI2-THOR's navigability + collider checks: the agent can be placed at any position regardless of whether a NavMesh path exists between successive positions. This is the most likely cause of the visual observations the reviewer reported (camera-height bobbing if forceAction also relaxes floor snap; agent-through-walls if NavMesh checks are skipped at transit corner rotations or close-up sweep points)."
+}
