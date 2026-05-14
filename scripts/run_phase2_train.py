@@ -175,10 +175,16 @@ def main() -> int:
         s for s in PHASE_2_3_CKPT_STEPS if 0 < s < final_step
     )
 
-    # The in-flight transition diagnostic is the load-bearing observation in
-    # the loops-25..35 window. Disable when resuming — by construction the
-    # resume entrypoint comes after that window has already been evaluated.
-    diag_enabled = (resume_step is None)
+    # Transition diagnostic:
+    #   Fresh run: enabled in session-6 mode (auto-trips at first-step-of-
+    #     loop-(post_end+1) per the original §8.7a).
+    #   Resume:    enabled in extended mode (per session-7 restructuring) —
+    #     loads the prior diagnostic JSON's per_loop into memory, skips the
+    #     session-6 boundary auto-trip, and re-evaluates G2.T1/T3 at every
+    #     checkpoint over the extended window. G2.T2 is evaluated post-hoc
+    #     against the loop-100 trajectory per the three-part criterion.
+    diag_enabled = True
+    extended_mode = (resume_step is not None)
     transition_path = args.output_dir / "transition_diagnostic.json"
     cfg = TrainerConfig(
         phase_name=PHASE2.name,
@@ -191,6 +197,7 @@ def main() -> int:
         resume_step=resume_step,
         # In-flight transition diagnostic (instr §8.7a).
         transition_diagnostic_enabled=diag_enabled,
+        transition_diagnostic_extended_mode=extended_mode,
         transition_diagnostic_path=transition_path,
         transition_perturbed_items=TRANSITION_PERTURBED_ITEMS,
         transition_control_items=TRANSITION_CONTROL_ITEMS,
@@ -277,6 +284,7 @@ def main() -> int:
                 "resume_step": resume_step,
                 "resume_from": str(args.resume_from) if args.resume_from else None,
                 "transition_diagnostic_enabled": bool(diag_enabled),
+                "transition_diagnostic_extended_mode": bool(extended_mode),
                 "transition_diagnostic_gate_tripped": bool(
                     summary["transition_diagnostic_gate_tripped"]
                 ),

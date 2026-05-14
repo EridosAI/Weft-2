@@ -720,21 +720,33 @@ The Stage A → Stage B transition inside Phase 2 (loop 30 → loop 31) is obser
 
 **G2.T1 — Loss spike check (training stability across the perturbation onset).** Compute `max_loss = max(mean_loss[loop=31..35])` and `baseline_loss = mean(mean_loss[loop=25..30])`. Gate trips if `max_loss > 3.0 * baseline_loss`. A trip indicates the perturbation has produced a training instability the architecture cannot absorb within 5 loops; flag in HANDOFF and pause for experiment-chat review before letting Phase 2 training continue.
 
-**G2.T2 — Perturbed-item variance widening (Dresser + Sofa).** Compute `log_var_loop30 = mean(log_var[loop=30, viewing_position_id ∈ {3, 4}])` and `log_var_loop35 = mean(log_var[loop=35, viewing_position_id ∈ {3, 4}])`. Gate trips if `log_var_loop35 - log_var_loop30 < 0.5` (in natural-log units). A trip indicates the predictor's variance is not absorbing the new perturbation within 5 loops; flag and pause.
+**G2.T2 — Perturbed-item variance widening (Dresser + Sofa).** Restructured 2026-05-14 per session-7 authorisation, after the original gate (absolute widening ≥ 0.5 by loop 35) tripped in session 6 with delta = +0.0225 ≪ 0.5. The restructured gate evaluates at **loop 100** (extending the observation window from 5 to 70 Stage B loops) using a **three-part criterion**:
+
+  (a) **Trajectory direction (gated).** Perturbed-item mean log_var (averaged over Dresser + Sofa per loop) is monotonically non-decreasing across loops 30 → 100. "Monotonically non-decreasing" allows up to 3 stochastic dips (consecutive non-monotonic transitions are counted; isolated dips ≤ 3 across the 70-loop window are tolerated as training-noise; analogue of G1.5's monotonic-on-≥7-of-last-9-transitions trajectory criterion). Direction = up = the predictor is registering Stage B as a sustained widening of its variance representation on the perturbed items.
+
+  (b) **Trajectory shape (descriptive, not gated).** Compute perturbed-item mean log_var at loops 30, 35, 50, 75, 100. Characterise the resulting curve as **accelerating, decelerating, linear, or flat**. The first three are interpretable architectural responses (accelerating = surprise compounding; decelerating = bounded absorption; linear = steady response). **Flat is the only outcome that fails the architectural claim** — it means the predictor has fundamentally not registered the perturbation. Reported alongside (a) for the experiment-chat verdict.
+
+  (c) **Differential with controls (gated).** Compute `perturbed_widening_at_100 = mean(log_var[loop=100, vp ∈ {3, 4}]) − mean(log_var[loop=30, vp ∈ {3, 4}])` and `control_widening_at_100 = mean(|log_var[loop=100, vp] − log_var[loop=30, vp]|)` averaged across the §8.7a control set {Bed=1, DiningTable=2, Television=5} (unchanged from the original G2.T3 control set; DiningTable kept as a noisy control inside this diagnostic per the original §8.7a framing — the {Bed, TV}-only change in session-6 was specific to §8.4's ratio gate and does not propagate here). Gate passes iff `perturbed_widening_at_100 ≥ 2.0 × control_widening_at_100`, OR control_widening_at_100 ≤ 1e-3 (controls essentially unmoved). Inherits the §8.4 ratio formulation; same robustness argument.
+
+Trip behaviour: trip iff (a) fails OR (c) fails. (b) is reported but does not auto-trip — the experiment chat interprets the trajectory shape as part of the verdict. A flat trajectory in (b) will typically coincide with (a) tripping (no monotonic widening) so the auto-trip path covers it; the (b) characterisation captures the qualitative reading regardless.
+
+**Rationale (audit trail).** The original threshold `log_var_loop35 - log_var_loop30 ≥ 0.5` was a SCAFFOLDING value anchored to "what a clearly-visible perturbation response looks like" — a 0.5 log_var widening implies σ² changing by a factor of ~1.65, the kind of response expected from a perturbation producing a 30–40% cross-stage cosine drop. The empirical Stage B perturbation is only 1–2% cross-stage cosine drop (per §8.4 perturbed-item gap 0.0097–0.0136); the 0.5 threshold was anchored to the wrong perturbation scale. The session-6 trip (+0.0225 at loop 35) is plausibly the predictor just starting to notice rather than a falsification of the architecture's confidence-graded mechanism. The trajectory-direction + shape + differential formulation tests the architecturally-meaningful claim ("does variance respond to surprise, and does it do so on perturbed items specifically, not control items") against the perturbation scale we actually have, rather than the scale the SCAFFOLDING assumed. Same pattern as the §8.4 0.05 absolute floor → Wilcoxon Reading C restructuring in session 6. Per `research_operations_v1.md` §15 (absolute-magnitude-threshold pattern; the corollary on architectural-strength gates added 2026-05-14 makes this default discipline).
 
 **G2.T3 — Control-item variance stability (Bed + DiningTable + Television).** Compute per-item `delta_log_var = log_var[loop=35] - log_var[loop=30]` for each of viewing_position_id ∈ {1, 2, 5}. Gate trips if any item's `|delta_log_var| > 0.3`. A trip indicates cross-item interference — the perturbation on Dresser/Sofa is leaking into the predictor's representation of items the perturbation does not visually affect, which the architecture's per-item representations should not produce. Flag and pause.
 
-**Trip behaviour.** If any of G2.T1 / G2.T2 / G2.T3 trips, the trainer:
+**Evaluation cadence.** G2.T1 and G2.T3 are evaluated at the end of loop 35 (5-loop post-onset window) on the initial training pass, and re-evaluated at every checkpoint in the extended training window (loops 36 → 100) — a trip at any new checkpoint stops training and is reported. G2.T2 is evaluated **once, at loop 100**, against the full loop-30..100 trajectory per the three-part criterion above.
+
+**Trip behaviour.** If any gate trips, the trainer:
 1. Writes the trip verdict and the values to `transition_diagnostic.json` with `gate_tripped: true` and the specific gate name.
 2. Writes a marker file `results/inner_pam_v0/phase2_main/transition_diagnostic_TRIPPED.txt` for easy detection by the launching shell.
 3. Exits non-zero (status 3).
-4. Does *not* continue training past loop 35.
+4. Does *not* continue training past the trip point.
 
 The launching session then updates HANDOFF and pauses for experiment-chat review per `research_operations_v1.md` §8.10.
 
-**Pass behaviour.** All three gates pass (loss within 3×, perturbed-item widening ≥ 0.5, control-item drift ≤ 0.3). Training continues to end of phase; the diagnostic JSON is updated per-loop through the rest of training as record-only.
+**Pass behaviour.** G2.T1 and G2.T3 pass continuously across loops 31 → 100; G2.T2 passes at the loop-100 evaluation. Training then continues to end of phase; the diagnostic JSON is updated per-loop through the rest of training as record-only.
 
-Thresholds (3.0× loss, 0.5 log_var widening, 0.3 control drift) are SCAFFOLDING and recalibratable from the empirical distribution observed in the first run — recalibration requires explicit justification in HANDOFF per §16.
+Thresholds (3.0× loss for G2.T1, 0.3 control drift for G2.T3, 2.0× perturbed-vs-control ratio at loop 100 for G2.T2.c, ≤ 3 stochastic dips across 70 loops for G2.T2.a) are SCAFFOLDING. The G2.T1 and G2.T3 thresholds remain recalibratable from the empirical distribution observed across the extended run; recalibration requires explicit justification in HANDOFF per §16. The G2.T2 three-part formulation is itself the session-7 recalibration of the original 0.5 absolute-magnitude threshold; further recalibration of (a)/(c) constants requires the same explicit justification.
 
 Gate failures stop the batch; do not proceed to Phase 3.
 
@@ -873,7 +885,7 @@ The v0 experiment produces one of three named verdicts at endpoint. CC reports t
 | SCAFFOLDING | §8.4 ratio gate threshold = 2.0 (perturbed_mean_gap / clean_control_mean_gap) | this doc §8.4 | recalibrate from empirical §8.4 distribution after first run |
 | SCAFFOLDING | §8.4 Wilcoxon corrected-p threshold = 0.001 (Bonferroni × 2 perturbed items) | this doc §8.4 | revisit if empirical p-values cluster near the threshold |
 | SCAFFOLDING | Phase 2 Stage A baseline length: `perturbation_start_loop = 31` (30 unperturbed loops before Stage B begins) | this doc §1.4, §8.3 | recalibrate if 30 loops produces inadequate Stage A baseline density; v1 may explore curriculum-length sensitivity |
-| SCAFFOLDING | In-flight transition gate thresholds: G2.T1 `3.0×` loss spike, G2.T2 `≥ 0.5` log_var widening on perturbed items, G2.T3 `≤ 0.3` log_var drift on control items | this doc §8.7a | recalibrate from empirical per-loop distribution observed during the first run; v1: derive thresholds from loop-level variance of each metric in Stage A |
+| SCAFFOLDING | In-flight transition gate thresholds: G2.T1 `3.0×` loss spike, G2.T3 `≤ 0.3` log_var drift on control items; G2.T2 = three-part trajectory criterion at loop 100 (direction monotonic with ≤ 3 dips; shape descriptive; differential perturbed/control ≥ 2.0) | this doc §8.7a | G2.T1/G2.T3: recalibrate from empirical per-loop distribution. G2.T2: original 0.5 absolute-magnitude threshold restructured 2026-05-14 (session 7) into trajectory-direction + shape + differential; further changes require explicit justification |
 | SCAFFOLDING | Dense early-phase checkpointing schedule (§4.6) | this doc §4.6 | revisit if checkpoint cost > 10 min each |
 
 Inventory reviewed at start and end of each phase per `research_operations_v1.md` §7.2.

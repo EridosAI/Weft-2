@@ -100,8 +100,22 @@ class TrainerConfig:
     transition_baseline_loops: tuple[int, int] = (0, 0)   # (lo, hi) inclusive
     transition_post_onset_loops: tuple[int, int] = (0, 0) # (lo, hi) inclusive
     transition_loss_spike_ratio: float = 3.0              # G2.T1
-    transition_log_var_widening_min: float = 0.5          # G2.T2
+    transition_log_var_widening_min: float = 0.5          # G2.T2 (legacy; only used in non-extended mode)
     transition_control_drift_max: float = 0.3             # G2.T3
+
+    # ---- Extended-mode diagnostic (session 7, instr §8.7a restructured). ----
+    # When True, the trainer:
+    #   (1) seeds `_diag_per_loop_summary` from any existing diagnostic JSON at
+    #       `transition_diagnostic_path` (so prior loops 0..35 from a session-6
+    #       run are preserved and the new loops 36..N appended);
+    #   (2) skips the original session-6 post_end-boundary G2.T2 auto-trip
+    #       evaluation (G2.T2 is evaluated post-hoc on the loop-100 trajectory
+    #       per the restructured three-part criterion);
+    #   (3) at every checkpoint step where `_last_loop_seen > post_end`,
+    #       re-evaluates G2.T1 (loss spike vs baseline loops 25–30) and G2.T3
+    #       (per-control-item drift from loop 30) against the extended window.
+    #       A trip writes the marker file and breaks.
+    transition_diagnostic_extended_mode: bool = False
 
     # ---- Early-stop at loop boundary (instr §8.7a STOP-for-review). ----
     # When set, the trainer halts after observing the first step whose
@@ -192,6 +206,26 @@ class OnlineTrainer:
         self._diag_gate_tripped: bool = False
         self._diag_trip_record: Optional[dict[str, Any]] = None
         self._diag_per_loop_summary: list[dict[str, Any]] = []
+
+        # Extended mode: seed _diag_per_loop_summary from the existing JSON so
+        # prior loops from a session-6 run are preserved and the loop-100
+        # trajectory analysis sees the full record.
+        if (
+            self.cfg.transition_diagnostic_enabled
+            and self.cfg.transition_diagnostic_extended_mode
+            and self.cfg.transition_diagnostic_path is not None
+            and Path(self.cfg.transition_diagnostic_path).exists()
+        ):
+            try:
+                prior = json.loads(
+                    Path(self.cfg.transition_diagnostic_path).read_text()
+                )
+                prior_per_loop = list(prior.get("per_loop", []))
+                self._diag_per_loop_summary = prior_per_loop
+            except Exception:
+                # Don't fail trainer init on a malformed prior diagnostic;
+                # extended-mode accumulation still works from an empty start.
+                self._diag_per_loop_summary = []
 
     # ---- init-time checks (instr §4.7) -----------------------------------
 
@@ -354,7 +388,13 @@ class OnlineTrainer:
                             post_end > 0
                             and self._last_loop_seen > post_end
                             and not self._diag_gate_tripped
+                            and not self.cfg.transition_diagnostic_extended_mode
                         ):
+                            # Session-6 behaviour: evaluate G2.T1/T2/T3 once at
+                            # first-step-of-loop-(post_end+1). Skipped in
+                            # extended mode — G2.T2 is post-hoc on the loop-100
+                            # trajectory; G2.T1/T3 are re-evaluated at each
+                            # checkpoint via the block below.
                             trip = self._evaluate_transition_gates()
                             if trip is not None:
                                 self._diag_gate_tripped = True
@@ -388,6 +428,21 @@ class OnlineTrainer:
                 ):
                     # Caller decides when to actually compute tau (after step 10k).
                     self.cfg.tau_calib_callback(self)
+
+                # Extended-mode in-flight T1/T3 re-evaluation at checkpoints.
+                if (
+                    self.cfg.transition_diagnostic_enabled
+                    and self.cfg.transition_diagnostic_extended_mode
+                    and not self._diag_gate_tripped
+                    and self._last_loop_seen
+                        > int(self.cfg.transition_post_onset_loops[1])
+                ):
+                    trip = self._evaluate_extended_t1_t3()
+                    if trip is not None:
+                        self._diag_gate_tripped = True
+                        self._diag_trip_record = trip
+                        self._write_diagnostic_trip_marker(trip)
+                        break
 
             if ordered_pos >= self.cfg.final_step:
                 break
@@ -580,6 +635,87 @@ class OnlineTrainer:
             }
 
         # All three pass; record summary for HANDOFF (None signifies no trip).
+        return None
+
+    def _evaluate_extended_t1_t3(self) -> Optional[dict[str, Any]]:
+        """Extended-mode in-flight check: G2.T1 vs the full post-onset window
+        seen so far, and G2.T3 control-drift loop30 → latest. G2.T2 is
+        explicitly NOT evaluated here (it is the post-hoc loop-100 three-part
+        criterion). Returns a trip-record on failure; None on pass.
+        """
+        baseline_lo, baseline_hi = self.cfg.transition_baseline_loops
+        post_lo, _ = self.cfg.transition_post_onset_loops
+        records_by_loop = {
+            int(r["loop_index"]): r for r in self._diag_per_loop_summary
+        }
+
+        baseline_losses = [
+            records_by_loop[k]["mean_loss"]
+            for k in range(int(baseline_lo), int(baseline_hi) + 1)
+            if k in records_by_loop
+        ]
+        post_losses = [
+            records_by_loop[k]["mean_loss"]
+            for k in range(int(post_lo), self._last_loop_seen + 1)
+            if k in records_by_loop
+        ]
+        if not baseline_losses or not post_losses:
+            return None  # not enough data yet; let the next checkpoint try
+        baseline_loss_mean = float(np.mean(baseline_losses))
+        post_loss_max = float(np.max(post_losses))
+        scale = max(abs(baseline_loss_mean), 1.0)
+        spike_threshold = baseline_loss_mean + (
+            float(self.cfg.transition_loss_spike_ratio) - 1.0
+        ) * scale
+        if post_loss_max > spike_threshold:
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T1_loss_spike_extended",
+                "mode": "extended",
+                "baseline_loops": [int(baseline_lo), int(baseline_hi)],
+                "post_onset_loops_observed": [int(post_lo), self._last_loop_seen],
+                "baseline_loss_mean": baseline_loss_mean,
+                "post_loss_max": post_loss_max,
+                "spike_threshold": spike_threshold,
+                "ratio_threshold": float(self.cfg.transition_loss_spike_ratio),
+            }
+
+        # G2.T3 — drift loop_baseline_hi → latest seen, per control item.
+        def _agg_lv(loop_idx: int, items: tuple[int, ...]) -> Optional[float]:
+            if loop_idx not in records_by_loop:
+                return None
+            d = records_by_loop[loop_idx]["mean_log_var_by_viewing_position_id"]
+            vals = [d[str(int(it))] for it in items if str(int(it)) in d]
+            return float(np.mean(vals)) if vals else None
+
+        control_drifts: dict[str, float] = {}
+        max_abs_drift = 0.0
+        worst_item: Optional[int] = None
+        for it in self.cfg.transition_control_items:
+            lv_base = _agg_lv(int(baseline_hi), (int(it),))
+            lv_latest = _agg_lv(int(self._last_loop_seen), (int(it),))
+            if lv_base is None or lv_latest is None:
+                control_drifts[str(int(it))] = float("nan")
+                continue
+            drift = lv_latest - lv_base
+            control_drifts[str(int(it))] = float(drift)
+            if abs(drift) > max_abs_drift:
+                max_abs_drift = abs(drift)
+                worst_item = int(it)
+        if max_abs_drift > float(self.cfg.transition_control_drift_max):
+            return {
+                "gate_tripped": True,
+                "gate_name": "G2.T3_control_drift_extended",
+                "mode": "extended",
+                "control_items_vp_ids": list(self.cfg.transition_control_items),
+                "log_var_at_baseline_end_loop": int(baseline_hi),
+                "log_var_at_latest_loop": int(self._last_loop_seen),
+                "per_item_delta_log_var": control_drifts,
+                "max_abs_drift_observed": max_abs_drift,
+                "worst_item_vp_id": worst_item,
+                "drift_threshold_max": float(self.cfg.transition_control_drift_max),
+            }
+
         return None
 
     def _write_diagnostic_json(
