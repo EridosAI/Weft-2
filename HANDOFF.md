@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Curriculum framing locked; substrate fix on DT (pose adjusted to remove LivingRoom doorway view-through); doc updates landed for v2 substrate (instructions §4.6 / §8.3 / §9.3 / §1.3, spec §5.6 per-item stability gate, research_operations §15 two new universal principles, Phase 2 script defaults now point at `data/route_phase2.json`); analyse-script verdict refactored to curriculum-aligned form. Verifications: within-loop motion-continuity on v2 calibration **PASSes**; adjusted-geometry preflight has Bedroom mean **0.9822 (G_M2 PASS)** and locality-direction-correct contrast **+0.0062** — but contrast magnitude trips the S1 = 0.02 SCAFFOLDING threshold. Per directive, no auto-tuning. Fifth STOP in session 5. Phase 2 collection NOT launched. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Phase 2 collection **launched 2026-05-14 03:49:32Z** (commit `fc95301` modified the preflight gate per the fifth-STOP resolution; preflight on adjusted geometry PASSES; PID 109417; log `logs/phase2_collect_20260514_114932.log`). 65k-frame nohup collection in progress at ~18 fps; expected wall-clock ~60 min; loops 1–30 are the Stage A baseline (perturbation_active=False), loops 31+ fire `RandomizeMaterials(inRoomTypes=["LivingRoom"])` per loop (Stage B). Curriculum framing, DT substrate fix, modified preflight gate (G_M1+G_M2+G_M3, S1/S2 dropped), and promoted §8.4 differential go/no-go all committed; spec §5.6, research_operations §15 (two new universal principles) all landed. Phase 2 collection running; subsequent encoding + §8.4 verification + Phase 2 training launch pending. Working tree clean; push hold in effect.
 
 ---
 
@@ -75,6 +75,14 @@ autonomous.
 ---
 
 ## Next immediate action
+
+**Phase 2 collection in progress.** Launched 2026-05-14 03:49:32Z (PID 109417, log `logs/phase2_collect_20260514_114932.log`) after the modified preflight gate was authorised (fc95301) and PASSED on the adjusted geometry. The collection runs 65k frames at the v2 substrate (360 frames/loop, adjusted DT pose), with `perturbation_start_loop=31` so loops 1–30 are Stage A baseline and loops 31+ fire `RandomizeMaterials(inRoomTypes=["LivingRoom"])` per loop. Expected wall-clock ~60 min at the observed ~18 fps. Once collection completes, CC will: (1) verify the frame count + Stage A/B split + materials_by_loop record, (2) run `scripts/run_phase2_encode.py` which now applies the §8.4 go/no-go gate (per-perturbed-item absolute gap > 0.05 AND differential contrast > 0.01 SCAFFOLDING), (3) update HANDOFF with the §8.4 results and STOP for experiment-chat review before launching Phase 2 training.
+
+The fifth-STOP framing (S1 trip on contrast magnitude) is now resolved by the modified gate — S1 dropped, differential check promoted to §8.4 go/no-go. The §8.4 verification on the actual collected stream is where the locality magnitude question gets answered with adequate sample size.
+
+---
+
+### (Earlier fifth STOP in session 5) — resolved by the modified-(i) authorisation; superseded by the Phase 2 launch above
 
 **STOP for experiment-chat review (fifth STOP in session 5).** The user's fourth authorisation (option (a): accept +13.9% loop length, hold 65k budget, recalibrate dependent arithmetic transparently; run motion-continuity + preflight on adjusted geometry; if both pass, launch Phase 2) was implemented through doc updates (commits `71f7693`, `b305aaa`, `21829f3`) and verifications (commits `45aca0e`, `4b1408c`). Within-loop motion-continuity on v2 calibration **PASSED** with the curriculum-aligned verdict. The preflight on adjusted geometry produced a **mixed verdict** that needs reviewer judgement:
 
