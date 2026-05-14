@@ -2,7 +2,9 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status at end of session 7 (2026-05-14, post-per-ordinal-input-variation addendum):** Ninth STOP, **verdict-branch pointer = `reading_i_supported`**. Reviewer-chat-authorised disambiguator on existing data: at Bed's close-up ords 9 and 10 — established as pixel-MD5 identical across Stage B loops 50/75/100 — the loop-30 frames are ALSO pixel-MD5 identical to those, and `cos(loop_30 embedding, loop_100 embedding) = 1.000000` exactly. Yet variance drift at those ordinals = **-0.4356** and **-0.4059** nat, both inside Bed's 2σ uniform-drift band [-0.488, -0.358]. Drift-under-zero-input-variation observed on perfectly invariant Bed poses. Supplementary Pearson r = -0.0128 (p = 0.97), far outside any non-zero correlation. The mechanism (i) interpretation — cross-item coupling shifting Bed's variance estimate via global gradient flow regardless of Bed's per-pose inputs — is supported. The mechanism (ii) interpretation — predictor responding to input variation — is incompatible with these specific ordinals' data (zero input variation but non-zero drift). All three sanity checks PASS (frame indices match `variance_by_ordinal.json`; embedding L2 norms in tolerance; ord 9/10 MD5s recomputed from PNGs match `within_loop_invariance.json`). **CC does not record the verdict; the pointer is a mechanical summary for the fresh reviewer chat that closes v0.** Working tree clean; push hold in effect.
+**Status at end of session 7 (2026-05-14, v0 verdict RECORDED):** **V2 — Shape-learning falsified, with coupling-mechanism caveat.** Per the reviewer-chat-locked branch logic, `reading_i_supported` → V2 with caveat. The path-prediction mechanism fit and learned (loss decreased, cluster structure formed on TV/Dresser/Sofa, variance head learned); the failure is specifically that the per-K-step isotropic scalar variance's gradient propagates uniformly across the predictor's state rather than tracking the inputs that produced surprise. Decisive evidence: ord 9 and ord 10 of Bed's close-up are pixel-MD5 identical across loops 30/50/75/100 with cos(loop_30, loop_100) = 1.000000, yet their variance drifts (-0.44, -0.41 nat) sit inside Bed's 2σ uniform-drift band — variance change without input change can only come from gradient updates on other frames. Supplementary Pearson r = -0.0128 (p = 0.97) corroborates. Sharper diagnosis than the spec's existing §11 V2 framing anticipates: the architectural lever v1 should target is uniform gradient propagation in the variance head. Sofa ord-1's +0.056 widening (only positive drift across all 44 (item, ordinal) pairs) carried forward as a v1 disambiguation question — localised architectural signal vs n=1 noise; V2 stands independently because Bed's coupling result doesn't depend on Sofa-ord-1's status. Spec §11 verdict block + §5.8 cross-scope-locality protocol committed at `c757d67`. Working tree clean; push hold in effect.
+
+**Status at end of session 7 (post-per-ordinal-input-variation addendum, superseded by verdict-recording above):** Ninth STOP, **verdict-branch pointer = `reading_i_supported`**. Reviewer-chat-authorised disambiguator on existing data: at Bed's close-up ords 9 and 10 — established as pixel-MD5 identical across Stage B loops 50/75/100 — the loop-30 frames are ALSO pixel-MD5 identical to those, and `cos(loop_30 embedding, loop_100 embedding) = 1.000000` exactly. Yet variance drift at those ordinals = **-0.4356** and **-0.4059** nat, both inside Bed's 2σ uniform-drift band [-0.488, -0.358]. Drift-under-zero-input-variation observed on perfectly invariant Bed poses. Supplementary Pearson r = -0.0128 (p = 0.97), far outside any non-zero correlation. The mechanism (i) interpretation — cross-item coupling shifting Bed's variance estimate via global gradient flow regardless of Bed's per-pose inputs — is supported. The mechanism (ii) interpretation — predictor responding to input variation — is incompatible with these specific ordinals' data (zero input variation but non-zero drift). All three sanity checks PASS (frame indices match `variance_by_ordinal.json`; embedding L2 norms in tolerance; ord 9/10 MD5s recomputed from PNGs match `within_loop_invariance.json`). **CC does not record the verdict; the pointer is a mechanical summary for the fresh reviewer chat that closes v0.** Working tree clean; push hold in effect.
 
 **Status at end of session 7 (post-disaggregating-diagnostics, superseded by per-ordinal-input addendum above):** Ninth STOP, **v0 verdict still deferred; verdict-recording goes to a fresh reviewer chat once these diagnostics are in.** Reviewer authorised two disaggregating diagnostics on existing data after the cross-loop substrate-determinism finding: (1) variance trajectory by close-up ordinal across items × loops; (2) within-loop input-invariance check on Bed in Stage B. **Headline new finding:** Bed's cross-loop drift loop 30 → 100 is **uniform across all 11 close-up ordinals** (std 0.034, range 0.129 nat) while TV, Dresser, Sofa show **non-uniform per-ordinal drifts** (std 0.12–0.19, range 0.30–0.56). Bed has LARGER within-loop pose-driven view variation than TV (cos_mean 0.74 vs 0.85), so input-magnitude alone doesn't explain why Bed's drift uniform while TV's is ordinal-monotonic. The data is mixed across items: TV/Dresser/Sofa's behaviour supports input-driven per-pose response (consistent with reviewer's account ii); Bed's uniform drift is consistent with cross-item coupling (consistent with account i). **No autonomous verdict.** Loop-170 safety check NOT run per directive. Working tree clean; push hold in effect.
 
@@ -84,9 +86,58 @@ autonomous.
 
 ---
 
-## Next immediate action
+## v0 verdict recorded (2026-05-14)
 
-**Ninth STOP — reviewer-chat verdict-disambiguation diagnostic now in (commit `64b3e36`); pointer = `reading_i_supported`. Verdict-recording goes to a fresh reviewer chat.** The reviewer-chat-authorised per-ordinal cross-loop input variation diagnostic on Bed produced a decisive result on the primary discriminator: ords 9 and 10 have literally zero cross-loop input variation across the full loop-30-to-100 span (pixel-MD5 identical across all four sampled loops; embedding `cos(loop_30, loop_100) = 1.000000` exactly), yet their variance drifts (-0.4356 and -0.4059 nat) fall inside Bed's 2σ uniform-drift band. Drift-under-zero-input-variation is architecturally impossible under reading (ii) and expected under reading (i). The supplementary Pearson r = -0.0128 (p = 0.97) corroborates: essentially no relationship between per-ordinal input variation and per-ordinal drift across the 11 ordinals.
+**V2 — Shape-learning falsified, with coupling-mechanism caveat.**
+
+Per the reviewer-chat-locked branch logic: `reading_i_supported` → V2 with coupling-mechanism caveat. Spec §11 verdict block updated at commit `c757d67` (alongside the new §5.8 cross-scope-perturbation-locality protocol).
+
+### Primary discriminator
+
+Ord 9 and ord 10 of Bed's close-up are **pixel-MD5 identical across all four sampled loops** {30, 50, 75, 100}; **cos(loop_30, loop_100) = 1.000000** at both ordinals; variance drifts (**−0.4356, −0.4059**) both inside Bed's 11-ordinal **2σ band [−0.4881, −0.3578]**. Supplementary **Pearson r = −0.0128, p = 0.97** — across Bed's 11 ordinals, per-ordinal cross-loop input variation has no relationship to per-ordinal variance drift.
+
+### Architectural reading
+
+The predictor's variance moved by ~0.42 nat on frames whose inputs did not change at all over 70 Stage B loops. The only mechanism in the architecture that can produce variance change without input change is gradient updates from training on other frames. The predictor's variance representation is therefore coupled across the training stream rather than isolated per (item, pose). Spec §2.2's prediction — that variance responds to per-item surprise — does not survive on this substrate with this loss formulation: the variance head is operating (loss decreased, structure formed elsewhere), but the gradient updates it produces propagate uniformly across the predictor's state regardless of which inputs were the source of surprise.
+
+This is V2 (architectural claim not supported), with a more specific failure mode than the spec's existing §11 V2 framing: the path-prediction mechanism fits and learns; the failure is specifically how the per-K-step isotropic scalar variance's gradient propagates across the predictor's state. This is a sharper diagnosis than V2's spec language anticipates, and the specific mechanism identified (**uniform gradient propagation in the variance head**) is the architectural lever v1 should target.
+
+### Localised-widening note (Sofa ord-1)
+
+From [variance_by_ordinal.json](results/inner_pam_v0/phase2_main/variance_by_ordinal.json): Sofa ord-1 drift loop 30 → 100 is **+0.056** — the only positive (widening) drift across all (item, ordinal) pairs in the disaggregated data. Bed / TV / Dresser have monotonic-narrowing trajectories at every ordinal; Sofa narrows at ords 0 and 2–10 but widens at ord 1.
+
+Two readings:
+
+- **(a) Localised architectural signal.** The variance mechanism may operate at finer (item, ordinal) granularity than the aggregate G2.T2 measured.
+- **(b) Noise at n=1.** Below §3.6 small-sample threshold.
+
+Distinguishing (a) from (b) requires v1 evaluation at per-(item, ordinal) granularity from design time, not aggregate-then-disaggregate; aggregate gates will continue to average over locally-specific signals. V2 stands either way (Bed coupling result is independent of Sofa ord-1's status). Carried forward as a v1 disambiguation question in the closing doc.
+
+### What v0 ships
+
+- Spec changes committed at `c757d67`: §5.8 (cross-scope perturbation locality at the rendered-/observation-frame level — broadened from §5.6's per-item-stability framing to cover rendering / physics / audio / policy substrate-state coupling) and §11 V0 verdict (the V2-with-caveat record above).
+- All Phase 2 collected data + trained checkpoints + diagnostic outputs preserved on disk (per the prior addendum's enumeration; no artefacts were removed for the verdict-recording step).
+- Working tree clean. Push hold remains in effect.
+
+### What is deferred to v1 / the closing doc
+
+- **WEFT_INNER_PAM_v0_CLOSING.md**: not yet written. Referenced from spec §11 for the Sofa-ord-1 disambiguation question and any longer-form v0-closing narrative.
+- **v1 architectural lever**: variance head's uniform gradient propagation. Concrete v1 design choices (per-(item, ordinal) variance heads? coupled-but-shaped variance? alternative loss formulations that isolate per-item surprise gradients?) are scoped in the closing doc / v1 design chat, not here.
+- **Substrate question**: whether the coupling result generalises beyond AI2-THOR + DINOv2-frozen. v1 design decision.
+
+### Working-tree state at end of v0
+
+Working tree clean. Push hold in effect. Commits since the prior addendum (`8a48336`):
+- `c757d67` — `docs(spec): §5.8 cross-scope perturbation locality + §11 V0 verdict recorded`.
+- (this commit) — HANDOFF verdict-recording entry.
+
+No running jobs. GPU clear. Disk: ~230 GB free.
+
+---
+
+### (Earlier — per-ordinal-input-variation diagnostic; verdict now recorded above)
+
+The reviewer-chat-authorised per-ordinal cross-loop input variation diagnostic on Bed produced a decisive result on the primary discriminator: ords 9 and 10 have literally zero cross-loop input variation across the full loop-30-to-100 span (pixel-MD5 identical across all four sampled loops; embedding `cos(loop_30, loop_100) = 1.000000` exactly), yet their variance drifts (-0.4356 and -0.4059 nat) fall inside Bed's 2σ uniform-drift band. Drift-under-zero-input-variation is architecturally impossible under reading (ii) and expected under reading (i). The supplementary Pearson r = -0.0128 (p = 0.97) corroborates: essentially no relationship between per-ordinal input variation and per-ordinal drift across the 11 ordinals.
 
 ### Per-ordinal cross-loop input variation diagnostic (verdict-disambiguator)
 
