@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Curriculum framing locked; Phase 2 scripts + in-flight transition diagnostic + DINOv2 preflight all committed. DiningTable identified as the sole control item showing cross-room DINOv2 bleed (extended diagnostic confirmed mean 0.9564, std 0.0091 across 6 RandomizeMaterials draws). Pose search located one DINOv2-stability-passing candidate (h118: heading 117.6°, position 8.25/4.75, mean 0.9827); motion-continuity check confirmed clean (consec min 0.7645, no bit-identical pairs). Adjusted route written to `data/route_phase2.json`. **v2 calibration loop length 360 frames/loop vs 316 baseline = +13.9% — exceeds the reviewer's 10% STOP threshold.** Preflight on adjusted geometry NOT re-run; Phase 2 collection NOT launched. Fourth STOP in session 5. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Curriculum framing locked; substrate fix on DT (pose adjusted to remove LivingRoom doorway view-through); doc updates landed for v2 substrate (instructions §4.6 / §8.3 / §9.3 / §1.3, spec §5.6 per-item stability gate, research_operations §15 two new universal principles, Phase 2 script defaults now point at `data/route_phase2.json`); analyse-script verdict refactored to curriculum-aligned form. Verifications: within-loop motion-continuity on v2 calibration **PASSes**; adjusted-geometry preflight has Bedroom mean **0.9822 (G_M2 PASS)** and locality-direction-correct contrast **+0.0062** — but contrast magnitude trips the S1 = 0.02 SCAFFOLDING threshold. Per directive, no auto-tuning. Fifth STOP in session 5. Phase 2 collection NOT launched. Working tree clean; push hold in effect.
 
 ---
 
@@ -75,6 +75,55 @@ autonomous.
 ---
 
 ## Next immediate action
+
+**STOP for experiment-chat review (fifth STOP in session 5).** The user's fourth authorisation (option (a): accept +13.9% loop length, hold 65k budget, recalibrate dependent arithmetic transparently; run motion-continuity + preflight on adjusted geometry; if both pass, launch Phase 2) was implemented through doc updates (commits `71f7693`, `b305aaa`, `21829f3`) and verifications (commits `45aca0e`, `4b1408c`). Within-loop motion-continuity on v2 calibration **PASSED** with the curriculum-aligned verdict. The preflight on adjusted geometry produced a **mixed verdict** that needs reviewer judgement:
+
+**Adjusted-geometry preflight summary:**
+
+| gate | result | observation |
+|---|---|---|
+| G_M1 mechanism | ✓ PASS | `RandomizeMaterials(inRoomTypes=['LivingRoom'])` returns success |
+| G_M2 Bedroom locality | ✓ PASS | Bedroom DINOv2 3-call mean = **0.9822** (> 0.98); DT now in-line with Bed and TV rather than the outlier |
+| G_M3 contrast | ✗ S1 trip | Contrast = +0.0062 (locality-correct direction; < 0.02 SCAFFOLDING threshold) |
+
+**Per-item DINOv2 3-call means at adjusted geometry:**
+
+| item | room | adjusted | original (3rd STOP) | delta |
+|---|---|---:|---:|---:|
+| Bed | Bedroom | 0.9847 | 0.9884 | −0.004 |
+| DiningTable | Bedroom | **0.9768** | **0.9448** | **+0.032** |
+| Television | Bedroom | 0.9852 | 0.9945 | −0.009 |
+| Dresser | LivingRoom | 0.9806 | 0.9884 | −0.008 |
+| Sofa | LivingRoom | 0.9713 | 0.9757 | −0.004 |
+| **Bedroom mean** | | **0.9822** | 0.9759 | **+0.006** (PASS) |
+| **LivingRoom mean** | | 0.9760 | 0.9820 | −0.006 |
+| **Contrast** | | **+0.0062** | **−0.0061** | **+0.012** (right-sign flip) |
+
+**The substrate fix worked.** DT improved by +0.032 in DINOv2 mean cosine. Bedroom mean rose above 0.98 cleanly. The contrast flipped sign (from −0.006 wrong-direction to +0.006 right-direction). All five items now sit in a ~0.97–0.99 band rather than one item being a 0.94 outlier.
+
+**Why S1 still trips.** The S1 = 0.02 threshold was a SCAFFOLDING guess written *before* any empirical contrast data existed. Across the two preflight runs (original pose and adjusted pose), the empirical contrast magnitudes are |−0.006| and |+0.006| — both small, both in the same order of magnitude. The 0.02 threshold was sized for a larger DINOv2 signal than `RandomizeMaterials` actually produces: most pixels in each frame are unchanged geometry, walls, lighting, and background; texture swaps move per-item embeddings by ~0.02–0.04, and the perturbed-vs-control mean contrast is the small difference of two small numbers.
+
+**Reading.** The locality fix is operating correctly at the substrate level (DT no longer doorway-bleeding into the LivingRoom; Bedroom mean above 0.98). The contrast magnitude trips a threshold that was sized without empirical grounding, and §15's just-added principle ("SCAFFOLDING thresholds get evaluated against what they're protecting, not adjusted by margin") applies — S1 was meant to catch "perturbation is not producing a meaningful localisation signal" and the empirical contrast *is* producing such a signal in the right direction.
+
+**Three options for the reviewer:**
+
+(i) **Accept the +0.006 contrast as evidence of locality and lower S1 to a value the empirical distribution supports** (e.g., S1 = 0.005, well below the observed magnitude). The locality claim is being tested by the direction of the contrast (positive = LivingRoom moves more); the magnitude tells us how strong that signal is but not whether it exists. The §8.4 verification on the actual collected stream is the load-bearing test; the preflight is the early-warning sanity check, and the warning is now: "the signal is small but in the right direction." Recommended.
+
+(ii) **Accept the substrate fix but override the preflight S1 trip in writing**, without changing the threshold. Document the empirical contrast distribution and proceed with the §8.4 verification at the load-bearing site. This is the "the preflight is doing its job by flagging the small magnitude; we proceed with our eyes open" reading. Slightly weaker than (i) because it leaves the next preflight run vulnerable to the same trip.
+
+(iii) **Fall back to option (d) from the third STOP**: revert `data/route_phase2.json` use, accept the original DT locality breach, document it via the §8.4 differential metric. Most conservative; gives up the substrate fix entirely.
+
+I recommend **(i)**. The substrate fix is real (Bedroom mean cleanly above 0.98 with DT no longer an outlier). The S1 threshold was a SCAFFOLDING guess that empirical data now contradicts; recalibrating it from the empirical distribution is exactly the workflow §15 prescribes. (ii) is defensible if you'd rather keep S1 = 0.02 as a "we tried" flag for future runs.
+
+What is NOT decided autonomously: any change to S1 or to the contrast criterion. STOP for review per the directive.
+
+---
+
+### (Earlier fourth STOP in session 5) — resolved by option (a) authorisation; superseded by the fifth STOP above
+
+The fourth STOP raised four options for handling the +13.9% loop length shift. The user authorised **option (a)** — accept the shift, hold the 65k budget, recalibrate the dependent arithmetic transparently, then run motion-continuity + preflight verifications. The recalibration was committed (`71f7693`, `b305aaa`, `21829f3`, `45aca0e`, `4b1408c`). Within-loop motion-continuity passed; preflight tripped S1 (this STOP).
+
+---
 
 **STOP for experiment-chat review (fourth STOP in session 5).** The user's third authorisation (run extended diagnostic → pose search → adjusted geometry → re-calibrate; STOP if loop length shifts > 10%) was implemented end-to-end (commit `3bd341b`). The pose search and motion-continuity check produced a clean DiningTable pose (DiningTable_h118 — heading 117.6°, position 8.25/4.75, DINOv2 stability mean 0.9827, motion-continuity consec cosine min 0.7645 with 0 bit-identical pairs). However:
 
@@ -359,7 +408,13 @@ Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_05
 | `1dcf387` | DINOv2-contrast preflight + encode differential metrics + calibration artefacts | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
 | `c71867f` | session-5 third-STOP HANDOFF entry | `HANDOFF.md` |
 | `3bd341b` | pose search + adjusted DT pose + v2 calibration loop-length STOP | `src/env/material_perturbation_probe.py`, `scripts/run_phase2_extended_diagnostic.py`, `scripts/run_phase2_pose_search.py`, `scripts/run_phase2_motion_continuity_check.py`, `data/route_phase2.json`, `results/inner_pam_v0/phase2_{extended_diagnostic,pose_search,motion_continuity}/`, `results/phase2_calibration_v2/calibration_summary.json` |
-| pending this entry | session-5 fourth-STOP HANDOFF entry | `HANDOFF.md` |
+| `444d0ae` | session-5 fourth-STOP HANDOFF entry | `HANDOFF.md` |
+| `71f7693` | §4.6 cadence + §8.3/§9.3 tables + config PHASE_2_3_CKPT_STEPS (v2 substrate) | `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md`, `src/config.py` |
+| `b305aaa` | spec §5.6 per-item stability gate + Phase 2 scripts default to `route_phase2.json` | `WEFT_INNER_PAM_v0_Spec.md`, `scripts/run_phase2_preflight.py`, `scripts/run_phase2_collect.py` |
+| `21829f3` | research_operations §15 two new universal principles | `research_operations_v1.md` |
+| `45aca0e` | analyse script verdict refactor + v2 within-loop motion-continuity PASS | `scripts/run_phase2_calibration_analyse.py`, `results/phase2_calibration_v2/continuity_report.json` |
+| `4b1408c` | adjusted-geometry preflight (G_M2 PASS, S1 trip on contrast magnitude) | `results/inner_pam_v0/phase2_preflight/` |
+| pending this entry | session-5 fifth-STOP HANDOFF entry | `HANDOFF.md` |
 
 ### Pose search + motion-continuity outcome (commit `3bd341b`)
 
@@ -385,21 +440,25 @@ Within-loop motion-continuity on the adjusted geometry was NOT checked — stopp
 
 ### Reviewer-action items before session 6
 
-1. **Decide on the v2 calibration loop-length question** between options (a) accept +13.9% and recalibrate the §8.3 budget / (b) re-search poses with loop-length constraint / (c) switch house seed / (d) accept the original DiningTable locality breach. See the "Next immediate action" section for per-option reasoning. I recommend (a).
+1. **Decide on the S1 contrast threshold + Phase 2 launch question** between options (i) recalibrate S1 from the empirical distribution and launch Phase 2 / (ii) override the S1 trip in writing without changing the threshold and launch / (iii) fall back to original DT locality breach (revert `route_phase2.json` use). See the "Next immediate action" section for per-option reasoning. I recommend (i).
 2. After the decision:
-   - (a) implies updating §8.3's frame budget table and possibly bumping the 65k budget to preserve the 100+ bin margin. Then re-run preflight on adjusted geometry; if it passes, launch Phase 2 collection.
-   - (b) implies relaxing the DINOv2 stability bar (e.g., 0.97 instead of 0.98) and picking the loop-length-cheapest candidate; need to re-run motion-continuity and preflight on the revised pose.
-   - (c) implies full substrate re-verification + redo of session-4 calibration + everything from there.
-   - (d) implies abandoning the substrate fix, reverting `data/route_phase2.json` use, and proceeding with the original route + the §8.4 differential metric documenting DiningTable's locality breach.
+   - (i) and (ii) both proceed to Phase 2 launch; (i) updates `_S1_CONTRAST_TOO_SMALL` in `scripts/run_phase2_preflight.py` to a value justified by the empirical contrast distribution.
+   - (iii) requires reverting the v2 substrate updates (route_phase2.json + script defaults + the §1.3 / §5.6 / §15 doc entries that record the DT pose adjustment) and proceeding on the original route.
 3. Phase 2 collection launches after the decision; encoding + §8.4 verification (absolute + differential metrics) follows; then STOP for review of §8.4 results before Phase 2 training.
+
+### v2 substrate doc + verification pass — fifth STOP (commits `71f7693` → `4b1408c`)
+
+After the user authorised option (a) (accept +13.9% loop length, hold 65k budget, recalibrate arithmetic transparently), the doc pass (§4.6 / §8.3 / §9.3 / §1.3 / spec §5.6 / research_operations §15) landed across `71f7693`, `b305aaa`, `21829f3`. The analyse-script verdict was refactored to the curriculum-aligned form (in-motion pairs gated; boundary cosmetic + cross-loop apex informational) in `45aca0e` along with the v2 calibration analyse: within-loop motion-continuity **PASS** (0 bit-identical in close_up→close_up and 0 in transit→transit). Preflight on adjusted geometry in `4b1408c`: G_M2 PASSes at Bedroom mean 0.9822 (vs 0.9759 at the original DT pose — the locality fix worked); G_M3 trips S1 at contrast +0.0062 (right direction, below the 0.02 SCAFFOLDING threshold guess).
+
+The substrate-fix-and-verification cycle is complete. The remaining decision is the S1 threshold (recommended option (i) above: recalibrate from empirical distribution).
 
 ### Operational state (end of session 5)
 
-- Working tree: clean modulo this HANDOFF entry. 28 commits on `main` after this entry lands (7 session-5 commits + the pending HANDOFF entry).
+- Working tree: clean modulo this HANDOFF entry. 33 commits on `main` after this entry lands (12 session-5 commits + the pending HANDOFF entry).
 - Push hold: in effect.
 - No running jobs.
 - Phase 1 artefacts: unchanged from session 4 (substrate-degenerate baseline; not re-run).
-- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) committed in earlier session-5 commit. Adjusted route at `data/route_phase2.json` committed this round; pose search + motion-continuity reports + v2 calibration summary all committed. Full Phase 2 collection has NOT begun.
+- Phase 2 substrate: adjusted route at `data/route_phase2.json` is the active configuration; v2 calibration analyse confirmed within-loop motion-continuity PASS at the curriculum-aligned verdict. Preflight at the adjusted geometry: G_M2 PASS (Bedroom mean 0.9822), G_M3 S1 trip (contrast magnitude +0.0062 below the SCAFFOLDING 0.02 threshold but in the locality-correct direction). Full Phase 2 collection has NOT begun.
 
 ---
 
