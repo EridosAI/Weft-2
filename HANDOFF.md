@@ -86,6 +86,22 @@ autonomous.
 
 ---
 
+## v0 commit session close (2026-05-14)
+
+v0 is closed. Three artifact commits landed:
+
+- `c757d67` — `docs(spec): §5.8 cross-scope perturbation locality + §11 V0 verdict recorded`
+- `05d1d30` — `docs(handoff): v0 verdict recorded — V2 with coupling-mechanism caveat`
+- `7fd2cae` — `docs(closing): WEFT_INNER_PAM_v0_CLOSING.md — v0-closing companion to spec/instructions/handoff`
+
+Working tree clean. No untracked files at repo root. Push hold remains in effect.
+
+**Divergences from the commit-mechanics instruction surfaced for the record (not unwound per the instruction's no-retry rule):** (1) commit order was spec → HANDOFF → closing rather than the prescribed spec → closing → HANDOFF; (2) commit messages diverged in wording from the prescribed templates, content equivalent. The three artifacts each got their own commit per §2.5–2.6 of CODING_STANDARDS; no bundling. The closing document at `7fd2cae` is 22 KB (the instruction expected 11–13 KB); structural checks (10 numbered sections + terminator line) pass.
+
+v1 design begins in a separate chat with its own spec discipline.
+
+---
+
 ## v0 verdict recorded (2026-05-14)
 
 **V2 — Shape-learning falsified, with coupling-mechanism caveat.**
