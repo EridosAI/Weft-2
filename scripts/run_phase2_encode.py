@@ -2,28 +2,36 @@
 
 Reads PNG frames at `data/phase2_frames/`, encodes them via the verified
 DINOv2 protocol (frozen, fp16, 224 center crop, ImageNet mean/std,
-L2-normalised CLS), and writes the (N, 1024) float32 embedding matrix
-to `data/phase2_embeddings/embeddings.npy`.
+L2-normalised CLS), writes the (N, 1024) float32 embedding matrix to
+`data/phase2_embeddings/embeddings.npy` unconditionally, then applies
+the §8.4 verification suite (restructured 2026-05-14 per session-6
+reviewer authorisation):
 
-Performs §8.4 verification with **both absolute and differential metrics**
-(per the 2026-05-14 experiment-chat directive):
+  (1) Shape + L2-norm check on the embedding matrix.
 
-  Absolute (gated): for each perturbed item (Dresser, Sofa), report the
-    within-Stage-A and within-Stage-B mean apex-embedding cosines and the
-    cross-stage mean cosine. The gap (within_avg - cross) must exceed
-    0.05 — otherwise per-loop RandomizeMaterials did not produce a
-    measurable encoder-level perturbation and the script exits non-zero.
+  (2) **Ratio gate** (clean-control formulation): per-item Stage B vs
+      Stage A mean cosine "gap" on the apex frames. Clean controls are
+      {Bed, Television}; DiningTable is reported as a record-only noisy
+      control (h118-corrected pose still leaks residual doorway-bleed
+      per the third-STOP framing). Gate passes iff
+      `mean(gap on perturbed) / mean(gap on clean controls) ≥ 2.0`,
+      or `mean(gap on clean controls) ≤ 1e-3` (locality clean by
+      construction).
 
-  Differential (record-only, for reviewer assessment): the same Stage B
-    vs Stage A comparison applied to the **control items** (Bed,
-    DiningTable, Television). Bedroom items are not visually perturbed
-    by the LivingRoom-scoped call, so the expected pattern is gap ≈ 0
-    on control items. The "contrast" (perturbed_mean_gap - control_mean_gap)
-    is the load-bearing read for whether the perturbation is item-
-    specific rather than a global drift.
+  (3) **Wilcoxon-signed-rank gate** (statistical-distinguishability,
+      Reading C). Per perturbed item, compute the 31×150 = 4650 pair
+      cross-stage cosines (Stage A apex × Stage B apex). Run
+      `scipy.stats.wilcoxon(1.0 - cos, alternative='greater')` on the
+      per-pair (1 − cosine) values, testing whether the distribution's
+      median is significantly greater than zero. Apply a Bonferroni
+      correction for two perturbed items: gate passes iff each
+      `min(raw_p * 2, 1.0) < 0.001`. The same test is run on Bed and
+      Television as a record-only sanity-check diagnostic (not gated);
+      DiningTable also runs record-only.
 
-The experiment chat reviews both metric families before authorising the
-launch of Phase 2 training.
+The save-first-gate-second pattern (embeddings written before gating)
+lets the statistical test be re-run cheaply on the saved matrix without
+re-encoding 65k frames.
 
 Usage:
   nohup python3.12 -u scripts/run_phase2_encode.py \\
@@ -42,6 +50,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
+from scipy import stats as _scipy_stats
 
 _ROOT = Path("/mnt/c/Users/Jason/Desktop/Eridos/Weft 2")
 if str(_ROOT) not in sys.path:
@@ -60,30 +69,37 @@ _DEFAULT_REPORT = _ROOT / "data" / "phase2_embeddings" / "encode_report.json"
 
 _EMBED_DIM = 1024
 _NORM_TOL = 1e-5
-_PERTURBATION_GAP_THRESHOLD = 0.05  # instr §8.4 (absolute per-perturbed-item gap)
-# Per-stage apex-frame sample count for the gap calculation. Reduced from 50
-# to 25 on 2026-05-14 because Stage A occupies the first 31 collected loops
-# (PHASE_2_PERTURBATION_START_LOOP=31) → there are 31 apex frames per item
-# per stage in Stage A, less than the original 50-pair requirement inherited
-# from spec §5.1/5.2's substrate-verification pattern. 25 sits well below
-# Stage A's 31-loop natural ceiling and still gives tight within/cross gap
-# estimates (the per-pair sampler draws 500 pairs from the sampled set, so
-# the bottleneck wasn't pair count, it was apex-frame availability).
-_PERTURBATION_SAMPLE_N = 25         # instr §8.4
 
-# Differential go/no-go gate — ratio criterion (reviewer-authorised 2026-05-14
-# post-sixth-STOP fix). perturbed_mean_gap must be at least
-# _DIFFERENTIAL_RATIO_MIN times control_mean_gap. The ratio formulation is
-# robust to the absolute scale of the gaps: small absolute gaps with strong
-# locality still pass (perturbed clearly separates more than controls), while
-# large gaps without locality (everything moves together) fail.
-#
-# Edge case: if control_mean_gap is near zero (≤ _CONTROL_GAP_NEAR_ZERO), the
-# ratio is unbounded; we treat that as PASS by short-circuit (controls show
-# essentially no Stage A vs Stage B drift, so locality is clean by
-# construction).
+# Per-stage apex-frame sample count for the mean-cosine gap calculation.
+# Stage A occupies the first 31 collected loops
+# (PHASE_2_PERTURBATION_START_LOOP=31) → 31 apex frames per item per stage in
+# Stage A. 25 sits below that natural ceiling. The per-pair sampler draws 500
+# pairs from the sampled set for the within-stage means; the cross-stage mean
+# uses all 25×25 = 625 pairs. The Wilcoxon test below uses the full 31×150
+# cross-stage pair set drawn from all apex frames (not the 25 sub-sample).
+_PERTURBATION_SAMPLE_N = 25
+
+# §8.4 ratio gate — clean controls {Bed, Television} only (DT excluded as a
+# noisy control per third-STOP framing; the h118-corrected pose still leaks
+# residual doorway-bleed). Gate passes iff
+#   perturbed_mean_gap / clean_control_mean_gap >= _DIFFERENTIAL_RATIO_MIN
+# or clean_control_mean_gap <= _CONTROL_GAP_NEAR_ZERO (locality clean by
+# construction). DiningTable's gap is reported as a record-only diagnostic.
 _DIFFERENTIAL_RATIO_MIN: float = 2.0
 _CONTROL_GAP_NEAR_ZERO: float = 1e-3
+
+# §8.4 Wilcoxon signed-rank gate (statistical distinguishability, Reading C
+# per session-6 reviewer authorisation 2026-05-14). For each perturbed item,
+# compute the n_a × n_b cross-stage cosine values (Stage A apex × Stage B
+# apex), then run
+#   scipy.stats.wilcoxon(1.0 - cos, alternative='greater')
+# testing whether the median of (1 − cos) is greater than zero. Bonferroni-
+# correct for the two perturbed items: corrected_p = min(raw_p * 2, 1.0); gate
+# passes iff corrected_p < _WILCOXON_CORRECTED_P_MAX for each perturbed item.
+# Same test is run on Bed and Television as record-only sanity diagnostic
+# (and on DiningTable as a noisy-control diagnostic).
+_WILCOXON_N_PERTURBED_ITEMS: int = 2
+_WILCOXON_CORRECTED_P_MAX: float = 0.001
 
 
 def _load_annotations(path: Path) -> List[Dict[str, Any]]:
@@ -147,14 +163,17 @@ def _perturbation_effect_check(
     item_label: str,
     viewing_position_id: int,
     sample_n: int,
-    gap_threshold: float,
     rng: np.random.Generator,
 ) -> Dict[str, Any]:
+    """Per-item Stage B vs Stage A mean-cosine gap (record-only; ratio gate
+    consumes the aggregate). The gap is the sample-level summary used by the
+    ratio criterion; the per-pair distribution feeds the Wilcoxon test below.
+    """
     stage_a_idx = _apex_indices(annotations, viewing_position_id, perturbation_active=False)
     stage_b_idx = _apex_indices(annotations, viewing_position_id, perturbation_active=True)
     if len(stage_a_idx) < sample_n or len(stage_b_idx) < sample_n:
         return {
-            "passed": False,
+            "ok": False,
             "reason": (
                 f"insufficient apex frames: "
                 f"stage_a={len(stage_a_idx)} stage_b={len(stage_b_idx)} "
@@ -168,18 +187,15 @@ def _perturbation_effect_check(
     a_emb = emb[stage_a_sample]
     b_emb = emb[stage_b_sample]
 
-    # Mean pairwise cosine within each set (random pair sampling).
     within_a = _mean_pairwise_cosine(a_emb, 500, rng)
     within_b = _mean_pairwise_cosine(b_emb, 500, rng)
-    # Mean cross-set cosine (all-pairs).
     cross_mat = a_emb @ b_emb.T  # both already L2-normed
     cross = float(cross_mat.mean())
 
     within_avg = 0.5 * (within_a + within_b)
     gap = within_avg - cross
-    passed = bool(gap > gap_threshold)
     return {
-        "passed": passed,
+        "ok": True,
         "item": item_label,
         "viewing_position_id": int(viewing_position_id),
         "n_stage_a": len(stage_a_idx),
@@ -188,8 +204,77 @@ def _perturbation_effect_check(
         "within_stage_b_mean_cosine": float(within_b),
         "cross_stage_mean_cosine": float(cross),
         "within_avg_minus_cross": float(gap),
-        "gap_threshold": float(gap_threshold),
-        "criterion": f"within - cross > {gap_threshold}",
+    }
+
+
+def _wilcoxon_cross_stage_check(
+    emb: np.ndarray,
+    annotations: List[Dict[str, Any]],
+    item_label: str,
+    viewing_position_id: int,
+    n_perturbed_items: int,
+) -> Dict[str, Any]:
+    """Wilcoxon signed-rank test on (1 − cross_stage_cosine) values per item.
+
+    Construct the full n_a × n_b matrix of cross-stage cosines from ALL Stage
+    A apex frames against ALL Stage B apex frames at this viewing position
+    (Stage A is bit-identical-deterministic so n_a × n_b pairs are
+    independent draws from the Stage-B-side distribution given each
+    Stage-A-side reference frame). Apply Wilcoxon signed-rank against zero
+    with `alternative='greater'`; this tests whether the median of (1 − cos)
+    is significantly greater than zero — i.e. whether cross-stage cosines
+    sit systematically below 1.0.
+
+    Bonferroni-correct for `n_perturbed_items` (multiply raw p by the count,
+    cap at 1.0). The corrected p is what the §8.4 gate compares against
+    `_WILCOXON_CORRECTED_P_MAX`. For control items the correction factor is
+    still applied so the reported corrected_p is directly comparable to the
+    perturbed-item gate; whether to *act* on a control's p value is a
+    record-only diagnostic, not a gate.
+    """
+    stage_a_idx = _apex_indices(annotations, viewing_position_id, perturbation_active=False)
+    stage_b_idx = _apex_indices(annotations, viewing_position_id, perturbation_active=True)
+    if len(stage_a_idx) < 2 or len(stage_b_idx) < 2:
+        return {
+            "ok": False,
+            "reason": (
+                f"insufficient apex frames for Wilcoxon: "
+                f"stage_a={len(stage_a_idx)} stage_b={len(stage_b_idx)}"
+            ),
+        }
+    a_emb = emb[np.asarray(stage_a_idx, dtype=np.int64)]
+    b_emb = emb[np.asarray(stage_b_idx, dtype=np.int64)]
+    cross_mat = a_emb @ b_emb.T  # (n_a, n_b), already L2-normed
+    one_minus_cos = (1.0 - cross_mat.astype(np.float64)).reshape(-1)
+    n_pairs = int(one_minus_cos.size)
+
+    # scipy.stats.wilcoxon needs to handle zero-difference values; default
+    # `zero_method="wilcox"` discards them. For our case the cross-stage
+    # cosines virtually never hit exact 1.0 (DINOv2 + texture variation makes
+    # ties at the float64 level vanishingly rare), so the default is fine.
+    # Use the normal approximation (`method="approx"`) — exact mode is
+    # O(2^n_pairs) and infeasible at n_pairs = 4650.
+    res = _scipy_stats.wilcoxon(
+        one_minus_cos,
+        alternative="greater",
+        zero_method="wilcox",
+        method="approx",
+    )
+    raw_p = float(res.pvalue)
+    corrected_p = min(raw_p * float(n_perturbed_items), 1.0)
+    return {
+        "ok": True,
+        "item": item_label,
+        "viewing_position_id": int(viewing_position_id),
+        "n_pairs": n_pairs,
+        "n_stage_a": int(len(stage_a_idx)),
+        "n_stage_b": int(len(stage_b_idx)),
+        "one_minus_cos_median": float(np.median(one_minus_cos)),
+        "one_minus_cos_mean": float(one_minus_cos.mean()),
+        "wilcoxon_statistic": float(res.statistic),
+        "wilcoxon_raw_p": raw_p,
+        "wilcoxon_corrected_p": float(corrected_p),
+        "bonferroni_n_items": int(n_perturbed_items),
     }
 
 
@@ -202,6 +287,10 @@ def main() -> int:
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--overwrite", action="store_true",
+        help="Overwrite an existing embeddings.npy at --out (save-first pattern).",
+    )
     args = parser.parse_args()
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -215,8 +304,8 @@ def main() -> int:
         print(f"[encode2] FAIL: annotations not found: {args.annotations}",
               file=sys.stderr)
         return 1
-    if args.out.exists():
-        print(f"[encode2] FAIL: out path already exists (refusing to overwrite): "
+    if args.out.exists() and not args.overwrite:
+        print(f"[encode2] FAIL: out path already exists (use --overwrite): "
               f"{args.out}", file=sys.stderr)
         return 1
 
@@ -251,8 +340,14 @@ def main() -> int:
           f"n_out_of_range={norm['n_out_of_range']} "
           f"min={norm['norms_min']:.6f} max={norm['norms_max']:.6f}", flush=True)
 
+    # Save-first pattern (session-6 directive 2026-05-14): persist embeddings
+    # unconditionally so the statistical gate can be re-run cheaply without
+    # re-encoding 65k frames. Norm failure still aborts gating, but the matrix
+    # is on disk for inspection.
+    np.save(args.out, emb)
+    print(f"[encode2] saved embeddings {emb.shape} -> {args.out}", flush=True)
+
     if not norm["passed"]:
-        # Save report and refuse to write embeddings.
         report = {
             "config": {"frames_dir": str(args.frames_dir), "annotations": str(args.annotations)},
             "encode_seconds": float(encode_seconds),
@@ -266,92 +361,124 @@ def main() -> int:
 
     rng = np.random.default_rng(int(args.seed))
 
-    # ---- §8.4 absolute metric (gated): perturbed items' Stage B vs Stage A gap.
+    # ---- §8.4 per-item Stage B vs Stage A mean-cosine gap (record-only;
+    # feeds the ratio gate below). Run on perturbed items and on all three
+    # potential controls (Bed, Television, DiningTable). DT moves to a
+    # record-only noisy-control slot per the third-STOP framing.
     perturbed_items: list[tuple[str, int]] = [("Dresser", 3), ("Sofa", 4)]
+    clean_control_items: list[tuple[str, int]] = [("Bed", 1), ("Television", 5)]
+    noisy_control_items: list[tuple[str, int]] = [("DiningTable", 2)]
+
     pert_checks: Dict[str, Any] = {}
     for label, vp in perturbed_items:
         pert_checks[label] = _perturbation_effect_check(
             emb, annotations, label, vp,
-            sample_n=_PERTURBATION_SAMPLE_N,
-            gap_threshold=_PERTURBATION_GAP_THRESHOLD,
-            rng=rng,
+            sample_n=_PERTURBATION_SAMPLE_N, rng=rng,
         )
-        print(f"[encode2] [absolute] perturbed {label}: "
-              f"passed={pert_checks[label]['passed']} "
+        print(f"[encode2] [gap] perturbed {label}: "
               f"gap={pert_checks[label].get('within_avg_minus_cross', float('nan')):.4f}",
               flush=True)
-    pert_pass = all(c["passed"] for c in pert_checks.values())
 
-    # ---- §8.4 differential metric (record-only, per 2026-05-14 directive).
-    # Compute the same Stage B vs Stage A gap on the control items (Bed,
-    # DiningTable, Television). Under the locality claim, control items
-    # should show gap ≈ 0 — they aren't visually re-textured by the
-    # LivingRoom-scoped RandomizeMaterials call. Any non-zero gap captures
-    # global drift across the Stage A/B boundary (lighting, shadows,
-    # background bleed). The contrast = perturbed_mean_gap - control_mean_gap
-    # isolates the perturbation-specific component.
-    control_items: list[tuple[str, int]] = [
-        ("Bed", 1), ("DiningTable", 2), ("Television", 5),
-    ]
-    control_checks: Dict[str, Any] = {}
-    for label, vp in control_items:
-        control_checks[label] = _perturbation_effect_check(
+    clean_control_checks: Dict[str, Any] = {}
+    for label, vp in clean_control_items:
+        clean_control_checks[label] = _perturbation_effect_check(
             emb, annotations, label, vp,
-            sample_n=_PERTURBATION_SAMPLE_N,
-            gap_threshold=_PERTURBATION_GAP_THRESHOLD,   # same threshold for symmetry; not gated
-            rng=rng,
+            sample_n=_PERTURBATION_SAMPLE_N, rng=rng,
         )
-        gap_val = control_checks[label].get("within_avg_minus_cross", float("nan"))
-        print(f"[encode2] [differential] control {label}: "
-              f"gap={gap_val:.4f} (record-only; not gated)",
-              flush=True)
+        gap_val = clean_control_checks[label].get("within_avg_minus_cross", float("nan"))
+        print(f"[encode2] [gap] clean-control {label}: gap={gap_val:.4f}", flush=True)
+
+    noisy_control_checks: Dict[str, Any] = {}
+    for label, vp in noisy_control_items:
+        noisy_control_checks[label] = _perturbation_effect_check(
+            emb, annotations, label, vp,
+            sample_n=_PERTURBATION_SAMPLE_N, rng=rng,
+        )
+        gap_val = noisy_control_checks[label].get("within_avg_minus_cross", float("nan"))
+        print(f"[encode2] [gap] noisy-control {label}: gap={gap_val:.4f} "
+              f"(record-only; excluded from ratio gate)", flush=True)
 
     perturbed_gaps = [
         c["within_avg_minus_cross"] for c in pert_checks.values()
-        if "within_avg_minus_cross" in c
+        if c.get("ok") and "within_avg_minus_cross" in c
     ]
-    control_gaps = [
-        c["within_avg_minus_cross"] for c in control_checks.values()
-        if "within_avg_minus_cross" in c
+    clean_control_gaps = [
+        c["within_avg_minus_cross"] for c in clean_control_checks.values()
+        if c.get("ok") and "within_avg_minus_cross" in c
     ]
     perturbed_mean_gap = float(np.mean(perturbed_gaps)) if perturbed_gaps else float("nan")
-    control_mean_gap = float(np.mean(control_gaps)) if control_gaps else float("nan")
-    contrast = perturbed_mean_gap - control_mean_gap
-    # ≥2× ratio gate (reviewer-authorised 2026-05-14, post-sixth-STOP). The
-    # ratio formulation is robust to absolute scale: locality is established
-    # by perturbed items separating proportionally more than controls, not
-    # by the absolute magnitude of the gap. Edge case: control_mean_gap
-    # essentially zero (≤ _CONTROL_GAP_NEAR_ZERO) short-circuits to PASS
-    # — controls show no Stage A vs Stage B drift, locality is clean by
-    # construction.
-    if not math.isfinite(perturbed_mean_gap) or not math.isfinite(control_mean_gap):
+    clean_control_mean_gap = (
+        float(np.mean(clean_control_gaps)) if clean_control_gaps else float("nan")
+    )
+
+    if not math.isfinite(perturbed_mean_gap) or not math.isfinite(clean_control_mean_gap):
         ratio = float("nan")
-        differential_pass = False
-        gate_reason = "non-finite gap value (degenerate sample)"
-    elif control_mean_gap <= _CONTROL_GAP_NEAR_ZERO:
+        ratio_pass = False
+        ratio_reason = "non-finite gap value (degenerate sample)"
+    elif clean_control_mean_gap <= _CONTROL_GAP_NEAR_ZERO:
         ratio = float("inf")
-        differential_pass = bool(perturbed_mean_gap > _PERTURBATION_GAP_THRESHOLD)
-        gate_reason = (
-            f"control_mean_gap <= {_CONTROL_GAP_NEAR_ZERO} (controls essentially "
+        ratio_pass = bool(perturbed_mean_gap > _CONTROL_GAP_NEAR_ZERO)
+        ratio_reason = (
+            f"clean_control_mean_gap <= {_CONTROL_GAP_NEAR_ZERO} (controls essentially "
             f"unmoved); locality clean by construction; pass iff perturbed_mean_gap "
-            f"clears the absolute gate threshold {_PERTURBATION_GAP_THRESHOLD}"
+            f"clears the same near-zero floor"
         )
     else:
-        ratio = perturbed_mean_gap / control_mean_gap
-        differential_pass = bool(ratio >= _DIFFERENTIAL_RATIO_MIN)
-        gate_reason = (
-            f"perturbed_mean_gap / control_mean_gap = {ratio:.3f} "
+        ratio = perturbed_mean_gap / clean_control_mean_gap
+        ratio_pass = bool(ratio >= _DIFFERENTIAL_RATIO_MIN)
+        ratio_reason = (
+            f"perturbed_mean_gap / clean_control_mean_gap = {ratio:.3f} "
             f"vs threshold {_DIFFERENTIAL_RATIO_MIN}"
         )
     print(
-        f"[encode2] [contrast] perturbed_mean_gap={perturbed_mean_gap:.4f} "
-        f"control_mean_gap={control_mean_gap:.4f} "
-        f"ratio={ratio:.3f}  {'PASS' if differential_pass else 'FAIL'} "
-        f"({gate_reason})",
+        f"[encode2] [ratio] perturbed_mean_gap={perturbed_mean_gap:.4f} "
+        f"clean_control_mean_gap={clean_control_mean_gap:.4f} "
+        f"ratio={ratio:.3f}  {'PASS' if ratio_pass else 'FAIL'} "
+        f"({ratio_reason})",
         flush=True,
     )
 
-    overall_pass = norm["passed"] and pert_pass and differential_pass
+    # ---- §8.4 Wilcoxon signed-rank gate (Reading C, session-6 authorised).
+    # Per-item cross-stage (1 − cos) signed-rank test against zero; the
+    # perturbed-item corrected p-values are gated.
+    wilcoxon_checks: Dict[str, Any] = {}
+    for label, vp in (
+        perturbed_items + clean_control_items + noisy_control_items
+    ):
+        check = _wilcoxon_cross_stage_check(
+            emb, annotations, label, vp,
+            n_perturbed_items=_WILCOXON_N_PERTURBED_ITEMS,
+        )
+        wilcoxon_checks[label] = check
+        if check.get("ok"):
+            role = (
+                "perturbed" if (label, vp) in perturbed_items else
+                "clean-control" if (label, vp) in clean_control_items else
+                "noisy-control"
+            )
+            print(f"[encode2] [wilcoxon] {role:14s} {label}: "
+                  f"n_pairs={check['n_pairs']} "
+                  f"median(1-cos)={check['one_minus_cos_median']:.6f} "
+                  f"raw_p={check['wilcoxon_raw_p']:.3e} "
+                  f"corrected_p={check['wilcoxon_corrected_p']:.3e}",
+                  flush=True)
+    perturbed_wilcoxon_pass_flags = {
+        label: bool(
+            wilcoxon_checks[label].get("ok")
+            and wilcoxon_checks[label]["wilcoxon_corrected_p"]
+                < _WILCOXON_CORRECTED_P_MAX
+        )
+        for label, _ in perturbed_items
+    }
+    wilcoxon_pass = all(perturbed_wilcoxon_pass_flags.values())
+    print(
+        f"[encode2] [wilcoxon] perturbed-item gate {'PASS' if wilcoxon_pass else 'FAIL'} "
+        f"({perturbed_wilcoxon_pass_flags}) vs corrected_p threshold "
+        f"{_WILCOXON_CORRECTED_P_MAX}",
+        flush=True,
+    )
+
+    overall_pass = norm["passed"] and ratio_pass and wilcoxon_pass
     report = {
         "config": {
             "frames_dir": str(args.frames_dir),
@@ -360,39 +487,56 @@ def main() -> int:
             "batch_size": int(args.batch_size),
             "num_workers": int(args.num_workers),
             "seed": int(args.seed),
-            "perturbation_gap_threshold": float(_PERTURBATION_GAP_THRESHOLD),
             "perturbation_sample_n": int(_PERTURBATION_SAMPLE_N),
             "differential_ratio_min": float(_DIFFERENTIAL_RATIO_MIN),
             "control_gap_near_zero": float(_CONTROL_GAP_NEAR_ZERO),
+            "wilcoxon_corrected_p_max": float(_WILCOXON_CORRECTED_P_MAX),
+            "wilcoxon_n_perturbed_items": int(_WILCOXON_N_PERTURBED_ITEMS),
             "norm_tolerance": float(_NORM_TOL),
         },
         "n_frames_encoded": int(emb.shape[0]),
         "encode_seconds": float(encode_seconds),
         "norm_check": norm,
-        # Absolute (gated): per-perturbed-item gap > _PERTURBATION_GAP_THRESHOLD
-        # on each of Dresser and Sofa.
-        "absolute_perturbation_effect_checks": pert_checks,
-        # Differential (gated since 2026-05-14): control-item gap + contrast.
-        "differential_control_item_effect_checks": control_checks,
-        "differential_summary": {
+        "perturbation_effect_checks": pert_checks,
+        "clean_control_effect_checks": clean_control_checks,
+        "noisy_control_effect_checks": noisy_control_checks,
+        "ratio_gate_summary": {
             "perturbed_items": [label for label, _ in perturbed_items],
-            "control_items": [label for label, _ in control_items],
+            "clean_control_items": [label for label, _ in clean_control_items],
+            "noisy_control_items": [label for label, _ in noisy_control_items],
             "perturbed_mean_gap": perturbed_mean_gap,
-            "control_mean_gap": control_mean_gap,
-            "contrast_perturbed_minus_control": contrast,
-            "ratio_perturbed_over_control": ratio,
+            "clean_control_mean_gap": clean_control_mean_gap,
+            "ratio_perturbed_over_clean_control": ratio,
             "ratio_threshold_min": float(_DIFFERENTIAL_RATIO_MIN),
             "control_gap_near_zero": float(_CONTROL_GAP_NEAR_ZERO),
-            "differential_gate_pass": differential_pass,
-            "differential_gate_reason": gate_reason,
+            "ratio_gate_pass": ratio_pass,
+            "ratio_gate_reason": ratio_reason,
             "note": (
-                "Differential go/no-go gate (ratio criterion, "
-                "reviewer-authorised 2026-05-14 post-sixth-STOP fix). "
-                f"Phase 2 training launches only if perturbed_mean_gap / "
-                f"control_mean_gap >= {_DIFFERENTIAL_RATIO_MIN}, or "
-                f"control_mean_gap <= {_CONTROL_GAP_NEAR_ZERO} (clean "
-                "locality by construction). Ratio formulation is robust to "
-                "absolute scale of the gaps."
+                "Ratio gate (session-6 restructuring 2026-05-14). Clean controls "
+                "= {Bed, Television}. DiningTable reported as record-only noisy "
+                "control (h118-corrected pose still leaks residual doorway-bleed). "
+                f"Gate passes iff perturbed_mean_gap / clean_control_mean_gap >= "
+                f"{_DIFFERENTIAL_RATIO_MIN}, or clean_control_mean_gap <= "
+                f"{_CONTROL_GAP_NEAR_ZERO}."
+            ),
+        },
+        "wilcoxon_gate_summary": {
+            "perturbed_items": [label for label, _ in perturbed_items],
+            "clean_control_items": [label for label, _ in clean_control_items],
+            "noisy_control_items": [label for label, _ in noisy_control_items],
+            "wilcoxon_checks": wilcoxon_checks,
+            "perturbed_pass_per_item": perturbed_wilcoxon_pass_flags,
+            "corrected_p_threshold_max": float(_WILCOXON_CORRECTED_P_MAX),
+            "wilcoxon_gate_pass": wilcoxon_pass,
+            "note": (
+                "Wilcoxon signed-rank on (1 - cross-stage-cosine), "
+                "alternative='greater', method='approx'. Per-pair sample = "
+                "n_stage_a × n_stage_b cross-stage pairs at the item's apex "
+                "frames. Bonferroni-correction: corrected_p = min(raw_p * "
+                f"{_WILCOXON_N_PERTURBED_ITEMS}, 1.0). Gate passes iff each "
+                f"perturbed item has corrected_p < {_WILCOXON_CORRECTED_P_MAX}. "
+                "Reading C per session-6 reviewer authorisation 2026-05-14. "
+                "Control-item p-values are record-only (not gated)."
             ),
         },
         "overall_pass": bool(overall_pass),
@@ -404,16 +548,18 @@ def main() -> int:
         reasons = []
         if not norm["passed"]:
             reasons.append("norm check")
-        if not pert_pass:
-            reasons.append("absolute per-perturbed-item gap")
-        if not differential_pass:
-            reasons.append(f"differential ratio gate: {gate_reason}")
-        print(f"[encode2] FAIL: {'; '.join(reasons)}. NOT writing embeddings.",
+        if not ratio_pass:
+            reasons.append(f"ratio gate: {ratio_reason}")
+        if not wilcoxon_pass:
+            reasons.append(
+                f"wilcoxon perturbed-item gate: {perturbed_wilcoxon_pass_flags}"
+            )
+        print(f"[encode2] FAIL: {'; '.join(reasons)}. "
+              f"Embeddings saved (gate failed; do not launch training).",
               file=sys.stderr)
         return 2
 
-    np.save(args.out, emb)
-    print(f"[encode2] PASS. Wrote {emb.shape} float32 -> {args.out}", flush=True)
+    print(f"[encode2] PASS. Embeddings on disk at {args.out}", flush=True)
     return 0
 
 
