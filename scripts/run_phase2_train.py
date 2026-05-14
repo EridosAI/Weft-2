@@ -238,8 +238,15 @@ def main() -> int:
     # ---- τ calibration (carries forward — Phase 2 uses Phase 2 window). --
     # Per instr §5.2 the τ calibration is on Phase 1 in the original design;
     # with Phase 1 discarded as substrate-degenerate, Phase 2 inherits the
-    # role. The 5k-10k window applies to Phase 2's own step count.
-    if summary["n_gradient_steps_actual"] >= TAU_CALIB_END_STEP:
+    # role. The 5k-10k window applies to Phase 2's own step count. On resume,
+    # the calibration window has already been passed (the prior session
+    # wrote tau_calibration.json at the checkpoint step ≥ 10k), so skip
+    # re-calibration — the resumed trainer's confidences log starts at
+    # resume_step+1 ≫ TAU_CALIB_END_STEP and would produce an empty window.
+    if (
+        resume_step is None
+        and summary["n_gradient_steps_actual"] >= TAU_CALIB_END_STEP
+    ):
         tau = compute_tau_from_confidences(
             trainer.confidences,
             start_step=TAU_CALIB_START_STEP,

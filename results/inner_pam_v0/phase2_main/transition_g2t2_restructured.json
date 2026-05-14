@@ -1,0 +1,254 @@
+{
+  "criterion": "G2.T2 restructured (session-7, instr \u00a78.7a)",
+  "diagnostic_source": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/results/inner_pam_v0/phase2_main/transition_diagnostic.json",
+  "loops_in_window": [
+    0,
+    101
+  ],
+  "missing_loops_30_to_100": [],
+  "trajectory_direction": {
+    "n_dips_observed": 34,
+    "n_dips_allowed_max": 3,
+    "dip_loops": [
+      {
+        "prev_loop": 32,
+        "prev_lv": -7.957384044473821,
+        "cur_loop": 33,
+        "cur_lv": -8.064725333994085
+      },
+      {
+        "prev_loop": 33,
+        "prev_lv": -8.064725333994085,
+        "cur_loop": 34,
+        "cur_lv": -8.072251211513173
+      },
+      {
+        "prev_loop": 36,
+        "prev_lv": -7.914702740582553,
+        "cur_loop": 37,
+        "cur_lv": -8.060782952742144
+      },
+      {
+        "prev_loop": 38,
+        "prev_lv": -7.970003604888916,
+        "cur_loop": 39,
+        "cur_lv": -7.980826226147738
+      },
+      {
+        "prev_loop": 39,
+        "prev_lv": -7.980826226147738,
+        "cur_loop": 40,
+        "cur_lv": -8.037332187999379
+      },
+      {
+        "prev_loop": 40,
+        "prev_lv": -8.037332187999379,
+        "cur_loop": 41,
+        "cur_lv": -8.038585207679056
+      },
+      {
+        "prev_loop": 42,
+        "prev_lv": -7.995306448502974,
+        "cur_loop": 43,
+        "cur_lv": -7.9992099025032735
+      },
+      {
+        "prev_loop": 44,
+        "prev_lv": -7.925949335098267,
+        "cur_loop": 45,
+        "cur_lv": -8.009590409018777
+      },
+      {
+        "prev_loop": 45,
+        "prev_lv": -8.009590409018777,
+        "cur_loop": 46,
+        "cur_lv": -8.079430038278753
+      },
+      {
+        "prev_loop": 47,
+        "prev_lv": -7.936633196744052,
+        "cur_loop": 48,
+        "cur_lv": -7.959942232478749
+      },
+      {
+        "prev_loop": 48,
+        "prev_lv": -7.959942232478749,
+        "cur_loop": 49,
+        "cur_lv": -7.991917046633634
+      },
+      {
+        "prev_loop": 50,
+        "prev_lv": -7.949838855049827,
+        "cur_loop": 51,
+        "cur_lv": -7.976992520419033
+      },
+      {
+        "prev_loop": 51,
+        "prev_lv": -7.976992520419033,
+        "cur_loop": 52,
+        "cur_lv": -8.03768649968234
+      },
+      {
+        "prev_loop": 54,
+        "prev_lv": -7.9243550734086465,
+        "cur_loop": 55,
+        "cur_lv": -7.940190271897749
+      },
+      {
+        "prev_loop": 55,
+        "prev_lv": -7.940190271897749,
+        "cur_loop": 56,
+        "cur_lv": -7.976014917547053
+      },
+      {
+        "prev_loop": 57,
+        "prev_lv": -7.964991482821378,
+        "cur_loop": 58,
+        "cur_lv": -8.124137379906394
+      },
+      {
+        "prev_loop": 59,
+        "prev_lv": -7.965977148576216,
+        "cur_loop": 60,
+        "cur_lv": -8.045959732749246
+      },
+      {
+        "prev_loop": 61,
+        "prev_lv": -7.970067132603038,
+        "cur_loop": 62,
+        "cur_lv": -8.037100206721913
+      },
+      {
+        "prev_loop": 63,
+        "prev_lv": -7.940620465712113,
+        "cur_loop": 64,
+        "cur_lv": -8.08663361722773
+      },
+      {
+        "prev_loop": 66,
+        "prev_lv": -7.951671361923218,
+        "cur_loop": 67,
+        "cur_lv": -8.044827287847346
+      },
+      {
+        "prev_loop": 67,
+        "prev_lv": -8.044827287847346,
+        "cur_loop": 68,
+        "cur_lv": -8.051994302056052
+      },
+      {
+        "prev_loop": 70,
+        "prev_lv": -7.963652524081144,
+        "cur_loop": 71,
+        "cur_lv": -8.057968941601839
+      },
+      {
+        "prev_loop": 71,
+        "prev_lv": -8.057968941601839,
+        "cur_loop": 72,
+        "cur_lv": -8.058085159821943
+      },
+      {
+        "prev_loop": 73,
+        "prev_lv": -7.978000380776145,
+        "cur_loop": 74,
+        "cur_lv": -8.01189095323736
+      },
+      {
+        "prev_loop": 75,
+        "prev_lv": -7.961465033617887,
+        "cur_loop": 76,
+        "cur_lv": -8.048828623511575
+      },
+      {
+        "prev_loop": 77,
+        "prev_lv": -8.014586166902022,
+        "cur_loop": 78,
+        "cur_lv": -8.081936619498514
+      },
+      {
+        "prev_loop": 81,
+        "prev_lv": -7.998923019929366,
+        "cur_loop": 82,
+        "cur_lv": -8.066883433948863
+      },
+      {
+        "prev_loop": 83,
+        "prev_lv": -8.011755791577425,
+        "cur_loop": 84,
+        "cur_lv": -8.041416645050049
+      },
+      {
+        "prev_loop": 85,
+        "prev_lv": -7.977253502065485,
+        "cur_loop": 86,
+        "cur_lv": -8.061963666569103
+      },
+      {
+        "prev_loop": 87,
+        "prev_lv": -8.049208554354582,
+        "cur_loop": 88,
+        "cur_lv": -8.106621113690462
+      },
+      {
+        "prev_loop": 90,
+        "prev_lv": -7.938753496516835,
+        "cur_loop": 91,
+        "cur_lv": -8.044650056145407
+      },
+      {
+        "prev_loop": 93,
+        "prev_lv": -7.890502951361917,
+        "cur_loop": 94,
+        "cur_lv": -8.112319144335661
+      },
+      {
+        "prev_loop": 94,
+        "prev_lv": -8.112319144335661,
+        "cur_loop": 95,
+        "cur_lv": -8.150605136697944
+      },
+      {
+        "prev_loop": 99,
+        "prev_lv": -7.922378149899569,
+        "cur_loop": 100,
+        "cur_lv": -7.975120522759177
+      }
+    ],
+    "pass": false
+  },
+  "trajectory_shape": {
+    "perturbed_log_var_at_loops": {
+      "30": -8.04037373716181,
+      "35": -8.017903674732555,
+      "50": -7.949838855049827,
+      "75": -7.961465033617887,
+      "100": -7.975120522759177
+    },
+    "successive_deltas": [
+      0.022470062429254867,
+      0.0680648196827276,
+      -0.011626178568059586,
+      -0.013655489141290111
+    ],
+    "label": "mixed",
+    "note": "Descriptive, not gated. Flat fails the architectural claim (but would also trigger direction failure via no widening)."
+  },
+  "differential": {
+    "baseline_loop": 30,
+    "target_loop": 100,
+    "perturbed_widening": 0.06525321440263276,
+    "per_control_drifts_loop_baseline_to_target": {
+      "1": -0.20909621498801556,
+      "2": 0.07149388573386517,
+      "5": -0.025786053050648405
+    },
+    "control_widening_mean_abs": 0.10212538459084304,
+    "ratio_perturbed_over_control": 0.6389519575770941,
+    "ratio_threshold_min": 2.0,
+    "control_drift_near_zero": 0.001,
+    "reason": "ratio = perturbed_widening / control_widening_mean = 0.0653 / 0.1021 = 0.639 vs threshold 2.0",
+    "pass": false
+  },
+  "overall_pass": false
+}
