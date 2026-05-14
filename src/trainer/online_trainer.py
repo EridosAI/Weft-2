@@ -209,7 +209,13 @@ class OnlineTrainer:
 
         # Extended mode: seed _diag_per_loop_summary from the existing JSON so
         # prior loops from a session-6 run are preserved and the loop-100
-        # trajectory analysis sees the full record.
+        # trajectory analysis sees the full record. Drop any *partial* loops
+        # (n_train_steps_attributed < 50, well below the ~360 a full loop
+        # produces) so they can be re-recorded fully in the resumed run —
+        # session 6 left loop 36 with only 1 step before stopping at the
+        # max_loops break, and we want the full loop 36 in the loop-100
+        # analysis.
+        self._preseeded_loops: set[int] = set()
         if (
             self.cfg.transition_diagnostic_enabled
             and self.cfg.transition_diagnostic_extended_mode
@@ -221,11 +227,19 @@ class OnlineTrainer:
                     Path(self.cfg.transition_diagnostic_path).read_text()
                 )
                 prior_per_loop = list(prior.get("per_loop", []))
-                self._diag_per_loop_summary = prior_per_loop
+                kept: list[dict[str, Any]] = []
+                for r in prior_per_loop:
+                    if int(r.get("n_train_steps_attributed", 0)) >= 50:
+                        kept.append(r)
+                self._diag_per_loop_summary = kept
+                self._preseeded_loops = {
+                    int(r["loop_index"]) for r in kept
+                }
             except Exception:
                 # Don't fail trainer init on a malformed prior diagnostic;
                 # extended-mode accumulation still works from an empty start.
                 self._diag_per_loop_summary = []
+                self._preseeded_loops = set()
 
     # ---- init-time checks (instr §4.7) -----------------------------------
 
@@ -491,6 +505,14 @@ class OnlineTrainer:
         """Compute and persist per-loop stats for `loop_idx`."""
         n_steps = int(self._per_loop_loss_count.get(loop_idx, 0))
         if n_steps == 0:
+            return
+        # In extended mode, preserve loops already seeded from disk — the
+        # resumed run's partial-mid-loop accumulator would otherwise overwrite
+        # a complete prior record with fewer steps.
+        if (
+            self.cfg.transition_diagnostic_extended_mode
+            and int(loop_idx) in self._preseeded_loops
+        ):
             return
         mean_loss = float(self._per_loop_loss_sum[loop_idx] / n_steps)
         per_item: dict[str, float] = {}
