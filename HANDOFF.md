@@ -2,7 +2,9 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status at end of session 7 (2026-05-14):** Ninth STOP. G2.T2 restructured (instr §8.7a) per session-7 authorisation: three-part criterion at loop 100 — (a) trajectory direction (monotonic non-decreasing, ≤ 3 dips), (b) trajectory shape (descriptive), (c) differential perturbed/control ≥ 2.0. Original 0.5 absolute threshold dropped per the same pattern as §8.4's 0.05 floor → Wilcoxon Reading C restructuring in session 6 (research_operations §15 corollary added). Trainer extended-mode added: on resume, loads prior diagnostic JSON, skips the session-6 boundary auto-trip, and re-evaluates G2.T1/T3 at every checkpoint over the extended window. Training resumed from `ckpt_12000.pt` with `--max_loops 100`; ran 286.3s, 24,360 gradient steps. **G2.T1 and G2.T3 clean across the entire loops-36..100 window** (no in-flight trip at the 4 new checkpoints). **G2.T2 restructured FAILS all three gated criteria:** (a) 34 dips vs ≤ 3 allowed; (b) shape "mixed" — widened by loop 50 then partially retracted; (c) ratio 0.639 vs ≥ 2.0 required (controls drift MORE than perturbed widen — Bed log_var actually NARROWED by 0.21 over loops 30→100). This is the documented session-7 STOP-for-review condition. Per session-7 authorisation language, the restructured-G2.T2 failure puts option (iv) (reframe verdict toward V2) in the reviewer's frame as a live decision based on loop-100 evidence. **No autonomous decision on the verdict.** Working tree clean; push hold in effect.
+**Status at end of session 7 (2026-05-14, post-diagnostic addendum):** Ninth STOP, **verdict deferred pending substrate-determinism diagnostic findings now in.** Reviewer surfaced a question after the loop-100 G2.T2 verdict: §8.4 reported control gaps (Bed 0.0045, TV 0.0068) that are inconsistent with the deterministic-substrate assumption (expected gap = 0). Cross-loop invariance diagnostic on existing data (commit `91a66fb`): **Bed Stage A close-up frames are pixel-MD5 identical across loops** (Case A); **Television Stage A close-up frames are NOT pixel-identical** but DINOv2 cosines are 0.99983–1.0 (Case B — per-call rendering non-determinism specific to TV, visually negligible). Poses match exactly. **Decisive new finding:** Bed's Stage A within-cosine is exactly 1.000000 (consistent with bit-identicity), but the §8.4 within-Stage-B cosine is 0.9954, so the entire Bed gap comes from Stage B — `RandomizeMaterials(inRoomTypes=["LivingRoom"])` produces visual variation in Bedroom item frames despite Bedroom not being in API scope. **Cross-room visual leakage from the perturbation API itself** — a substrate-level finding the §8.4 framing didn't surface. Reframes the loop-100 V2 reading: control items DO have real Stage B input variation (small but nonzero); Bed's predictor-narrowing despite that variation is still anomalous, but not the same as "predictor doesn't see perturbation". **No autonomous verdict.** Working tree clean; push hold in effect.
+
+**Status at end of session 7 (initial, pre-diagnostic; superseded by addendum above):** Ninth STOP. G2.T2 restructured (instr §8.7a) per session-7 authorisation: three-part criterion at loop 100 — (a) trajectory direction (monotonic non-decreasing, ≤ 3 dips), (b) trajectory shape (descriptive), (c) differential perturbed/control ≥ 2.0. Original 0.5 absolute threshold dropped per the same pattern as §8.4's 0.05 floor → Wilcoxon Reading C restructuring in session 6 (research_operations §15 corollary added). Trainer extended-mode added: on resume, loads prior diagnostic JSON, skips the session-6 boundary auto-trip, and re-evaluates G2.T1/T3 at every checkpoint over the extended window. Training resumed from `ckpt_12000.pt` with `--max_loops 100`; ran 286.3s, 24,360 gradient steps. **G2.T1 and G2.T3 clean across the entire loops-36..100 window** (no in-flight trip at the 4 new checkpoints). **G2.T2 restructured FAILS all three gated criteria:** (a) 34 dips vs ≤ 3 allowed; (b) shape "mixed" — widened by loop 50 then partially retracted; (c) ratio 0.639 vs ≥ 2.0 required (controls drift MORE than perturbed widen — Bed log_var actually NARROWED by 0.21 over loops 30→100). This is the documented session-7 STOP-for-review condition. Per session-7 authorisation language, the restructured-G2.T2 failure puts option (iv) (reframe verdict toward V2) in the reviewer's frame as a live decision based on loop-100 evidence. **No autonomous decision on the verdict.** Working tree clean; push hold in effect.
 
 **Status at end of session 6 (2026-05-14):** Eighth STOP. §8.4 gate restructured and PASSED on the existing collected data (ratio = 2.107 vs threshold 2.0 with clean controls = {Bed, Television}; Wilcoxon corrected_p < 1e-300 on both perturbed items vs 0.001 threshold). Trainer extended with `--max_loops` and `--resume_from`; resume smoke-tested on real data. Phase 2 training launched with `--max_loops 35` and ran cleanly to step 12,960 (loop 36 boundary). **§8.7a G2.T2 TRIPPED**: perturbed-item log_var widening = +0.022 between loop 30 and loop 35, vs required ≥ 0.5 SCAFFOLDING threshold. Trainer wrote `transition_diagnostic_TRIPPED.txt`, exit code 3. G2.T1 (loss-spike) and G2.T3 (control-drift) both clean. This is the documented session-6 STOP-for-review condition — training STOPPED, reviewer judgement requested. Working tree clean; push hold in effect.
 
@@ -80,7 +82,92 @@ autonomous.
 
 ## Next immediate action
 
-**Ninth STOP (session 7 outcome).** §8.7a G2.T2 restructured from the absolute "log_var widening ≥ 0.5 by loop 35" formulation to a three-part criterion at loop 100 (trajectory direction + shape + differential), per session-7 authorisation. Training resumed from `ckpt_12000.pt` (session-6 endpoint, step 12,000) with `--max_loops 100`. Resume worked cleanly (extended-mode diagnostic loaded prior loops 0..35 from the session-6 JSON, appended loops 36..100 from the resumed run). G2.T1 (loss spike) and G2.T3 (control drift) clean across the entire loops-36..100 in-flight window — no trip at any of the 4 new checkpoints (steps 15k, 20k, 30k, 36,360). **Restructured G2.T2 FAILS all three gated criteria at loop 100.** This is the documented session-7 STOP-for-review condition; per the session-6 handoff's authorisation language, option (iv) (reframe verdict toward V2 — architecture's confidence-graded mechanism falsified at this signal magnitude) becomes a live reviewer decision based on loop-100 evidence. **No autonomous resolution.**
+**Ninth STOP — v0 verdict deferred pending reviewer interpretation of the post-verdict substrate-determinism diagnostic.** The §8.7a G2.T2 restructured-gate fails at loop 100 (recorded below), but a reviewer-surfaced question about substrate determinism produced a follow-up diagnostic whose findings change how the verdict is read. The verdict has NOT been recorded. The loop-170 safety check has NOT been run.
+
+### Cross-loop invariance diagnostic (post-session-7, reviewer-directed) — findings
+
+**Question:** §8.4 reported control-item Stage A vs Stage B gaps of 0.0045 (Bed) and 0.0068 (Television). On a corrected-substrate, deterministic-renderer assumption, Stage A close-up control-item frames should be bit-identical across loops (same seed, same trajectory, same pose, no perturbation in scope). Expected gap on truly invariant inputs to a frozen deterministic encoder = 0, not 0.0045.
+
+**Method.** From existing `data/phase2_frames/`, sampled Stage A loops {1, 5, 10, 15, 20, 25, 28}; for each (item, loop), collected close-up frames (11 per loop, identical poses confirmed: max XZ displacement across loops = 0.0, max rotation deviation = 0.0°); at each within-close-up ordinal index, computed pairwise pixel-MD5 hashes (on decoded RGB arrays) and pairwise DINOv2 cosines (from the saved `embeddings.npy`). Same for the apex frame. Report at [results/inner_pam_v0/phase2_main/cross_loop_invariance_check.json](results/inner_pam_v0/phase2_main/cross_loop_invariance_check.json).
+
+**Bed (vp=1) — Case A (pixel-deterministic in Stage A).**
+- All 11 ordinals × 7 loops: **pixel-MD5 ALL identical** at every ordinal. `n_unique_pixel_md5 = 1` everywhere.
+- DINOv2 cosine off-diagonal range [0.99999994, 1.00000012] — numerical noise around 1.0.
+- Apex: pixel-identical across all 7 loops; cosine 0.99999996.
+- Substrate determinism holds for Bed at this pose. Stage A is, as designed, bit-identical.
+
+**Television (vp=5) — Case B (per-call non-determinism, visually negligible).**
+- All 11 ordinals × 7 loops: pixel-MD5 NOT identical. `n_ordinals_with_all_pixel_md5_identical = 0` (zero out of 11 ordinals have all-identical hashes across the 7 loops).
+- DINOv2 cosine off-diagonal range [0.99983, 1.00000], mean of means 0.99999.
+- Apex: 2 unique pixel-MD5 hashes across 7 loops; cosines 0.99998–1.0.
+- TV-specific renderer non-determinism — most likely shader cache state, animation frame counters, anti-aliasing sample order, or similar non-deterministic GPU state that varies per `controller.step` call even with identical pose. Visually negligible (cosine > 0.9998) but pixel-distinct.
+
+### Where the §8.4 control gaps actually come from
+
+The §8.4 report's per-stage cosines (read from `data/phase2_embeddings/encode_report.json`):
+
+| item | within_A | within_B | cross | gap |
+|---|---:|---:|---:|---:|
+| Bed | **1.000000** | 0.995422 | 0.993194 | 0.0045 |
+| Television | 0.999987 | 0.989502 | 0.988223 | 0.0065 |
+| DiningTable | 0.999969 | 0.980352 | 0.976574 | 0.0136 |
+
+**Bed's within_A is exactly 1.000000** (consistent with the bit-identical Stage A frames confirmed above). The entire 0.0045 gap comes from **within_B = 0.9954** — Stage B has within-stage visual variation that Stage A does not. The Stage A → Stage B drift then accounts for the additional 0.0023 from `within_avg - cross`.
+
+**The only mechanism that can produce within-Stage-B variation on Bed is the per-loop `RandomizeMaterials(inRoomTypes=["LivingRoom"])` call producing visual side-effects in Bedroom frames.** Bedroom is not in the API's room scope, but the rendering after the call differs from the rendering before. **Cross-room visual leakage from the perturbation API itself** — a substrate-level finding the §8.4 framing didn't surface and that re-frames the loop-100 verdict.
+
+For TV: within_A = 0.999987 (consistent with renderer non-determinism observed in the Stage A diagnostic). within_B = 0.9895 — the TV-specific renderer non-determinism contributes a small floor, plus the same cross-room leakage Bed sees, plus possibly more accumulated non-determinism over 150 Stage B loops vs 31 Stage A loops.
+
+For DT (skipped in the diagnostic per directive, but the §8.4 numbers confirm the noisy-control framing): within_A = 0.999969 (essentially deterministic — DT's doorway-bleed is a Stage B effect, not a Stage A determinism issue); within_B = 0.9804 — DT's FOV catches enough LivingRoom backdrop that `RandomizeMaterials` moves DT's embedding by 4× more than Bed's and 2× more than TV's.
+
+### Implications for the loop-100 G2.T2 verdict
+
+The cross-loop diagnostic doesn't directly invalidate the G2.T2 restructured-gate failure, but it materially changes the reading of it. The reading-pre-diagnostic was:
+
+> "Bed log_var NARROWED by 0.21 over loops 30→100 — predictor became more confident on Bed during Stage B than at Stage A end. Controls drift MORE than perturbed widen. The architectural prediction (variance widens specifically on perturbed items in response to surprise, while controls remain stable) is not observed."
+
+The reading-post-diagnostic refines this:
+
+1. **Controls are NOT input-invariant in Stage B.** Bed's input has Stage B within-cosine 0.9954 (real variation, small but nonzero). TV's has 0.9895. DT's has 0.9804. These are real visual changes the predictor sees on items that the perturbation API's scope claims not to affect.
+
+2. **The "controls should remain stable" prior was wrong.** The architectural prediction "variance widens specifically on perturbed items, controls remain stable" assumed pure perturbation locality at the input. The locality holds at the API level (`inRoomTypes=["LivingRoom"]`) but does NOT hold at the rendered-frame level. The predictor sees real Stage B variation on Bed, TV, AND DT, just smaller magnitudes than on Dresser and Sofa.
+
+3. **Bed's narrowing (-0.21) is still anomalous, but the framing changes.** Bed has the smallest Stage B input variation (within_B 0.9954 → about 0.005 cosine drop) yet the predictor's log_var moved by 0.21 in the *narrowing* direction. This is not "predictor doesn't see perturbation"; it's "predictor's variance estimate on Bed is moving by ~50× the magnitude of Bed's input variation, in the wrong direction". Possible mechanisms: (i) gradient-descent's global parameter updates couple item-specific variance estimates through the shared transformer body — updates on Dresser+Sofa batches affect Bed's variance estimate as a side-effect; (ii) the per-K-step scalar isotropic variance (spec §3.3) averages across the embedding dimension and across K steps, smearing item-specific surprise into a global term that doesn't track per-item input variation; (iii) some combination.
+
+4. **The differential ratio (c) needs to be re-read against the actual per-item input variation.** A naïve fix would be "weight the control drift by the inverse of input variation", but that's recalibrating the gate post-hoc against the same data it's being tested on — exactly the failure mode §15 guards against. The clean reading is: with `RandomizeMaterials` producing cross-room leakage, the §8.7a "{Bed, DT, TV} = controls" framing was never fully clean. The Bed/TV portion is *cleaner* than DT (smaller magnitude) but is not zero-input-variation as the original gate assumed.
+
+5. **The §8.4 ratio gate at 2.107 still holds:** clean controls (Bed, TV) sum to mean gap 0.0055, perturbed items to 0.01165, ratio 2.107. The perturbation produces 2× more visual variation on perturbed items than the cross-room leakage produces on clean controls. That's a real differential signal at the encoder level, just not as clean as "perturbed = X variation, controls = 0".
+
+### Three readings the reviewer might pick from
+
+(A) **The diagnostic doesn't change the verdict.** The architectural claim is "variance responds preferentially to per-item surprise"; if the predictor's variance changes are dominated by global gradient coupling rather than per-item input variation, that's still the architecture's mechanism not operating as the spec predicts. V2 stands; cross-room leakage is a substrate-level caveat in the V2 report.
+
+(B) **The diagnostic invalidates the G2.T2.c gate's interpretation, not the verdict.** The "control widening MORE than perturbed widening" finding is now legibly a consequence of: (i) Bed's input *does* vary in Stage B, and (ii) the predictor's variance updates are not per-item-isolated. (B-i) re-frames G2.T2.c; (B-ii) is the load-bearing architectural finding. Verdict still V2-leaning but the framing in §11 changes from "predictor doesn't see perturbation" to "predictor sees perturbation but its variance estimate is coupled across items and direction-noisy".
+
+(C) **The diagnostic is enough to pause for substrate-revision before declaring a verdict.** `RandomizeMaterials`'s cross-room leakage was unexpected; the assumption that scoped perturbation produces zero side-effects on out-of-scope rooms is empirically false on this AI2-THOR build. A revised perturbation mechanism (per-object material setting, or asset replacement, or hand-built texture swaps) might produce cleaner locality at the rendered-frame level. The loop-100 evidence is then conditional on a substrate that doesn't isolate the perturbation as the design assumed; a different substrate could produce a different verdict.
+
+I don't have a strong recommendation among A/B/C — they're each defensible. (A) is the strictest reading of the architectural claim and treats the substrate finding as a caveat. (B) is the most precise framing — it acknowledges that the gate's interpretation of the data is now updated while the underlying observation (controls drift more than perturbed widen) stands. (C) is the most conservative — wait, fix the substrate, then re-test. (C) is also the most expensive (re-collection + re-training).
+
+What is **NOT** decided autonomously: which reading to take; the V2 declaration; substrate revision; loop-170 safety check. All defer to experiment-chat review.
+
+### Stop conditions if continuation is authorised
+
+- (A) authorised: write V2 evidence package per §11, with the substrate caveat documented. No further training.
+- (B) authorised: same as (A) but with the precise framing — clean controls (Bed, TV) DO have input variation in Stage B due to `RandomizeMaterials` cross-room leakage; the architectural finding is "predictor's variance estimate is coupled across items, not per-item isolated". V2 evidence + caveat.
+- (C) authorised: stop training; substrate-revision path becomes live. The substrate-revision design (per-object material setting, asset replacement, etc.) goes to a new substrate-verification cycle.
+- Loop-170 safety check (originally option (ii) in session-7's reviewer options): still available but explicitly NOT to be run before A/B/C is decided per the current directive.
+
+### Working-tree state at end of this addendum
+
+Working tree clean. Push hold in effect. Commits since session-7's HANDOFF:
+- `91a66fb` — exp(phase2): cross-loop invariance diagnostic — Bed pixel-identical, TV non-deterministic; §8.4 control gaps explained by cross-room visual leakage from `RandomizeMaterials`.
+- (this commit) — docs(handoff): post-verdict substrate-determinism diagnostic findings; verdict deferred.
+
+No running jobs. GPU clear. Disk: ~100 GB free.
+
+---
+
+### (Earlier — initial session-7 ninth-STOP framing; superseded by the post-diagnostic addendum above)
 
 ### Session 7 outcomes (load-bearing summary)
 
