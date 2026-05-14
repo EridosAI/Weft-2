@@ -1,0 +1,1163 @@
+{
+  "annotations_path": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_calibration_v2/annotations.jsonl",
+  "frames_dir": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/data/phase2_calibration_v2/frames",
+  "n_frames": 1800,
+  "diagnostic_1_y_coordinate": {
+    "y_overall": {
+      "min": 0.00650787353515625,
+      "max": 0.9009997844696045,
+      "mean": 0.5183560225698683,
+      "std": 0.4425556476512971,
+      "range": 0.8944919109344482
+    },
+    "n_unique_y_values_rounded_4dp": 2,
+    "unique_y_values_rounded_4dp": [
+      0.0065,
+      0.901
+    ],
+    "y_first_loop_stats": {
+      "loop_index": 0,
+      "n_frames": 360,
+      "min": 0.00650787353515625,
+      "max": 0.9009997844696045,
+      "range": 0.8944919109344482
+    },
+    "flag_threshold_m": 0.05,
+    "flagged": true
+  },
+  "diagnostic_2_displacement": {
+    "flag_threshold_m": 0.25,
+    "distribution": {
+      "n_pairs": 1799,
+      "mean": 0.09713226138159481,
+      "median": 0.0,
+      "std": 0.13970881174432723,
+      "min": 0.0,
+      "max": 0.8944919109344482,
+      "p99": 0.8944919109344482,
+      "histogram_bin_labels": [
+        "[0.00, 0.05)",
+        "[0.05, 0.10)",
+        "[0.10, 0.15)",
+        "[0.15, 0.20)",
+        "[0.20, 0.25)",
+        "[0.25, 0.50)",
+        "[0.50, 1.00)",
+        "[1.00, 2.00)",
+        "[2.00, inf)"
+      ],
+      "histogram_counts": [
+        1000,
+        0,
+        15,
+        635,
+        120,
+        0,
+        29,
+        0,
+        0
+      ]
+    },
+    "n_flagged": 29,
+    "flagged_pairs_count_by_loop": {
+      "0": 6,
+      "1": 6,
+      "2": 6,
+      "3": 6,
+      "4": 5
+    },
+    "flagged_pairs": [
+      {
+        "consec_pair_idx": 103,
+        "frame_a_idx": 103,
+        "frame_b_idx": 104,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 8.712756156921387,
+          "y": 0.9009997844696045,
+          "z": 5.636485576629639
+        },
+        "position_after": {
+          "x": 8.712756156921387,
+          "y": 0.00650787353515625,
+          "z": 5.636485576629639
+        },
+        "rotation_y_before": 117.56510925292969,
+        "rotation_y_after": 122.56512451171875,
+        "loop_index_before": 0,
+        "loop_index_after": 0,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 188,
+        "frame_a_idx": 188,
+        "frame_b_idx": 189,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.324842929840088,
+          "y": 0.00650787353515625,
+          "z": 2.262326240539551
+        },
+        "position_after": {
+          "x": 5.324842929840088,
+          "y": 0.9009997844696045,
+          "z": 2.262326240539551
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 132.46636962890625,
+        "loop_index_before": 0,
+        "loop_index_after": 0,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 199,
+        "frame_a_idx": 199,
+        "frame_b_idx": 200,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 6.675157070159912,
+          "y": 0.9009997844696045,
+          "z": 3.737673759460449
+        },
+        "position_after": {
+          "x": 6.675157070159912,
+          "y": 0.00650787353515625,
+          "z": 3.737673759460449
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 137.46636962890625,
+        "loop_index_before": 0,
+        "loop_index_after": 0,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 241,
+        "frame_a_idx": 241,
+        "frame_b_idx": 242,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.663685321807861,
+          "y": 0.00650787353515625,
+          "z": 1.7365126609802246
+        },
+        "position_after": {
+          "x": 5.663685321807861,
+          "y": 0.9009997844696045,
+          "z": 1.7365126609802246
+        },
+        "rotation_y_before": 279.42083740234375,
+        "rotation_y_after": 279.42083740234375,
+        "loop_index_before": 0,
+        "loop_index_after": 0,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 332,
+        "frame_a_idx": 332,
+        "frame_b_idx": 333,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 11.360971450805664,
+          "y": 0.9009997844696045,
+          "z": 3.7916529178619385
+        },
+        "position_after": {
+          "x": 11.360971450805664,
+          "y": 0.00650787353515625,
+          "z": 3.7916529178619385
+        },
+        "rotation_y_before": 127.65974426269531,
+        "rotation_y_after": 132.6597442626953,
+        "loop_index_before": 0,
+        "loop_index_after": 0,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 359,
+        "frame_a_idx": 359,
+        "frame_b_idx": 360,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 10.776752471923828,
+          "y": 0.00650787353515625,
+          "z": 2.47975754737854
+        },
+        "position_after": {
+          "x": 10.776752471923828,
+          "y": 0.9009997844696045,
+          "z": 2.47975754737854
+        },
+        "rotation_y_before": 193.28280639648438,
+        "rotation_y_after": 193.28280639648438,
+        "loop_index_before": 0,
+        "loop_index_after": 1,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": true
+      },
+      {
+        "consec_pair_idx": 463,
+        "frame_a_idx": 463,
+        "frame_b_idx": 464,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 8.712756156921387,
+          "y": 0.9009997844696045,
+          "z": 5.636485576629639
+        },
+        "position_after": {
+          "x": 8.712756156921387,
+          "y": 0.00650787353515625,
+          "z": 5.636485576629639
+        },
+        "rotation_y_before": 117.56510925292969,
+        "rotation_y_after": 122.56512451171875,
+        "loop_index_before": 1,
+        "loop_index_after": 1,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 548,
+        "frame_a_idx": 548,
+        "frame_b_idx": 549,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.324842929840088,
+          "y": 0.00650787353515625,
+          "z": 2.262326240539551
+        },
+        "position_after": {
+          "x": 5.324842929840088,
+          "y": 0.9009997844696045,
+          "z": 2.262326240539551
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 132.46636962890625,
+        "loop_index_before": 1,
+        "loop_index_after": 1,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 559,
+        "frame_a_idx": 559,
+        "frame_b_idx": 560,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 6.675157070159912,
+          "y": 0.9009997844696045,
+          "z": 3.737673759460449
+        },
+        "position_after": {
+          "x": 6.675157070159912,
+          "y": 0.00650787353515625,
+          "z": 3.737673759460449
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 137.46636962890625,
+        "loop_index_before": 1,
+        "loop_index_after": 1,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 601,
+        "frame_a_idx": 601,
+        "frame_b_idx": 602,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.663685321807861,
+          "y": 0.00650787353515625,
+          "z": 1.7365126609802246
+        },
+        "position_after": {
+          "x": 5.663685321807861,
+          "y": 0.9009997844696045,
+          "z": 1.7365126609802246
+        },
+        "rotation_y_before": 279.42083740234375,
+        "rotation_y_after": 279.42083740234375,
+        "loop_index_before": 1,
+        "loop_index_after": 1,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 692,
+        "frame_a_idx": 692,
+        "frame_b_idx": 693,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 11.360971450805664,
+          "y": 0.9009997844696045,
+          "z": 3.7916529178619385
+        },
+        "position_after": {
+          "x": 11.360971450805664,
+          "y": 0.00650787353515625,
+          "z": 3.7916529178619385
+        },
+        "rotation_y_before": 127.65974426269531,
+        "rotation_y_after": 132.6597442626953,
+        "loop_index_before": 1,
+        "loop_index_after": 1,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 719,
+        "frame_a_idx": 719,
+        "frame_b_idx": 720,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 10.776752471923828,
+          "y": 0.00650787353515625,
+          "z": 2.47975754737854
+        },
+        "position_after": {
+          "x": 10.776752471923828,
+          "y": 0.9009997844696045,
+          "z": 2.47975754737854
+        },
+        "rotation_y_before": 193.28280639648438,
+        "rotation_y_after": 193.28280639648438,
+        "loop_index_before": 1,
+        "loop_index_after": 2,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": true
+      },
+      {
+        "consec_pair_idx": 823,
+        "frame_a_idx": 823,
+        "frame_b_idx": 824,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 8.712756156921387,
+          "y": 0.9009997844696045,
+          "z": 5.636485576629639
+        },
+        "position_after": {
+          "x": 8.712756156921387,
+          "y": 0.00650787353515625,
+          "z": 5.636485576629639
+        },
+        "rotation_y_before": 117.56510925292969,
+        "rotation_y_after": 122.56512451171875,
+        "loop_index_before": 2,
+        "loop_index_after": 2,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 908,
+        "frame_a_idx": 908,
+        "frame_b_idx": 909,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.324842929840088,
+          "y": 0.00650787353515625,
+          "z": 2.262326240539551
+        },
+        "position_after": {
+          "x": 5.324842929840088,
+          "y": 0.9009997844696045,
+          "z": 2.262326240539551
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 132.46636962890625,
+        "loop_index_before": 2,
+        "loop_index_after": 2,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 919,
+        "frame_a_idx": 919,
+        "frame_b_idx": 920,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 6.675157070159912,
+          "y": 0.9009997844696045,
+          "z": 3.737673759460449
+        },
+        "position_after": {
+          "x": 6.675157070159912,
+          "y": 0.00650787353515625,
+          "z": 3.737673759460449
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 137.46636962890625,
+        "loop_index_before": 2,
+        "loop_index_after": 2,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 961,
+        "frame_a_idx": 961,
+        "frame_b_idx": 962,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.663685321807861,
+          "y": 0.00650787353515625,
+          "z": 1.7365126609802246
+        },
+        "position_after": {
+          "x": 5.663685321807861,
+          "y": 0.9009997844696045,
+          "z": 1.7365126609802246
+        },
+        "rotation_y_before": 279.42083740234375,
+        "rotation_y_after": 279.42083740234375,
+        "loop_index_before": 2,
+        "loop_index_after": 2,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1052,
+        "frame_a_idx": 1052,
+        "frame_b_idx": 1053,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 11.360971450805664,
+          "y": 0.9009997844696045,
+          "z": 3.7916529178619385
+        },
+        "position_after": {
+          "x": 11.360971450805664,
+          "y": 0.00650787353515625,
+          "z": 3.7916529178619385
+        },
+        "rotation_y_before": 127.65974426269531,
+        "rotation_y_after": 132.6597442626953,
+        "loop_index_before": 2,
+        "loop_index_after": 2,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1079,
+        "frame_a_idx": 1079,
+        "frame_b_idx": 1080,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 10.776752471923828,
+          "y": 0.00650787353515625,
+          "z": 2.47975754737854
+        },
+        "position_after": {
+          "x": 10.776752471923828,
+          "y": 0.9009997844696045,
+          "z": 2.47975754737854
+        },
+        "rotation_y_before": 193.28280639648438,
+        "rotation_y_after": 193.28280639648438,
+        "loop_index_before": 2,
+        "loop_index_after": 3,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": true
+      },
+      {
+        "consec_pair_idx": 1183,
+        "frame_a_idx": 1183,
+        "frame_b_idx": 1184,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 8.712756156921387,
+          "y": 0.9009997844696045,
+          "z": 5.636485576629639
+        },
+        "position_after": {
+          "x": 8.712756156921387,
+          "y": 0.00650787353515625,
+          "z": 5.636485576629639
+        },
+        "rotation_y_before": 117.56510925292969,
+        "rotation_y_after": 122.56512451171875,
+        "loop_index_before": 3,
+        "loop_index_after": 3,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1268,
+        "frame_a_idx": 1268,
+        "frame_b_idx": 1269,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.324842929840088,
+          "y": 0.00650787353515625,
+          "z": 2.262326240539551
+        },
+        "position_after": {
+          "x": 5.324842929840088,
+          "y": 0.9009997844696045,
+          "z": 2.262326240539551
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 132.46636962890625,
+        "loop_index_before": 3,
+        "loop_index_after": 3,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1279,
+        "frame_a_idx": 1279,
+        "frame_b_idx": 1280,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 6.675157070159912,
+          "y": 0.9009997844696045,
+          "z": 3.737673759460449
+        },
+        "position_after": {
+          "x": 6.675157070159912,
+          "y": 0.00650787353515625,
+          "z": 3.737673759460449
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 137.46636962890625,
+        "loop_index_before": 3,
+        "loop_index_after": 3,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1321,
+        "frame_a_idx": 1321,
+        "frame_b_idx": 1322,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.663685321807861,
+          "y": 0.00650787353515625,
+          "z": 1.7365126609802246
+        },
+        "position_after": {
+          "x": 5.663685321807861,
+          "y": 0.9009997844696045,
+          "z": 1.7365126609802246
+        },
+        "rotation_y_before": 279.42083740234375,
+        "rotation_y_after": 279.42083740234375,
+        "loop_index_before": 3,
+        "loop_index_after": 3,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1412,
+        "frame_a_idx": 1412,
+        "frame_b_idx": 1413,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 11.360971450805664,
+          "y": 0.9009997844696045,
+          "z": 3.7916529178619385
+        },
+        "position_after": {
+          "x": 11.360971450805664,
+          "y": 0.00650787353515625,
+          "z": 3.7916529178619385
+        },
+        "rotation_y_before": 127.65974426269531,
+        "rotation_y_after": 132.6597442626953,
+        "loop_index_before": 3,
+        "loop_index_after": 3,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1439,
+        "frame_a_idx": 1439,
+        "frame_b_idx": 1440,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 10.776752471923828,
+          "y": 0.00650787353515625,
+          "z": 2.47975754737854
+        },
+        "position_after": {
+          "x": 10.776752471923828,
+          "y": 0.9009997844696045,
+          "z": 2.47975754737854
+        },
+        "rotation_y_before": 193.28280639648438,
+        "rotation_y_after": 193.28280639648438,
+        "loop_index_before": 3,
+        "loop_index_after": 4,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": true
+      },
+      {
+        "consec_pair_idx": 1543,
+        "frame_a_idx": 1543,
+        "frame_b_idx": 1544,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 8.712756156921387,
+          "y": 0.9009997844696045,
+          "z": 5.636485576629639
+        },
+        "position_after": {
+          "x": 8.712756156921387,
+          "y": 0.00650787353515625,
+          "z": 5.636485576629639
+        },
+        "rotation_y_before": 117.56510925292969,
+        "rotation_y_after": 122.56512451171875,
+        "loop_index_before": 4,
+        "loop_index_after": 4,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1628,
+        "frame_a_idx": 1628,
+        "frame_b_idx": 1629,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.324842929840088,
+          "y": 0.00650787353515625,
+          "z": 2.262326240539551
+        },
+        "position_after": {
+          "x": 5.324842929840088,
+          "y": 0.9009997844696045,
+          "z": 2.262326240539551
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 132.46636962890625,
+        "loop_index_before": 4,
+        "loop_index_after": 4,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1639,
+        "frame_a_idx": 1639,
+        "frame_b_idx": 1640,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 6.675157070159912,
+          "y": 0.9009997844696045,
+          "z": 3.737673759460449
+        },
+        "position_after": {
+          "x": 6.675157070159912,
+          "y": 0.00650787353515625,
+          "z": 3.737673759460449
+        },
+        "rotation_y_before": 132.46636962890625,
+        "rotation_y_after": 137.46636962890625,
+        "loop_index_before": 4,
+        "loop_index_after": 4,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1681,
+        "frame_a_idx": 1681,
+        "frame_b_idx": 1682,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": 0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 5.663685321807861,
+          "y": 0.00650787353515625,
+          "z": 1.7365126609802246
+        },
+        "position_after": {
+          "x": 5.663685321807861,
+          "y": 0.9009997844696045,
+          "z": 1.7365126609802246
+        },
+        "rotation_y_before": 279.42083740234375,
+        "rotation_y_after": 279.42083740234375,
+        "loop_index_before": 4,
+        "loop_index_after": 4,
+        "phase_before": "transit",
+        "phase_after": "close_up",
+        "loop_boundary_flag": false
+      },
+      {
+        "consec_pair_idx": 1772,
+        "frame_a_idx": 1772,
+        "frame_b_idx": 1773,
+        "displacement_m": 0.8944919109344482,
+        "dx_m": 0.0,
+        "dy_m": -0.8944919109344482,
+        "dz_m": 0.0,
+        "position_before": {
+          "x": 11.360971450805664,
+          "y": 0.9009997844696045,
+          "z": 3.7916529178619385
+        },
+        "position_after": {
+          "x": 11.360971450805664,
+          "y": 0.00650787353515625,
+          "z": 3.7916529178619385
+        },
+        "rotation_y_before": 127.65974426269531,
+        "rotation_y_after": 132.6597442626953,
+        "loop_index_before": 4,
+        "loop_index_after": 4,
+        "phase_before": "close_up",
+        "phase_after": "transit",
+        "loop_boundary_flag": false
+      }
+    ]
+  },
+  "diagnostic_3_contact_sheets": {
+    "max_rendered": 30,
+    "n_rendered": 29,
+    "out_dir": "results/phase2_calibration_v2/discontinuity_frames",
+    "sheets": [
+      {
+        "consec_pair_idx": 103,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_000_pair000103_disp0.894m.png",
+        "frames_in_sheet": [
+          102,
+          103,
+          104,
+          105
+        ]
+      },
+      {
+        "consec_pair_idx": 188,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_001_pair000188_disp0.894m.png",
+        "frames_in_sheet": [
+          187,
+          188,
+          189,
+          190
+        ]
+      },
+      {
+        "consec_pair_idx": 199,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_002_pair000199_disp0.894m.png",
+        "frames_in_sheet": [
+          198,
+          199,
+          200,
+          201
+        ]
+      },
+      {
+        "consec_pair_idx": 241,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_003_pair000241_disp0.894m.png",
+        "frames_in_sheet": [
+          240,
+          241,
+          242,
+          243
+        ]
+      },
+      {
+        "consec_pair_idx": 332,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_004_pair000332_disp0.894m.png",
+        "frames_in_sheet": [
+          331,
+          332,
+          333,
+          334
+        ]
+      },
+      {
+        "consec_pair_idx": 359,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_005_pair000359_disp0.894m.png",
+        "frames_in_sheet": [
+          358,
+          359,
+          360,
+          361
+        ]
+      },
+      {
+        "consec_pair_idx": 463,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_006_pair000463_disp0.894m.png",
+        "frames_in_sheet": [
+          462,
+          463,
+          464,
+          465
+        ]
+      },
+      {
+        "consec_pair_idx": 548,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_007_pair000548_disp0.894m.png",
+        "frames_in_sheet": [
+          547,
+          548,
+          549,
+          550
+        ]
+      },
+      {
+        "consec_pair_idx": 559,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_008_pair000559_disp0.894m.png",
+        "frames_in_sheet": [
+          558,
+          559,
+          560,
+          561
+        ]
+      },
+      {
+        "consec_pair_idx": 601,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_009_pair000601_disp0.894m.png",
+        "frames_in_sheet": [
+          600,
+          601,
+          602,
+          603
+        ]
+      },
+      {
+        "consec_pair_idx": 692,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_010_pair000692_disp0.894m.png",
+        "frames_in_sheet": [
+          691,
+          692,
+          693,
+          694
+        ]
+      },
+      {
+        "consec_pair_idx": 719,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_011_pair000719_disp0.894m.png",
+        "frames_in_sheet": [
+          718,
+          719,
+          720,
+          721
+        ]
+      },
+      {
+        "consec_pair_idx": 823,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_012_pair000823_disp0.894m.png",
+        "frames_in_sheet": [
+          822,
+          823,
+          824,
+          825
+        ]
+      },
+      {
+        "consec_pair_idx": 908,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_013_pair000908_disp0.894m.png",
+        "frames_in_sheet": [
+          907,
+          908,
+          909,
+          910
+        ]
+      },
+      {
+        "consec_pair_idx": 919,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_014_pair000919_disp0.894m.png",
+        "frames_in_sheet": [
+          918,
+          919,
+          920,
+          921
+        ]
+      },
+      {
+        "consec_pair_idx": 961,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_015_pair000961_disp0.894m.png",
+        "frames_in_sheet": [
+          960,
+          961,
+          962,
+          963
+        ]
+      },
+      {
+        "consec_pair_idx": 1052,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_016_pair001052_disp0.894m.png",
+        "frames_in_sheet": [
+          1051,
+          1052,
+          1053,
+          1054
+        ]
+      },
+      {
+        "consec_pair_idx": 1079,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_017_pair001079_disp0.894m.png",
+        "frames_in_sheet": [
+          1078,
+          1079,
+          1080,
+          1081
+        ]
+      },
+      {
+        "consec_pair_idx": 1183,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_018_pair001183_disp0.894m.png",
+        "frames_in_sheet": [
+          1182,
+          1183,
+          1184,
+          1185
+        ]
+      },
+      {
+        "consec_pair_idx": 1268,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_019_pair001268_disp0.894m.png",
+        "frames_in_sheet": [
+          1267,
+          1268,
+          1269,
+          1270
+        ]
+      },
+      {
+        "consec_pair_idx": 1279,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_020_pair001279_disp0.894m.png",
+        "frames_in_sheet": [
+          1278,
+          1279,
+          1280,
+          1281
+        ]
+      },
+      {
+        "consec_pair_idx": 1321,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_021_pair001321_disp0.894m.png",
+        "frames_in_sheet": [
+          1320,
+          1321,
+          1322,
+          1323
+        ]
+      },
+      {
+        "consec_pair_idx": 1412,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_022_pair001412_disp0.894m.png",
+        "frames_in_sheet": [
+          1411,
+          1412,
+          1413,
+          1414
+        ]
+      },
+      {
+        "consec_pair_idx": 1439,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_023_pair001439_disp0.894m.png",
+        "frames_in_sheet": [
+          1438,
+          1439,
+          1440,
+          1441
+        ]
+      },
+      {
+        "consec_pair_idx": 1543,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_024_pair001543_disp0.894m.png",
+        "frames_in_sheet": [
+          1542,
+          1543,
+          1544,
+          1545
+        ]
+      },
+      {
+        "consec_pair_idx": 1628,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_025_pair001628_disp0.894m.png",
+        "frames_in_sheet": [
+          1627,
+          1628,
+          1629,
+          1630
+        ]
+      },
+      {
+        "consec_pair_idx": 1639,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_026_pair001639_disp0.894m.png",
+        "frames_in_sheet": [
+          1638,
+          1639,
+          1640,
+          1641
+        ]
+      },
+      {
+        "consec_pair_idx": 1681,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_027_pair001681_disp0.894m.png",
+        "frames_in_sheet": [
+          1680,
+          1681,
+          1682,
+          1683
+        ]
+      },
+      {
+        "consec_pair_idx": 1772,
+        "displacement_m": 0.8944919109344482,
+        "contact_sheet": "results/phase2_calibration_v2/discontinuity_frames/disc_028_pair001772_disp0.894m.png",
+        "frames_in_sheet": [
+          1771,
+          1772,
+          1773,
+          1774
+        ]
+      }
+    ]
+  },
+  "forceAction_usage_note": "ContinuousMotionExplorer._teleport calls controller.step(action='Teleport', position={x, y, z}, ..., forceAction=True) at src/env/continuous_motion_explorer.py:426. `git blame` shows forceAction=True has been in the production explorer since the session-4 commit ec172c7 that introduced the ContinuousMotionExplorer class \u2014 it is NOT a session-5 leak from pose-search reachability testing; the pose-search and motion-continuity scripts introduced this session independently set forceAction=True, but the production path predates them. forceAction=True bypasses AI2-THOR's NavMesh + floor-snap validation. Combined with the input position dict's y value coming from two different sources \u2014 route.json's viewing_position.y = 0.9009998 (eye-height snapshot from the prior repo's stage_0b setup) for close-up steps; NavMesh-planned waypoints with y \u2248 0.006 (floor level) for transit steps \u2014 the agent's BASE y oscillates between 0.901 (close-up) and 0.006 (transit) at every close_up\u2194transit phase boundary. With the camera offset fixed above the base, the rendered camera elevation oscillates by ~0.9m, producing the bobbing the reviewer observed in v2 calibration frames. No horizontal wall-jump was found: the [0.25, 0.50) and [1.0, 2.0) displacement bins are empty (zero pairs); the reviewer's 'agent jumps through walls' observation is the visual effect of the y-bob \u2014 the camera leaping ~0.9m in elevation in a single rendered frame at every close_up\u2194transit transition.",
+  "root_cause_summary": {
+    "bug": "Agent base y oscillates between close-up steps (y = 0.901, eye-height from route.json) and transit steps (y = 0.006, NavMesh floor).",
+    "mechanism": "ContinuousMotionExplorer._teleport copies position.y from the input dict and passes it to AI2-THOR's Teleport with forceAction=True. forceAction bypasses the floor-snap validation, so the agent base lands at whatever y is specified rather than being snapped to the NavMesh floor.",
+    "introduced": "Session-4 commit ec172c7 (the ContinuousMotionExplorer's initial implementation). All v1 and v2 calibrations + the aborted Phase 2 collection ran with this bug present; rendered frames had a ~1.8m camera elevation during close-up segments and a ~0.9m camera elevation during transit segments.",
+    "rendered_camera_elevation_close_up_m": 1.801,
+    "rendered_camera_elevation_transit_m": 0.906,
+    "elevation_delta_m": 0.894,
+    "recommended_fix": "In `_teleport`, drop the input position dict's y value; always use the NavMesh floor y (queried once at init via controller.step('GetReachablePositions') and stored on the explorer as self._agent_floor_y). Optionally add `standing=True` to the Teleport call to make the agent's standing posture explicit. forceAction=True can be retained \u2014 it is required for the close-up path's off-grid 0.20m steps (which don't align to AI2-THOR's 0.25m grid). The fix is ~5 lines in ContinuousMotionExplorer plus a query at __init__ time.",
+    "downstream_invalidation": "All v1 (session-4) and v2 (session-5) calibration data, the session-5 preflight runs, the pose-search candidate frames, the motion-continuity sweep frames, and the aborted Phase 2 collection (6800 frames) were rendered with the camera-bobbing bug present. Within-phase-pair analyses (close_up\u2192close_up, transit\u2192transit) are unaffected because y is constant within each phase; cross-phase analyses and the bird's-eye close-up framing of every prior rendered frame are. Re-doing v2 calibration + preflight after the fix is required; the pose-search verdict on DT_h118 should be re-verified at the corrected camera height; the \u00a78.4 absolute and differential gate thresholds may need recalibration once the encoder sees correctly-rendered Stage A/B apex frames."
+  }
+}
