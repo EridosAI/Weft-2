@@ -2,7 +2,7 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
-**Status as of session 5 (2026-05-14):** Curriculum framing locked (Stage A → Stage B → Stage C; no jitter); spec/instructions/ops docs updated; Phase 2 wrapper + preflight + collect + encode + train scripts implemented and committed; in-flight transition diagnostic landed in OnlineTrainer; encode script extended with absolute + differential §8.4 metrics. Phase 2 preflight rewritten to use DINOv2-embedding contrast per Grok's specification (G_M2 = 0.98 fixed; G_M3 = 0.5 × observed_contrast; S1 contrast<0.02 / S2 Bedroom<0.98 STOP-and-report conditions). The DINOv2 calibration run tripped both STOP conditions: DiningTable (a Bedroom control item) shows more DINOv2 movement under LivingRoom retexturing than either LivingRoom perturbed item, corroborating the doorway-bleed hypothesis. Per the directive, no auto-tuning. Third STOP in session 5. Working tree clean; push hold in effect.
+**Status as of session 5 (2026-05-14):** Curriculum framing locked; Phase 2 scripts + in-flight transition diagnostic + DINOv2 preflight all committed. DiningTable identified as the sole control item showing cross-room DINOv2 bleed (extended diagnostic confirmed mean 0.9564, std 0.0091 across 6 RandomizeMaterials draws). Pose search located one DINOv2-stability-passing candidate (h118: heading 117.6°, position 8.25/4.75, mean 0.9827); motion-continuity check confirmed clean (consec min 0.7645, no bit-identical pairs). Adjusted route written to `data/route_phase2.json`. **v2 calibration loop length 360 frames/loop vs 316 baseline = +13.9% — exceeds the reviewer's 10% STOP threshold.** Preflight on adjusted geometry NOT re-run; Phase 2 collection NOT launched. Fourth STOP in session 5. Working tree clean; push hold in effect.
 
 ---
 
@@ -75,6 +75,44 @@ autonomous.
 ---
 
 ## Next immediate action
+
+**STOP for experiment-chat review (fourth STOP in session 5).** The user's third authorisation (run extended diagnostic → pose search → adjusted geometry → re-calibrate; STOP if loop length shifts > 10%) was implemented end-to-end (commit `3bd341b`). The pose search and motion-continuity check produced a clean DiningTable pose (DiningTable_h118 — heading 117.6°, position 8.25/4.75, DINOv2 stability mean 0.9827, motion-continuity consec cosine min 0.7645 with 0 bit-identical pairs). However:
+
+**The v2 calibration shifts the loop length by +13.9%, exceeding the directive's 10% STOP threshold.**
+
+| metric | baseline (session-4) | v2 (adjusted DT pose) | shift |
+|---|---:|---:|---|
+| frames per loop | 316 | **360** | **+13.9%** ✗ |
+| close-up frames per item | ~11 per loop | ~11 per loop (55/5) | ~0% |
+| transit frames per loop | ~260 | 305 | +17.3% |
+| within-loop continuity | clean | (not run; stopped at the loop-length check) | — |
+| Phase-2 budget impact at 65k | 195 trained loops | ~171 trained loops, ~42 reps into the 100+ bin (vs ~65 prior) | budget margin halved |
+
+The DT shift extends the transit paths: the new DT position at (8.25, 4.75) is further from Bed (11.75, 2.25) AND requires a longer NavMesh route to Dresser (6.0, 3.0) than the original pose did. Close-up frames are unchanged in count; the extra ~44 frames/loop are almost entirely in transit.
+
+**Per the directive: STOP at >10% loop length shift.** The preflight on the adjusted geometry was NOT re-run. The directive structure ("Re-run preflight ... if it passes, proceed to Phase 2 launch. If not, stop and report") gates preflight on calibration succeeding; calibration STOPped first.
+
+**Three options for the reviewer:**
+
+(a) **Accept the +13.9% loop length increase, recalibrate the §8.3 budget arithmetic, and proceed.** The 65k frame budget at 360 frames/loop yields ~171 trained loops, ~141 Stage B loops, ~42 reps into the 100+ bin — still adequate to test §2.2 but with about half the margin we had at 316. The reviewer might re-derive the budget to a slightly higher value (~73k = 200 trained loops, ~70 reps margin) if they want to preserve the original margin. This is the lowest-effort path that preserves the locality-fix.
+
+(b) **Constrain the pose search to candidates that preserve loop length more closely.** The h118 pose works for locality but the +3.4m increase on Bed→DT transit is structural to its location. Other candidates that didn't pass the > 0.98 stability bar (h147 at 0.972, h206 at 0.971) might preserve loop length better; could re-run with a relaxed stability threshold (e.g., > 0.97) and pick the loop-length-cheapest candidate. Trades off some locality cleanness for transit-budget preservation.
+
+(c) **Switch house seed** (the disruptive option (c) from the third STOP). A different seed-house might have DT, Bed, and Dresser arrangement that doesn't force long transits when DT is repositioned to avoid the doorway. Requires re-running session-4 substrate verification + encoder verification protocol from scratch.
+
+(d) **Accept the locality breach** (option (d) from the third STOP). Don't change the substrate; treat DT as a non-clean control; document the §8.4 differential metric per-item so the reviewer can read DT's behaviour separately. Preserves substrate + loop length; weakens the architectural claim.
+
+I'd recommend **(a)** if the +13.9% loop length cost is acceptable for the locality fix it buys. The trained-loops count at 65k drops from 195 to 171 (-12%); the 100+ bin reps drop from 65 to 42 (-35%); the budget arithmetic still works but with less margin. **(b)** is the principled middle ground if budget margin matters more than DINOv2-stability strictness. **(c)** and **(d)** are the substrate-disruptive and substrate-accepting extremes respectively.
+
+What is NOT being decided autonomously: lowering the 10% STOP threshold to admit the +13.9% shift; lowering the 0.98 DINOv2 stability threshold to admit other candidate poses; auto-bumping the 65k frame budget to compensate for the loop-length increase. All of those go past the directive.
+
+---
+
+### (Earlier third STOP in session 5) — resolved by the substrate fix path; superseded by the fourth STOP above
+
+The third STOP raised four options (a–d) for handling DiningTable's DINOv2 bleed. The user authorised **option (b)** — adjust DT's viewing pose to remove the doorway view — and provided the detailed workflow (extended diagnostic → pose search → motion-continuity check → adjusted route → re-run session-4 calibration → re-run preflight). All of those steps ran cleanly (commit `3bd341b`) but the v2 calibration loop length tripped the 10% STOP threshold (this STOP).
+
+---
 
 **STOP for experiment-chat review (third STOP in session 5).** The user's second authorisation (option (a): switch the preflight to DINOv2-embedding contrast; G_M2 at Bedroom DINOv2 cosine > 0.98; G_M3 at 40–60% of observed mean DINOv2 contrast; STOP-and-report if calibration surfaces unexpected pattern, no auto-tuning) was implemented (commit `1dcf387`) and the calibration run was executed. **Both STOP-and-report conditions tripped on the calibration data**, surfacing a substrate-level finding that goes beyond preflight thresholds and has implications for the §8.4 verification + the curriculum's control-item framing.
 
@@ -319,24 +357,49 @@ Preflight ran at 2026-05-14 05:26 UTC; log at `logs/phase2_preflight_20260514_05
 | `1da95ba` | pixel-RGB preflight recalibration + 3-call averaging + encode docstring | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
 | `1870c02` | session-5 second-STOP HANDOFF entry | `HANDOFF.md` |
 | `1dcf387` | DINOv2-contrast preflight + encode differential metrics + calibration artefacts | `scripts/run_phase2_preflight.py`, `scripts/run_phase2_encode.py`, updated preflight report + frames |
-| pending this entry | session-5 third-STOP HANDOFF entry | `HANDOFF.md` |
+| `c71867f` | session-5 third-STOP HANDOFF entry | `HANDOFF.md` |
+| `3bd341b` | pose search + adjusted DT pose + v2 calibration loop-length STOP | `src/env/material_perturbation_probe.py`, `scripts/run_phase2_extended_diagnostic.py`, `scripts/run_phase2_pose_search.py`, `scripts/run_phase2_motion_continuity_check.py`, `data/route_phase2.json`, `results/inner_pam_v0/phase2_{extended_diagnostic,pose_search,motion_continuity}/`, `results/phase2_calibration_v2/calibration_summary.json` |
+| pending this entry | session-5 fourth-STOP HANDOFF entry | `HANDOFF.md` |
+
+### Pose search + motion-continuity outcome (commit `3bd341b`)
+
+Extended diagnostic with 6 RandomizeMaterials draws confirmed DiningTable as the sole affected Bedroom item (DINOv2 mean 0.9564, std 0.0091 — consistent leak, not lottery noise). Bed and Television sit cleanly above 0.98.
+
+Pose search generated 12 candidate angles around DT's centroid, snapped each to the nearest NavMesh-reachable grid point at the right distance, screened for teleport-ok, then ran a 3-draw DINOv2 stability check. Eleven candidates screened in; only **DiningTable_h118** (heading 117.6°, position (8.25, 4.75)) passed the 0.98 stability bar (mean 0.9827, std 0.0082). The agent approaches DT from the northwest looking southeast; the original pose approached from the southeast looking northwest. The doorway to the LivingRoom is now behind the agent rather than in the FOV.
+
+Motion-continuity check on the top 3 candidates: h118 sweep consec cosine range [0.7645, 0.9785], 0 bit-identical pairs — clean. h147 and h206 also motion-continuity-clean but failed the stability threshold.
+
+`data/route_phase2.json` writes the adjusted route with DT's new pose, viewing_distance_m updated to 1.682 (from 1.754, since the snapped position is slightly closer to the centroid than the original target), plus provenance fields recording the original pose, the workflow, and the metric rationale.
+
+### v2 calibration outcome — fourth STOP (commit `3bd341b`)
+
+5-loop calibration on the adjusted route produced **1800 frames over 5 loops = 360 frames/loop**, vs the 316 baseline. Loop length shift = **+13.9%**, exceeding the reviewer's 10% STOP threshold.
+
+The shift is structural to the new DT position. Both DT-adjacent transits change:
+- Bed (11.75, 2.25) → DT new (8.25, 4.75): straight-line ~4.3 m vs old ~0.9 m
+- DT new (8.25, 4.75) → Dresser (6.0, 3.0): straight-line ~2.85 m vs old ~5.0 m
+
+Close-up frames per item are unchanged (~11 per loop per item). The extra ~44 frames/loop are almost all in transit: 305 transit frames/loop in v2 vs ~260 in v1.
+
+Within-loop motion-continuity on the adjusted geometry was NOT checked — stopped at the loop-length boundary per the directive's "if it shifts more than 10%, stop." Preflight on the adjusted geometry was also NOT re-run for the same reason.
 
 ### Reviewer-action items before session 6
 
-1. **Decide on the substrate / control-item question** between options (a) treat DiningTable as a non-clean control / (b) adjust DiningTable's viewing pose / (c) switch house seed / (d) accept the locality breach. (a) is my recommendation; (b) is the most principled; (c) is most disruptive; (d) preserves substrate but weakens the architectural claim. See the "Next immediate action" section above for the per-option reasoning.
+1. **Decide on the v2 calibration loop-length question** between options (a) accept +13.9% and recalibrate the §8.3 budget / (b) re-search poses with loop-length constraint / (c) switch house seed / (d) accept the original DiningTable locality breach. See the "Next immediate action" section for per-option reasoning. I recommend (a).
 2. After the decision:
-   - (a/d) implies the preflight is overridden in writing with the DINOv2 numbers documented; the §8.4 verification on the collected stream is the load-bearing locality test.
-   - (b) implies a substrate change: update the seed-7 route's DiningTable viewing pose, re-run the session-4 5-loop calibration to verify within-loop continuity + apex bit-identicity, then re-run the DINOv2 preflight against the new pose.
-   - (c) implies a house-seed change: full substrate re-verification, then re-run all preflight + calibration steps.
-3. Phase 2 collection launches after the decision is implemented; encoding + §8.4 verification (absolute + differential metrics) follows; then STOP for review of §8.4 results before Phase 2 training.
+   - (a) implies updating §8.3's frame budget table and possibly bumping the 65k budget to preserve the 100+ bin margin. Then re-run preflight on adjusted geometry; if it passes, launch Phase 2 collection.
+   - (b) implies relaxing the DINOv2 stability bar (e.g., 0.97 instead of 0.98) and picking the loop-length-cheapest candidate; need to re-run motion-continuity and preflight on the revised pose.
+   - (c) implies full substrate re-verification + redo of session-4 calibration + everything from there.
+   - (d) implies abandoning the substrate fix, reverting `data/route_phase2.json` use, and proceeding with the original route + the §8.4 differential metric documenting DiningTable's locality breach.
+3. Phase 2 collection launches after the decision; encoding + §8.4 verification (absolute + differential metrics) follows; then STOP for review of §8.4 results before Phase 2 training.
 
 ### Operational state (end of session 5)
 
-- Working tree: clean modulo this HANDOFF entry. 27 commits on `main` after this entry lands (6 session-5 commits + the pending HANDOFF entry).
+- Working tree: clean modulo this HANDOFF entry. 28 commits on `main` after this entry lands (7 session-5 commits + the pending HANDOFF entry).
 - Push hold: in effect.
 - No running jobs.
 - Phase 1 artefacts: unchanged from session 4 (substrate-degenerate baseline; not re-run).
-- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) added this session. DINOv2-contrast preflight calibrated; result FAIL on S1+S2 with the finding that DiningTable's DINOv2 representation is sensitive to LivingRoom retexturing via doorway view-through. Full Phase 2 collection has NOT begun.
+- Phase 2 substrate: continuous-motion explorer + env wrapper unchanged. Phase 2 wrapper (`Phase2RetextureEnv`) committed in earlier session-5 commit. Adjusted route at `data/route_phase2.json` committed this round; pose search + motion-continuity reports + v2 calibration summary all committed. Full Phase 2 collection has NOT begun.
 
 ---
 
