@@ -103,13 +103,35 @@ With both prerequisites met: run a comparable Stage A → Stage B substrate with
 
 The v0 verdict is V2 — but V2 in a specific form ("variance updates propagate as a coupled global shift") that constrains v1 in different ways depending on which underlying cause produced the coupling. Three plausible underlying causes; v1 design should disambiguate which.
 
-### 7.1 Cause: per-K-step scalar isotropic variance is wrong
+### 7.1 Cause: pooled-readout topology collapses per-input information before any output head sees it
+
+The variance head produces a single scalar log-variance per predicted step (spec §3.3, §4.1). The original §7.1 framing argued that K scalars per step gave gradient backprop no architectural pathway to route variance updates per position. BCDD evidence (2026-05-16) showed this framing was incomplete: under v0's predictor architecture, the body collapses all W input positions to a single pooled vector (`last_token = x[:, -1, :]`, src/predictor/inner_pam.py:83) BEFORE any K-step output is generated. The output projection then fans the single pooled vector to K*(d+1) values via one dense linear layer (src/predictor/inner_pam.py:64, 84). Both the mean head and the variance head sit downstream of this collapse.
+
+**The mechanism, made precise by BCDD.** Between loop-30 and loop-100 checkpoints, the body's pooled `last_token` cosine on bit-identical Bed ord 9/10 inputs is 0.754 — a ~24.6% representational drift on the same input across training. The drift magnitude is essentially input-agnostic: across all 22 invariant input windows tested (11 ordinals × 2 loop windows), `last_token` cosine std is 0.0004. Body parameters have accumulated training updates that shift the pooled representation roughly uniformly regardless of input.
+
+Both downstream heads inherit this drift. The mean head, despite having ~1024× more parameters per output step than the variance head, exhibits the same uniform-drift signature on the same invariant inputs: mean drift at ords 9 and 10 falls inside the 2σ band built from all 11 ordinals' mean drifts (band [0.358, 0.413], ord 9 = 0.377, ord 10 = 0.369). Variance drift exhibits the same pattern (the v0 finding). Both heads produce input-blind drift because they both read from a pooled vector that has drifted in an input-agnostic way.
+
+**This rules out the original §7.1 mechanism as dominant.** If the variance head's K-scalar parameter count were the dominant coupling source, the mean head — with K·d parameters per step — should respond differently to input variation across ords. It does not. Both heads pattern-match v0's uniform-drift signature.
+
+**Disambiguating evidence (revised).** A v1 that retains v0's pooled-readout topology and addresses only the variance head's parameter count (per-dimension variance, mixture-density variance) should reproduce the coupling result on invariant inputs, because the upstream pooled vector still drifts uniformly. A v1 with a readout topology that preserves K-positional structure through to the output stage (K learnable output queries with cross-attention into the encoder output; K positional read-out tokens; per-K output heads) should produce per-input differentiation in mean drift at invariant ordinals if this is the cause. The variance representation change is downstream of the readout change and well-defined only once K position-distinguished hidden vectors exist.
+
+**Per-K coefficient of variation at invariant ordinals (BCDD test C).** Mean drift CoV across K at ord 9 is 0.189; at ord 10, 0.183. The per-K profile shows a coherent horizon-dependent pattern (largest drift at small k, smallest at k=13) rather than random per-row scatter. This is consistent with a single `last_token` shift mapped through output-projection rows that have different alignments with the drift direction — not independent per-row drift in the output projection itself. Most of the coupling signal originates upstream of the output projection.
+
+**Evidence source.** `results/v1_design/bcdd_results.json` (canonical); `results/v1_design/bcdd_results_failed_preflight.json` (forensic record of the protocol-mismatch trace that surfaced the K-back window construction and mean-over-K statistic before sanity-check pass). BCDD script at `scripts/bcdd.py`.
+
+### 7.1.PRESERVED — Original framing (superseded by BCDD evidence 2026-05-16)
+
+**Note (2026-05-16):** The original §7.1 framing identified the variance head's K-scalar parameter count as the architectural pathway gap. BCDD diagnostic on v0 checkpoints (loop-30 vs loop-100) demonstrated that the mean head — with K·d parameters per output step — exhibits the same uniform-drift signature on bit-identical inputs as the variance head. This rules out variance-head topology as the dominant coupling source. The revised §7.1 above identifies the body's pooled-readout collapse as the upstream cause; the original framing is preserved here as institutional memory of how the diagnosis evolved.
+
+*Original section heading: 7.1 Cause: per-K-step scalar isotropic variance is wrong*
 
 The variance head produces a single scalar log-variance per predicted step (spec §3.3, §4.1). One scalar per step is one parameter per step that must absorb everything the per-K-step gradient delivers, regardless of which input position drove the surprise. When all variance updates flow through one scalar per step, the gradient produces a single direction of change in the predictor's variance representation — which propagates as a uniform shift across positions.
 
 **The mechanism, made precise.** The variance head has K scalar parameters per predicted step, no per-position parameters. Gradient backprop through the path-prediction loss has no architectural pathway to route variance updates to specific positions; whatever update gradient delivers, it applies uniformly. A variance head with per-position parameters would create the architectural pathway gradient currently lacks. The coupling result is therefore not just an observation about training dynamics — it is what the architecture's parameter topology *must* produce, because the variance representation lacks the parameters needed for non-uniform updates.
 
 **Disambiguating evidence.** A v1 with anisotropic (per-dimension) variance, or a v1 with per-position variance, or a v1 with mixture-density variance (mixture of Gaussians per step) should produce per-position variance evolution if this is the cause. A v1 that retains the scalar isotropic variance head but addresses a different cause should reproduce v0's coupling.
+
+---
 
 ### 7.2 Cause: DINOv2-frozen substrate doesn't isolate per-item information
 

@@ -77,6 +77,8 @@ Exact match to 4 decimal places. Predictor + embeddings (`data/phase2_embeddings
 - Suggested commit message for when the user lifts the hold: `exp(v1-design): BCDD diagnostic results on v0 ckpts loop-30 vs loop-100, with Stage A supplementary` covering `scripts/bcdd.py` + both result files.
 - No running jobs.
 
+**Update (2026-05-16, post-commit `abdc755`):** §7.1 of `WEFT_INNER_PAM_v0_CLOSING.md` revised in place per BCDD evidence; original framing preserved as §7.1.PRESERVED. Awaiting review before commit. §7.2–§7.4, §8, and all other closing-doc sections untouched per scope-locked instruction. Push hold remains in effect.
+
 ---
 
 ## What this repo is
