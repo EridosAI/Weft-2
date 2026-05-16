@@ -18,6 +18,67 @@
 
 ---
 
+## BCDD diagnostic — primary PASS, Stage A supplementary recorded (2026-05-16)
+
+**Run.** `scripts/bcdd.py` (Body-Coupling Disambiguating Diagnostic), v1-design read-only diagnostic on existing v0 artifacts. No retraining, no resume, no predictor modifications.
+
+**Checkpoints used.**
+
+| arm | checkpoint | step | corresponds to |
+|---|---|---:|---|
+| loop-30 | `results/inner_pam_v0/phase2_main/ckpt_12000.pt` | 12000 | ≈ Bed loop 33 (matches v0's `SAMPLE_POINTS[30] = "ckpt_12000.pt"` in `run_phase2_variance_by_ordinal.py:48`) |
+| loop-100 | `results/inner_pam_v0/phase2_main/ckpt_36360.pt` | 36360 | ≈ Bed loop 101 (matches v0's `SAMPLE_POINTS[100]` — final Phase 2 step, training stopped here) |
+| fresh Stage A | `results/inner_pam_v0/phase1_main/ckpt_95721.pt` | 95721 | end of Phase 1 / Stage A baseline |
+
+The handoff's expectation of "step 49,200 for loop 100" did not match the actual training trajectory — Phase 2 stopped at step 36,360 (`max_loops: 35` per [phase2_main/training_summary.json](results/inner_pam_v0/phase2_main/training_summary.json)). The v0 study itself anchored loop-100 to `ckpt_36360.pt`, so this is the canonical pair and the sanity-check matches v0's published numbers exactly.
+
+**Protocol-mismatch finding (preflight).** Initial run failed the v0 sanity check (ord 9: +0.1717 vs −0.4356 published, sign-flipped + magnitude 2.5× off). Traced to three independent script-level discrepancies between `bcdd.py` and v0's protocol:
+
+1. **Checkpoint key.** Saves use `predictor_state` ([online_trainer.py:806](src/trainer/online_trainer.py#L806)); BCDD only recognised `model_state_dict` / `state_dict`. Loading failed.
+2. **sys.path.** `src/predictor/inner_pam.py` uses absolute `from src.config import …`; BCDD inserted `src/` rather than the repo root, so the import failed.
+3. **Window construction.** v0 ([run_phase2_variance_by_ordinal.py:143-154](scripts/run_phase2_variance_by_ordinal.py#L143-L154)) uses a K-back window — `window_end = target_end - PREDICT_K` — so the K-th predicted step lands ON the ordinal frame. BCDD originally built windows ending AT the ordinal frame, predicting forward into post-close-up frames. 16-frame content shift, totally different log_var magnitudes.
+4. **Variance-drift sign.** v0 reports `lv_100 − lv_30` (newer − older) per [run_phase2_per_ordinal_cross_loop_input.py:306](scripts/run_phase2_per_ordinal_cross_loop_input.py#L306). BCDD computed `lv_30 − lv_100`.
+5. **Sanity-check statistic.** Initial author's patch keyed the PASS/FAIL stdout block on `log_var[K-1]` (K-th step). v0 actually uses `log_var.mean()` over K — see field name `mean_log_var_over_K` and [run_phase2_variance_by_ordinal.py:157](scripts/run_phase2_variance_by_ordinal.py#L157).
+
+**Patches applied to `scripts/bcdd.py`** (script-only; no predictor or science changes beyond aligning with v0's existing protocol):
+
+1. `load_predictor` now recognises `predictor_state` as the canonical InnerPAM checkpoint key (added ahead of the existing `model_state_dict` / `state_dict` branches). Useful note for future diagnostic scripts: **`predictor_state` is the canonical key**.
+2. `load_predictor` inserts the repo root (`predictor_module_path.parents[2]`) into `sys.path` instead of `src/`, and imports as `from src.predictor.inner_pam import InnerPAM` (matches the absolute-import convention used throughout the repo).
+3. `build_window` switched to K-back: `window_end = target_end - PREDICT_K`, `start = window_end - WINDOW_W + 1`. Window now covers frames `[target_end - 31, target_end - 16]` inclusive — matches v0 exactly.
+4. `var_drift_per_k(lv_newer, lv_older) → lv_newer − lv_older`. All three call sites updated to pass `(lv_100, lv_30)` order (same-input drifts on w30 / w100, plus v0-style cross-input drift).
+5. Sanity-check stdout block keys on `v0_style_variance_drift["mean"]` (mean-over-K) with explicit Δ value and PASS/FAIL flag at the 0.05 threshold. The K-th-step field added in an earlier patch was removed — keeping it would mislead future readers about which statistic v0 uses. `V0_VARIANCE_DRIFT_REFERENCE` comment block now points to `run_phase2_variance_by_ordinal.py:157` as the canonical statistic source.
+
+**ARCH_DEFAULTS verified.** InnerPAM constructor at [src/predictor/inner_pam.py:37-46](src/predictor/inner_pam.py#L37-L46) accepts `embed_dim`, `window_w`, `predict_k`, `hidden`, `n_layers`, `n_heads`, `mlp_dim` with the spec §7.3 SCAFFOLDING defaults. No adjustment to `ARCH_DEFAULTS` needed.
+
+**Sanity check (post-patch).**
+
+| ord | BCDD mean-over-K | v0 published | Δ | flag |
+|---:|---:|---:|---:|---|
+| 9 | −0.4356 | −0.4356 | 0.0000 | PASS |
+| 10 | −0.4059 | −0.4059 | 0.0000 | PASS |
+
+Exact match to 4 decimal places. Predictor + embeddings (`data/phase2_embeddings/embeddings.npy`, 65k × 1024, L2-normed to 1.0 exactly on sample) + protocol + checkpoints all confirmed aligned with v0.
+
+**Stage A supplementary arm ran successfully.** The `--fresh-stage-a-ckpt` argument loaded cleanly; per-ordinal fields `fresh_to_loop_30_last_token_cosine_on_loop_30_window`, `fresh_to_loop_100_last_token_cosine_on_loop_100_window`, `fresh_to_loop_30_mean_drift_on_loop_30_window`, `fresh_to_loop_100_mean_drift_on_loop_100_window` populated for all 11 ords. No stdout summary block exists for Stage A in the script; values inspected directly from the JSON. CC does NOT interpret these — flagged for the v1-design reviewer chat alongside Tests A / B / C.
+
+**Artefacts.**
+
+- `results/v1_design/bcdd_results.json` — final primary + Stage A output. **This is the canonical artefact for M1/M2/M3 interpretation in the v1-design chat.**
+- `results/v1_design/bcdd_results_failed_preflight.json` — preserved as audit-trail evidence of the protocol-mismatch trace (computed with the pre-patch script: wrong window, wrong sign, K-th-step gating). Should NOT be interpreted; kept as forensic record only.
+
+**Stop conditions checked.** Sanity-check Δ = 0.0000 at both invariant ords (PASS, well within the 0.05 hard threshold). No state_dict load failures (strict=True load succeeds for all three checkpoints with zero missing / unexpected keys). No NaN/Inf in outputs.
+
+**Tests A / B / C results in the JSON. CC does not name a verdict for M1/M2/M3** — that interpretation belongs to the v1-design chat.
+
+**Operational state.**
+
+- Working tree: `scripts/bcdd.py` modified (uncommitted); `results/v1_design/bcdd_results.json` + `bcdd_results_failed_preflight.json` written (uncommitted).
+- Push hold: **in effect.** No remote push performed.
+- Suggested commit message for when the user lifts the hold: `exp(v1-design): BCDD diagnostic results on v0 ckpts loop-30 vs loop-100, with Stage A supplementary` covering `scripts/bcdd.py` + both result files.
+- No running jobs.
+
+---
+
 ## What this repo is
 
 This is a fresh repository for the Weft project, built around the architecture articulated in `WEFT_INNER_PAM_v0_Spec.md`. The previous repo at `/mnt/c/Users/Jason/Desktop/Eridos/Weft/` contains four iterations of negative results that established the previous architecture (next-frame prediction with cosine retrieval) was building the wrong thing. The new architecture is path-prediction with Gaussian negative-log-likelihood loss, learning trajectory shapes through repetition. See the spec for full claims.
