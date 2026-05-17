@@ -11,15 +11,15 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
-# (top-level `env/` was historically ignored; removed to allow src/env/ — the
-#  phase-2/3 explorer wrapper package — into the tree. Re-add as /env/ at the
-#  repo root if a top-level venv named env/ is ever created.)
+# (top-level `env/` was historically ignored; removed to allow v0/src/env/ —
+#  the phase-2/3 explorer wrapper package — into the tree. Re-add as /env/ at
+#  the repo root if a top-level venv named env/ is ever created.)
 
 # Env snapshot from pip freeze (not part of pinned reqs).
 .env_snapshot.txt
 
-# Tensorboard runs inside results/
-results/**/tb/
+# Tensorboard runs inside any results/ (root, v0/, v1/)
+**/results/**/tb/
 
 # Checkpoints and large artifacts
 checkpoints/
@@ -27,9 +27,9 @@ checkpoints/
 *.pth
 *.ckpt
 
-# Logs
-logs/*.log
-logs/*.pid
+# Logs (match logs/ at any depth — root, v0/, v1/)
+**/logs/*.log
+**/logs/*.pid
 
 # IDE / editor
 .vscode/
@@ -45,12 +45,16 @@ Thumbs.db
 *.local
 .env
 
-# Results — keep .json and .md, ignore raw dumps
-results/**/*.npy
-results/**/*.npz
+# Results — keep .json and .md, ignore raw dumps (match results/ at any depth)
+**/results/**/*.npy
+**/results/**/*.npz
 # Bank-state dirs (FAISS index + vectors + per-entry metadata): too large
-results/**/ckpt_*/
+**/results/**/ckpt_*/
 
 # Data dir — bulk artifacts (rendered frames, aux training outputs, encoder cache).
+# Matches data/ at any depth (root, v0/, v1/).
 # Keep small reference files via explicit !pattern overrides if/when added.
 data/
+
+# (v1's checkpoints + raw dumps are already covered by the unanchored
+#  patterns above; no separate v1-specific block needed.)

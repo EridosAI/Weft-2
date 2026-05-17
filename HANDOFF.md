@@ -18,6 +18,50 @@
 
 ---
 
+## Repo restructure for v1 (2026-05-17)
+
+v0 experimental work moved to `v0/`. v1 working directory created at `v1/`. Shared infrastructure (encoder, substrate, pipeline) moved to `shared/`. Top-level discipline documents (`research_operations_v1.md`, `CODING_STANDARDS.md`) and all `WEFT_INNER_PAM_*.md` design/closing/spec docs remain at repo root. Push hold remains in effect.
+
+**Moves performed (all via `git mv` to preserve history; underlying filesystem rename for gitignored content under `data/`):**
+
+- `src/encoder/` → `shared/encoder/` (DINOv2-Large frozen encoder, used by both v0 and v1).
+- `src/env/continuous_motion_env.py`, `continuous_motion_explorer.py`, `procthor_house.py` → `shared/substrate/` (AI2-THOR + ProcTHOR scene-level infrastructure).
+- `src/env/explorer_phase{1,2,3}.py`, `material_perturbation_probe.py` → `v0/src/env/` (phase-specific explorers + v0's perturbation probe; v1 spec §7.3 may revise perturbation).
+- 5 substrate-verification scripts → `shared/substrate/verification/`: `run_dinov2_encode_full_stream.py`, `run_dinov2_stability_test.py`, `run_encoder_verification.py`, `run_encoder_verification_dinov2.py`, `check_rerender_determinism.py`.
+- Remainder of `src/`, all of `scripts/`, `tests/`, `data/`, `results/`, `archive/`, `instructions/`, `logs/`, `STOP_REPORT.md`, `WEFT_INNER_PAM_v0_Spec.md`, `WEFT_INNER_PAM_v0_EXPERIMENT_INSTRUCTIONS.md` → `v0/`.
+
+**`src/config.py` bulk-moved to `v0/src/config.py`** rather than split — splitting would have required new-code creation beyond §6.2's scope lock. v1 will create its own config later. `path_prediction_loss` likewise stays inlined in `v0/src/trainer/online_trainer.py`; v1 implements its loss fresh.
+
+**Import + path-string updates** (script-only; no logic changes):
+
+- 29 files had `from src.*` imports rewritten:
+  - `from src.config` → `from v0.src.config`
+  - `from src.encoder.dinov2_encoder` → `from shared.encoder.dinov2_encoder`
+  - `from src.env.{continuous_motion_env, continuous_motion_explorer, procthor_house}` → `from shared.substrate.{...}`
+  - `from src.env.{explorer_phase1, explorer_phase2, explorer_phase3, material_perturbation_probe}` → `from v0.src.env.{...}`
+  - `from src.{eval, memory, mixing, predictor, trainer}.X` → `from v0.src.{...}.X`
+- 14 files with `REPO_ROOT / "data/..."` or `REPO_ROOT / "results/..."` rewritten to `REPO_ROOT / "v0/data/..."` / `REPO_ROOT / "v0/results/..."`.
+- `v0/tests/conftest.py` updated: `Path(__file__).parent.parent` → `Path(__file__).parent.parent.parent` so sys.path inserts the repo root (parent of `v0/`), supporting the new namespaced imports.
+- `v0/scripts/bcdd.py` dynamic-import logic updated: `parents[2]` → `parents[3].resolve()` and `from src.predictor.inner_pam` → `from v0.src.predictor.inner_pam`; argparse defaults for `--embeddings` / `--predictor-module` updated to `v0/...` prefixes.
+
+**Not rewritten (intentional):** `from src.encoders.frozen_vjepa2` and `from src.env.push_t_staged` in `shared/substrate/verification/check_rerender_determinism.py` — these reference the previous repo at `/mnt/c/Users/Jason/Desktop/Eridos/Weft/` via runtime sys.path insertion. No local module of that name exists.
+
+**`__init__.py` files added** at `v0/`, `shared/`, `shared/substrate/`, `shared/substrate/verification/` so the namespaced imports resolve as packages.
+
+**v0 test suite passes at new location: 21 of 21 (was 21 of 21 pre-restructure).** No tests skipped. Smoke import check passes for `shared.encoder.dinov2_encoder`, `shared.substrate.procthor_house`, `v0.src.config`, `v0.src.predictor.inner_pam`.
+
+**`v1/` initialised** with `src/{predictor, training, evaluation}/`, `scripts/`, `data/`, `results/`, `tests/` (all with `.gitkeep`) plus `v1/README.md` stub and copies of the v1 spec passes for self-contained reference.
+
+**`shared/pipeline/`** is empty (with `.gitkeep`) — the encoding pipeline is currently inlined in v0 scripts, and `path_prediction_loss` stays in v0/trainer per scope lock. Populating `shared/pipeline/` is a v1-design task, not a restructure task.
+
+**`README.md`** and **`.gitignore`** updated to reflect the new layout (v0/v1/shared/ subtrees; explicit v1-output ignore patterns; comment refreshes referencing `v0/src/env/`).
+
+**Non-trivial imports skipped per §3.2:** none. All 29 import rewrites were single-pattern path-string changes.
+
+**Operational state.** Working tree to be committed in a single `refactor:` commit per §6.2. Push hold in effect.
+
+---
+
 ## BCDD diagnostic — primary PASS, Stage A supplementary recorded (2026-05-16)
 
 **Run.** `scripts/bcdd.py` (Body-Coupling Disambiguating Diagnostic), v1-design read-only diagnostic on existing v0 artifacts. No retraining, no resume, no predictor modifications.
