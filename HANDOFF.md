@@ -18,6 +18,23 @@
 
 ---
 
+## v1 handoff materials verification — READY (2026-05-17)
+
+Read-only verification pass against the 18-item checklist in `CC_v1_handoff_verification_instruction`. Report at `v1_handoff_materials_verification.md` at repo root.
+
+- Total items: 18. Present: 18. Missing: 0. Anomalous: 0.
+- HEAD verified at `2150815` (restructure commit, message matches §6.2 pattern). Working tree clean.
+- Push hold confirmed: no `origin` remote configured. All five post-v0-close commits (`fef8a52` → `2150815`) are local-only.
+- `shared/pipeline/` is empty (only `.gitkeep`) — expected by design per the scope-locked decision to keep `path_prediction_loss` inlined in v0; populating it is a v1-implementation task.
+
+**Noticed-but-not-blocking observations (full detail in the verification report):**
+- `PREDICTOR_FORWARD_EXCERPT.md` references the pre-restructure path `src/predictor/inner_pam.py` in its header. Content otherwise accurate. Fresh chat reads the actual file at `v0/src/predictor/inner_pam.py`.
+- Two stale CC worktree branches under `.claude/worktrees/` at commit `aefa1bc`; operational state, not a verification blocker.
+
+**Recommendation: READY** for fresh chat. Priority-ordered context list in the verification report's final section.
+
+---
+
 ## Repo restructure for v1 (2026-05-17)
 
 v0 experimental work moved to `v0/`. v1 working directory created at `v1/`. Shared infrastructure (encoder, substrate, pipeline) moved to `shared/`. Top-level discipline documents (`research_operations_v1.md`, `CODING_STANDARDS.md`) and all `WEFT_INNER_PAM_*.md` design/closing/spec docs remain at repo root. Push hold remains in effect.
