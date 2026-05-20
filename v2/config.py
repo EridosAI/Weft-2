@@ -85,16 +85,21 @@ SUBSTRATE_SEED: int = 7                          # SCAFFOLDING — fixed for rep
 # results/pre_e/scaffolding_calibration.json.
 # --------------------------------------------------------------------------
 
-TAU_R: float = 0.6              # SCAFFOLDING — calibrated at PRE-E — repetition similarity threshold (§4.4)
-REPETITION_NOISE_FLOOR: float = 0.3   # SCAFFOLDING — calibrated at PRE-E — off-diagonal "no repetition" floor (§4.4)
-TAU_L: float = 0.05             # SCAFFOLDING — calibrated at PRE-E — locality shift threshold (§4.2)
-TAU_PERT: float = 0.25          # SCAFFOLDING — calibrated at PRE-E — perturbation-detection residual threshold (§6.2 step 4); placeholder set above the fidelity-noise residual floor (~sqrt(2(1-F))) and below the perturbation residual (~sqrt(2M))
-REPETITION_COVERAGE_THRESHOLD: float = 0.5   # SCAFFOLDING — calibrated at PRE-E — locality-undefined floor (§6.2 step 3)
-BIC_IMPROVEMENT_THRESHOLD: float = 10.0      # SCAFFOLDING — calibrated at PRE-E — multimodal GMM/BIC (§6.3)
-LOCAL_PCA_WINDOW: int = 64      # SCAFFOLDING — calibrated at PRE-E — local-PCA window for manifold dim (§4.5)
+# Calibrated at PRE-E; source: results/pre_e/scaffolding_calibration.json (the
+# runtime source of truth — load_calibrated_thresholds() reads that JSON; these
+# constants mirror it for documentation / fallback).
+TAU_R: float = 0.552            # SCAFFOLDING — calibrated at PRE-E — repetition similarity threshold (§4.4)
+REPETITION_NOISE_FLOOR: float = 0.395 # SCAFFOLDING — calibrated at PRE-E — off-diagonal "no repetition" floor (§4.4)
+TAU_L: float = 0.024            # SCAFFOLDING — calibrated at PRE-E — locality shift threshold (§4.2)
+TAU_PERT: float = 0.178         # SCAFFOLDING — calibrated at PRE-E — perturbation-detection residual threshold (§6.2 step 4); above the magnitude=0 fidelity-noise residual floor
+REPETITION_COVERAGE_THRESHOLD: float = 0.5   # SCAFFOLDING — calibrated at PRE-E — locality-undefined floor (§6.2 step 3); PRE-B worked-example coverage 1.0 clears it
+BIC_IMPROVEMENT_THRESHOLD: float = 0.0       # SCAFFOLDING — calibrated at PRE-E — multimodal GMM/BIC (§6.3); single-mode references max −3.09, so 0.0 (the BIC model-selection boundary) cleanly separates
+LOCAL_PCA_WINDOW: int = 128     # SCAFFOLDING — calibrated at PRE-E — local-PCA window for manifold dim (§4.5); recovers D=16 (16.8) with cv≈0 across subsampling
 MANIFOLD_SUBSAMPLE_RATE: int = 4   # SCAFFOLDING — calibrated at PRE-E — local-PCA position subsampling (§4.5)
-REF_NEIGHBOURHOOD_WINDOW: int = 3  # SCAFFOLDING — calibrated at PRE-E — reference-neighbour radius for §4.1/§4.2
-BLOCK_SIZE_LONG: int = 20000    # SCAFFOLDING — calibrated at PRE-E — block size for self-sim on |τ|>1e5 (§6.2 step 1)
+REF_NEIGHBOURHOOD_WINDOW: int = 3  # SCAFFOLDING — PRE-A locality design (carried; not re-derived at PRE-E) — reference-neighbour radius for §4.1/§4.2
+BLOCK_SIZE_LONG: int = 20000    # SCAFFOLDING — carried (not exercised at this scale) — block size for self-sim on |τ|>1e5 (§6.2 step 1)
+# τ_W (working-region, §7.3) per-head — calibrated at PRE-E vs the PRE-D1a baseline:
+# μ ≈ 0.0613 (p=0.049), σ ≈ 1.68e-7 (p=0.049). Consumed from the JSON by PRE-D2 / Phase 1.
 
 # τ_W (co-primary working-region threshold, §7.3) — calibrated PER-HEAD at PRE-E
 # via Wilcoxon p<0.05 vs the bit-identical baseline from PRE-D1a. No usable

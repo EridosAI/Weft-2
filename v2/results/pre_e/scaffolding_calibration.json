@@ -1,0 +1,76 @@
+{
+  "thresholds": {
+    "TAU_R": 0.5518276218876209,
+    "REPETITION_NOISE_FLOOR": 0.3945023306020766,
+    "TAU_L": 0.024020302688423527,
+    "TAU_PERT": 0.17774028053901791,
+    "REPETITION_COVERAGE_THRESHOLD": 0.5,
+    "BIC_IMPROVEMENT_THRESHOLD": 0.0,
+    "LOCAL_PCA_WINDOW": 128,
+    "MANIFOLD_SUBSAMPLE_RATE": 4,
+    "REF_NEIGHBOURHOOD_WINDOW": 3,
+    "BLOCK_SIZE_LONG": 20000
+  },
+  "tau_W": {
+    "per_head": {
+      "mu": {
+        "tau_W": 0.061301334761083126,
+        "p_value": 0.048653602600097656,
+        "baseline_median": 0.027678046375513077,
+        "baseline_iqr": 0.061301334761083126,
+        "baseline_n": 20
+      },
+      "sigma": {
+        "tau_W": 1.6790911039343825e-07,
+        "p_value": 0.048653602600097656,
+        "baseline_median": 1.2858989606456817e-07,
+        "baseline_iqr": 3.052892916244332e-07,
+        "baseline_n": 20
+      }
+    },
+    "stop": null,
+    "joint_alpha_note": "joint working-region requires both heads at p<0.05; joint alpha ~0.0025 if independent (heads are not independent on this architecture; empirical dependence reported in v2 closing per \u00a77.3)."
+  },
+  "post_coverage_check": {
+    "calibrated_threshold": 0.5,
+    "pre_b_coverage": 1.0,
+    "clears": true
+  },
+  "provenance": {
+    "residual_thresholds": {
+      "TAU_PERT": 0.17774028053901791,
+      "TAU_L": 0.024020302688423527,
+      "_residual_m0_p99_5": 0.17774028053901791,
+      "_dcos_noise_p99": 0.024020302688423527,
+      "_residual_m0_max": 0.18700679180066795
+    },
+    "repetition_thresholds": {
+      "TAU_R": 0.5518276218876209,
+      "REPETITION_NOISE_FLOOR": 0.3945023306020766,
+      "_offperiod_p95": 0.1336846010697311,
+      "_atperiod_min": 0.9699706427055108
+    },
+    "coverage_threshold": {
+      "REPETITION_COVERAGE_THRESHOLD": 0.5,
+      "_pre_a_min_coverage": 1.0
+    },
+    "bic_threshold": {
+      "BIC_IMPROVEMENT_THRESHOLD": 0.0,
+      "_single_mode_bic_p99": -3.201468604724899,
+      "_single_mode_bic_max": -3.092700760488242,
+      "_multi_mode_bic_median": 406.1157457483125
+    },
+    "local_pca_window": {
+      "LOCAL_PCA_WINDOW": 128,
+      "MANIFOLD_SUBSAMPLE_RATE": 4,
+      "_window_selection": {
+        "window": 128,
+        "cv": 1.1384644734524369e-07,
+        "mean_D_local": 16.790648768949428
+      }
+    },
+    "tau_W_rule": "smallest margin where one-sample Wilcoxon signed-rank finds the PRE-D1a n=20 baseline significantly below (median + tau_W) at p<0.05",
+    "note": "REF_NEIGHBOURHOOD_WINDOW carried from PRE-A locality design; BLOCK_SIZE_LONG carried (not exercised at this scale)."
+  },
+  "stop_triggers": []
+}
