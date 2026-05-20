@@ -2,7 +2,13 @@
 
 ## Current state
 
-Repository setup complete. v2 directory structure created with empty packages for `preflight/`, `substrate/`, `protocol/`. Reference documents in `v2/docs/`. Library-import model adopted: v2 imports v1 directly from `v1.src.*`; v1 scaffold not copied.
+**Phase 0 sub-phase 0.1 (V2-PRE-A) COMPLETE — no STOP triggers.** Construction primitives (§5.1-5.3), property measurement (§4), measurement protocol (§6.2), grid mapping (§6.3), `config.py` (ARCHITECTURE/SCAFFOLDING), unit tests, and `scripts/run_pre_a.py` implemented. Library-import model: v2 imports v1 from `v1.src.*` (v1 frozen, not copied).
+
+Sanity sweep: all 5 spec axes 3/3 within 10% tolerance (magnitude, locality, continuity, repetition period, manifold dim) + fidelity supplementary 3/3. Stream contract PASS (L2 norms 1±1e-5). Arch-forward smoke PASS (3 arms finite). `V2_TRAINING_STEPS = 10000` (loss-plateau-calibrated; lock-file-gated via `config.get_v2_training_steps()`). Outputs in `results/pre_a/`; `data/embedding_U.npy` persisted (spec §5.5).
+
+Next sub-phase: **0.2 — V2-PRE-C** (architectural assertions on v2 substrate). Note: §7.2 = 11 assertions total (4 Primary + 4 Ablation 1 + 3 Ablation 2), not "33"; build the thin wrapper in `src/preflight/pre_c_arch_assertions_v2_substrate.py` invoking v1's `pre_d_arch_property_assertions.run_assertions` against a mid-parameter synthetic stream at L_d=2.
+
+Earlier setup (commit `8ebf068`): v2 directory + reference docs in `v2/docs/`.
 
 ## Environment
 
@@ -40,7 +46,8 @@ End of repository setup. Next phase: **Phase 0 — Pre-sweep verification** (V2-
 - CODING_STANDARDS.md not copied (stale, references PAM_Tiered_v0, Grok/Cursor orchestration — a different project). v2 inherits coding patterns from v1's codebase implicitly. If a Phase 0 coding question surfaces that v1 doesn't answer, write the rule then.
 - `v1/src/env/`, `v1/src/evaluation/`, `v1/src/training/` exist alongside `v1/src/eval/`, `v1/src/trainer/`. CC verified at pre-flight that the predictor scaffold and scripts do not import from these; v2 can ignore them. If Phase 0 work surfaces a need, flag it.
 - `bcdd_results.json` source: `v0/results/v1_design/bcdd_results.json` (not the `bcdd_results_failed_preflight.json` sibling).
-- No v2 implementation work has begun.
+- Canary 3 (v1 PRE-D assertions) requires the bypass arg — v1 PRE-C lock file was never created: `python3 v1/scripts/run_pre_d_arch_assertions.py --decoder-n-layers 2`. The 11 assertions also pass via `pytest v1/tests/test_preflight.py`. PRE-A canary status: 90 pytest PASS (21 v0 + 51 v1 + 18 v2), 11 PRE-D assertions PASS, v0/v1/shared unmodified, push hold held.
+- Substrate-design notes (PRE-A): manifold-dim axis verified via `D_global` (`D_local` underestimates for a 1-D trajectory — local-PCA window calibrated at PRE-E); locality construction value is the ground-truth §4.2 measurement (protocol's estimated reference recovers it). A thin `src/substrate/stream_builder.py` composition helper was added (no new substrate mechanism).
 
 ### Deviations from the setup instructions (recorded per §7.2)
 

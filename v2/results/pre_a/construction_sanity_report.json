@@ -1,0 +1,382 @@
+{
+  "tolerance_relative": 0.1,
+  "held_reference_values": {
+    "fidelity_F": 0.999,
+    "magnitude_M": 0.0,
+    "locality_L": 0.5,
+    "continuity_center": 24,
+    "period_P": 256,
+    "manifold_dim_D": 16
+  },
+  "manifold_dim_note": "axis verified via D_global (participation ratio of full-trajectory covariance), which tracks the construction D; D_local underestimates for a 1-D trajectory because a local window of a curve does not span all manifold directions equally \u2014 local-PCA window calibrated at PRE-E.",
+  "locality_note": "construction locality is the ground-truth \u00a74.2 value (measured with the true pre-perturbation reference + true perturbed set); the sweep verifies the protocol's estimated reference/detection recovers it.",
+  "axes": {
+    "magnitude": {
+      "construction_key": "magnitude_M",
+      "measured_key": "magnitude_M",
+      "n_within_tolerance": 3,
+      "n_values": 3,
+      "axis_ok": true,
+      "is_spec_axis": true,
+      "values": [
+        {
+          "construction": 0.1,
+          "measured": 0.09903550403873806,
+          "rel_deviation": 0.009644959612619408,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9872711129515411,
+            "repetition_coverage": 1.0,
+            "magnitude_M": 0.09903550403873806,
+            "locality_L": 0.596244131455399,
+            "continuity_C": 0.18154408482462545,
+            "manifold_D_local": 7.465703606215197,
+            "manifold_D_global": 16.320558755887507,
+            "n_perturbed_detected": 172
+          }
+        },
+        {
+          "construction": 0.5,
+          "measured": 0.4973829384560736,
+          "rel_deviation": 0.00523412308785276,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9494967090152716,
+            "repetition_coverage": 0.9236505681818182,
+            "magnitude_M": 0.4973829384560736,
+            "locality_L": 0.5809859154929577,
+            "continuity_C": 0.21859936209801828,
+            "manifold_D_local": 8.076403942703271,
+            "manifold_D_global": 17.368964649964962,
+            "n_perturbed_detected": 172
+          }
+        },
+        {
+          "construction": 0.9,
+          "measured": 0.8969799441440515,
+          "rel_deviation": 0.0033556176177206173,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9263261902796451,
+            "repetition_coverage": 0.9236505681818182,
+            "magnitude_M": 0.8969799441440515,
+            "locality_L": 0.5786384976525822,
+            "continuity_C": 0.2556501249841608,
+            "manifold_D_local": 8.466773107416723,
+            "manifold_D_global": 17.84441096708989,
+            "n_perturbed_detected": 172
+          }
+        }
+      ]
+    },
+    "locality": {
+      "construction_key": "locality_L",
+      "measured_key": "locality_L",
+      "n_within_tolerance": 3,
+      "n_values": 3,
+      "axis_ok": true,
+      "is_spec_axis": true,
+      "values": [
+        {
+          "construction": 0.12290502793296088,
+          "measured": 0.12290502793296088,
+          "rel_deviation": 0.0,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9098965166743234,
+            "repetition_coverage": 0.86328125,
+            "magnitude_M": 0.4983221746394919,
+            "locality_L": 0.12290502793296088,
+            "continuity_C": 0.2554586861060885,
+            "manifold_D_local": 8.738869059424903,
+            "manifold_D_global": 18.63523166803858,
+            "n_perturbed_detected": 308
+          }
+        },
+        {
+          "construction": 0.5809859154929577,
+          "measured": 0.5809859154929577,
+          "rel_deviation": 0.0,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9494967090152716,
+            "repetition_coverage": 0.9236505681818182,
+            "magnitude_M": 0.4973829384560736,
+            "locality_L": 0.5809859154929577,
+            "continuity_C": 0.21859936209801828,
+            "manifold_D_local": 8.076403942703271,
+            "manifold_D_global": 17.368964649964962,
+            "n_perturbed_detected": 172
+          }
+        },
+        {
+          "construction": 0.9109311740890689,
+          "measured": 0.9109311740890689,
+          "rel_deviation": 0.0,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9887091999573883,
+            "repetition_coverage": 0.9840198863636364,
+            "magnitude_M": 0.4948901129868267,
+            "locality_L": 0.9109311740890689,
+            "continuity_C": 0.18184511109619858,
+            "manifold_D_local": 7.439683049594384,
+            "manifold_D_global": 16.25520052273947,
+            "n_perturbed_detected": 36
+          }
+        }
+      ]
+    },
+    "continuity": {
+      "construction_key": "continuity_C",
+      "measured_key": "continuity_C",
+      "n_within_tolerance": 3,
+      "n_values": 3,
+      "axis_ok": true,
+      "is_spec_axis": true,
+      "values": [
+        {
+          "construction": 0.02793232578182936,
+          "measured": 0.029866680858785594,
+          "rel_deviation": 0.0692514863268056,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.999000138748588,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.029866680858785594,
+            "manifold_D_local": 6.450057032893159,
+            "manifold_D_global": 15.921597949789247,
+            "n_perturbed_detected": 0
+          }
+        },
+        {
+          "construction": 0.16713004962638434,
+          "measured": 0.1722740451768642,
+          "rel_deviation": 0.03077840018583828,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9990000921312245,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.1722740451768642,
+            "manifold_D_local": 7.317370789895192,
+            "manifold_D_global": 15.982863897259552,
+            "n_perturbed_detected": 0
+          }
+        },
+        {
+          "construction": 0.890481915278121,
+          "measured": 0.8924559544463044,
+          "rel_deviation": 0.002216821177740426,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9990000650708933,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.8924559544463044,
+            "manifold_D_local": 7.29916660291657,
+            "manifold_D_global": 15.969165444655923,
+            "n_perturbed_detected": 0
+          }
+        }
+      ]
+    },
+    "repetition_period": {
+      "construction_key": "period_P",
+      "measured_key": "period_P",
+      "n_within_tolerance": 3,
+      "n_values": 3,
+      "axis_ok": true,
+      "is_spec_axis": true,
+      "values": [
+        {
+          "construction": 64,
+          "measured": 64,
+          "rel_deviation": 0.0,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 64,
+            "fidelity_F": 0.9990005496028406,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.40042003346897986,
+            "manifold_D_local": 15.907355111683756,
+            "manifold_D_global": 15.915004779082897,
+            "n_perturbed_detected": 0
+          }
+        },
+        {
+          "construction": 128,
+          "measured": 128,
+          "rel_deviation": 0.0,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 128,
+            "fidelity_F": 0.9990028411548341,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.18157065351929608,
+            "manifold_D_local": 11.276071325241668,
+            "manifold_D_global": 15.975972943430232,
+            "n_perturbed_detected": 0
+          }
+        },
+        {
+          "construction": 256,
+          "measured": 256,
+          "rel_deviation": 0.0,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9990000921312245,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.1722740451768642,
+            "manifold_D_local": 7.317370789895192,
+            "manifold_D_global": 15.982863897259552,
+            "n_perturbed_detected": 0
+          }
+        }
+      ]
+    },
+    "manifold_dim": {
+      "construction_key": "manifold_dim_D",
+      "measured_key": "manifold_D_global",
+      "n_within_tolerance": 3,
+      "n_values": 3,
+      "axis_ok": true,
+      "is_spec_axis": true,
+      "values": [
+        {
+          "construction": 4,
+          "measured": 3.978982277376817,
+          "rel_deviation": 0.005254430655795783,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9989999544790126,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.6306998111492843,
+            "manifold_D_local": 2.4738291977542706,
+            "manifold_D_global": 3.978982277376817,
+            "n_perturbed_detected": 0
+          }
+        },
+        {
+          "construction": 16,
+          "measured": 15.982663270283751,
+          "rel_deviation": 0.0010835456072655347,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9990000837086616,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.6143053989305732,
+            "manifold_D_local": 7.327853995332436,
+            "manifold_D_global": 15.982663270283751,
+            "n_perturbed_detected": 0
+          }
+        },
+        {
+          "construction": 64,
+          "measured": 64.00802671389633,
+          "rel_deviation": 0.00012541740463012374,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9990001688187626,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.6465712257619786,
+            "manifold_D_local": 26.602061279231275,
+            "manifold_D_global": 64.00802671389633,
+            "n_perturbed_detected": 0
+          }
+        }
+      ]
+    },
+    "fidelity_supplementary": {
+      "construction_key": "fidelity_F",
+      "measured_key": "fidelity_F",
+      "n_within_tolerance": 3,
+      "n_values": 3,
+      "axis_ok": true,
+      "is_spec_axis": false,
+      "values": [
+        {
+          "construction": 0.8,
+          "measured": 0.7998916411588287,
+          "rel_deviation": 0.00013544855146416235,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.7998916411588287,
+            "repetition_coverage": 1.0,
+            "magnitude_M": 0.09989593239330141,
+            "locality_L": 0.0,
+            "continuity_C": 0.3372088966013068,
+            "manifold_D_local": 10.629269148181766,
+            "manifold_D_global": 24.638963682952145,
+            "n_perturbed_detected": 3072
+          }
+        },
+        {
+          "construction": 0.9,
+          "measured": 0.8999732724607163,
+          "rel_deviation": 2.9697265870752708e-05,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.8999732724607163,
+            "repetition_coverage": 1.0,
+            "magnitude_M": 0.04864683132093717,
+            "locality_L": 0.0,
+            "continuity_C": 0.25432148647853725,
+            "manifold_D_local": 8.7458254991156,
+            "manifold_D_global": 19.59759030902664,
+            "n_perturbed_detected": 3072
+          }
+        },
+        {
+          "construction": 0.97,
+          "measured": 0.9699988988539843,
+          "rel_deviation": 1.135202078044207e-06,
+          "within_tolerance": true,
+          "all_measured": {
+            "period_P": 256,
+            "fidelity_F": 0.9699988988539843,
+            "repetition_coverage": 1.0,
+            "magnitude_M": null,
+            "locality_L": null,
+            "continuity_C": 0.19631253136386378,
+            "manifold_D_local": 7.698967525044657,
+            "manifold_D_global": 16.93106893113437,
+            "n_perturbed_detected": 0
+          }
+        }
+      ]
+    }
+  },
+  "stop_trigger_1_construction_mismatch": false
+}

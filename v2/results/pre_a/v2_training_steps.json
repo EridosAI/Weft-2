@@ -1,0 +1,7 @@
+{
+  "v2_training_steps": 10000,
+  "source": "V2-PRE-A smoke run",
+  "plateau_detected": true,
+  "plateau_step_raw": 10000,
+  "rel_improvement_threshold": 0.02
+}

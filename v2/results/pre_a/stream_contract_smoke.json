@@ -1,0 +1,91 @@
+{
+  "stream_contract": {
+    "passed": true,
+    "detail": "OnlineTrainerV1 accepted the synthetic stream (L2 contract satisfied)",
+    "norm_min": 0.9999999403953552,
+    "norm_max": 1.0,
+    "stream_shape": [
+      3072,
+      1024
+    ]
+  },
+  "arch_forward_smoke": {
+    "all_finite": true,
+    "arms": {
+      "primary": {
+        "output_finite": true,
+        "output_shapes": [
+          [
+            1,
+            16,
+            1024
+          ],
+          [
+            1,
+            16
+          ]
+        ]
+      },
+      "ablation1": {
+        "output_finite": true,
+        "output_shapes": [
+          [
+            1,
+            16,
+            1024
+          ],
+          [
+            1,
+            16
+          ]
+        ]
+      },
+      "ablation2": {
+        "output_finite": true,
+        "output_shapes": [
+          [
+            1,
+            16,
+            1024
+          ],
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    }
+  },
+  "v2_training_steps_calibration": {
+    "v2_training_steps": 10000,
+    "plateau_detected": true,
+    "plateau_step_raw": 10000,
+    "interval_means": [
+      2192.4470980758665,
+      -2778.094542289734,
+      -2732.916041900635,
+      -2876.222535369873,
+      -2897.879670776367,
+      -2876.0867328033446
+    ],
+    "interval_step_axis": [
+      2000,
+      4000,
+      6000,
+      8000,
+      10000,
+      12000
+    ],
+    "checkpoint_every": 2000,
+    "rel_improvement_threshold": 0.02,
+    "smoke_max_steps": 40000,
+    "steps_trained": 12000,
+    "wall_clock_seconds": 133.7172875404358,
+    "ms_per_step": 11.143107295036316,
+    "device": "cuda",
+    "stream_shape": [
+      40448,
+      1024
+    ]
+  }
+}
