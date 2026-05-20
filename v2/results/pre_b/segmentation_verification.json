@@ -1,0 +1,143 @@
+{
+  "data": {
+    "embeddings": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v0/data/phase2_embeddings/embeddings.npy",
+    "annotations": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v0/data/phase2_annotations.jsonl",
+    "n_frames": 65000,
+    "substrate_version_note": "_assign_close_up_ordinals is driver-only; embeddings unaffected (spec \u00a76.1) \u2014 correct version"
+  },
+  "segmentation": {
+    "n_loops": 181,
+    "n_clean_loops": 31,
+    "n_pert_loops": 150,
+    "stage_A_loops": "0..30",
+    "stage_B_loops": "31..180",
+    "perturbation": "livingroom_retexture",
+    "frames_per_loop_mean": 359.1,
+    "note": "ACTUAL structure is 5 items x 181 loops, NOT the 5x5 (5 loops) sketch in instr \u00a77.3 / ask #1"
+  },
+  "ssm_characterization_block100": {
+    "n_blocks": 650,
+    "block_frames": 100,
+    "expected_loop_period_blocks": 3.591,
+    "autocorr_peak_lag_blocks": 18,
+    "autocorr_peak_value": 0.9953314661979675,
+    "autocorr_profile_first10": [
+      0.8506,
+      0.8282,
+      0.9085,
+      0.941,
+      0.8339,
+      0.8415,
+      0.9738,
+      0.8758,
+      0.8266,
+      0.8758
+    ],
+    "stage_boundary_block": 111,
+    "within_stageA_block_sim": 0.8886,
+    "within_stageB_block_sim": 0.8841,
+    "cross_stage_block_sim": 0.8847,
+    "diag_minus_offdiag": 0.1156
+  },
+  "reference_state_clusters": {
+    "Bed_A": {
+      "item_id": 1,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 1.0,
+      "pairwise_cosine_min": 1.0,
+      "pairwise_cosine_std": 0.0,
+      "to_centroid_cosine_mean": 1.0,
+      "to_centroid_cosine_min": 1.0
+    },
+    "Bed_B": {
+      "item_id": 1,
+      "stage": "B",
+      "n_samples": 150,
+      "pairwise_cosine_mean": 0.99493,
+      "pairwise_cosine_min": 0.98458,
+      "pairwise_cosine_std": 0.00257,
+      "to_centroid_cosine_mean": 0.99748,
+      "to_centroid_cosine_min": 0.99418
+    },
+    "Sofa_A": {
+      "item_id": 4,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 1.0,
+      "pairwise_cosine_min": 1.0,
+      "pairwise_cosine_std": 0.0,
+      "to_centroid_cosine_mean": 1.0,
+      "to_centroid_cosine_min": 1.0
+    },
+    "Sofa_B": {
+      "item_id": 4,
+      "stage": "B",
+      "n_samples": 149,
+      "pairwise_cosine_mean": 0.96493,
+      "pairwise_cosine_min": 0.89839,
+      "pairwise_cosine_std": 0.01332,
+      "to_centroid_cosine_mean": 0.98243,
+      "to_centroid_cosine_min": 0.95001
+    },
+    "TV_B": {
+      "item_id": 5,
+      "stage": "B",
+      "n_samples": 149,
+      "pairwise_cosine_mean": 0.98981,
+      "pairwise_cosine_min": 0.96663,
+      "pairwise_cosine_std": 0.00514,
+      "to_centroid_cosine_mean": 0.99493,
+      "to_centroid_cosine_min": 0.98867
+    },
+    "DiningTable_B": {
+      "item_id": 2,
+      "stage": "B",
+      "n_samples": 150,
+      "pairwise_cosine_mean": 0.98222,
+      "pairwise_cosine_min": 0.95381,
+      "pairwise_cosine_std": 0.00561,
+      "to_centroid_cosine_mean": 0.99113,
+      "to_centroid_cosine_min": 0.97938
+    }
+  },
+  "s24_ranges": {
+    "magnitude": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 lower-bound 'For magnitude: zero (bit-identical streams)'; upper-bound 'For magnitude: full-stream replacement (cosine drop of ~1.0 magnitude)'; operationalised pass2 \u00a74.1 'M = 0 ... M = 1 when they are orthogonal'."
+    },
+    "manifold_dim": {
+      "range": [
+        1.0,
+        1024.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 lower-bound 'For dimensionality: 1 (degenerate manifold)'; upper-bound 'For dimensionality: d=1024 (full ambient space)'; operationalised pass2 \u00a74.5 'D = 1 ... D = d = 1024'."
+    },
+    "continuity": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 does NOT enumerate continuity explicitly but states ranges are 'operationalised in pass 2 \u00a74'; pass2 \u00a74.3 'C = 0 corresponds to bit-identical consecutive positions (zero motion); C near 1 corresponds to consecutive positions being orthogonal'."
+    },
+    "locality": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 does NOT enumerate locality explicitly but states ranges are 'operationalised in pass 2 \u00a74'; pass2 \u00a74.2 'L = 1 when the perturbation affects only positions in S_pert (perfect locality); L = 0 when the perturbation shifts every other position's relations (no locality)'."
+    },
+    "repetition": {
+      "range": null,
+      "ambiguous": true,
+      "trace": "pass1 \u00a72.4 gives only qualitative bounds 'For repetition: no repetition (each stream position unique)' .. 'full pattern saturation'; pass2 \u00a74.4 defines repetition as a multi-dimensional (period P, fidelity F, coverage) structure with no single numerical range. Period sweep grid is uncommitted SCAFFOLDING (\u00a72.6 / Phase 0.5). AMBIGUOUS \u2014 surfaced for design-chat per ask #4."
+    }
+  }
+}

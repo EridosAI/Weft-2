@@ -1,0 +1,340 @@
+{
+  "data": {
+    "embeddings": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v0/data/phase2_embeddings/embeddings.npy",
+    "annotations": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v0/data/phase2_annotations.jsonl",
+    "n_frames": 65000,
+    "substrate_version": "correct (_assign_close_up_ordinals driver-only; \u00a76.1)"
+  },
+  "segmentation": {
+    "n_loops": 181,
+    "stage_A_loops": "0..30 (31 clean)",
+    "stage_B_loops": "31..180 (150, livingroom_retexture)",
+    "frames_per_loop_mean": 359.1,
+    "note": "5 items x 181 loops (NOT the 5x5 / 5-loop \u00a77.3 sketch)"
+  },
+  "ask1_segmentation_ssm": {
+    "coarse_block100": {
+      "n_blocks": 650,
+      "block_frames": 100,
+      "expected_loop_period_blocks": 3.591,
+      "autocorr_peak_lag_blocks": 18,
+      "autocorr_peak_value": 0.9953314661979675,
+      "autocorr_profile_first10": [
+        0.8506,
+        0.8282,
+        0.9085,
+        0.941,
+        0.8339,
+        0.8415,
+        0.9738,
+        0.8758,
+        0.8266,
+        0.8758
+      ],
+      "stage_boundary_block": 111,
+      "within_stageA_block_sim": 0.8886,
+      "within_stageB_block_sim": 0.8841,
+      "cross_stage_block_sim": 0.8847,
+      "diag_minus_offdiag": 0.1156
+    },
+    "closeup_state": {
+      "n_states": 903,
+      "within_item_mean_sim": 0.9837,
+      "cross_item_mean_sim": 0.4938,
+      "interpretation": "within-item >> cross-item confirms 5 item-blocks; within-item Stage-A clustering ~1.0 confirms loop repetition",
+      "matrix_shape": [
+        903,
+        903
+      ]
+    }
+  },
+  "ask2_reference_state_clusters": {
+    "Bed_A": {
+      "item_id": 1,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 1.0,
+      "pairwise_cosine_min": 1.0,
+      "pairwise_cosine_std": 0.0,
+      "to_centroid_cosine_mean": 1.0,
+      "to_centroid_cosine_min": 1.0
+    },
+    "Bed_B": {
+      "item_id": 1,
+      "stage": "B",
+      "n_samples": 150,
+      "pairwise_cosine_mean": 0.99493,
+      "pairwise_cosine_min": 0.98458,
+      "pairwise_cosine_std": 0.00257,
+      "to_centroid_cosine_mean": 0.99748,
+      "to_centroid_cosine_min": 0.99418
+    },
+    "DiningTable_A": {
+      "item_id": 2,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 0.99997,
+      "pairwise_cosine_min": 0.99957,
+      "pairwise_cosine_std": 0.00011,
+      "to_centroid_cosine_mean": 0.99999,
+      "to_centroid_cosine_min": 0.9996
+    },
+    "DiningTable_B": {
+      "item_id": 2,
+      "stage": "B",
+      "n_samples": 150,
+      "pairwise_cosine_mean": 0.98222,
+      "pairwise_cosine_min": 0.95381,
+      "pairwise_cosine_std": 0.00561,
+      "to_centroid_cosine_mean": 0.99113,
+      "to_centroid_cosine_min": 0.97938
+    },
+    "Dresser_A": {
+      "item_id": 3,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 1.0,
+      "pairwise_cosine_min": 1.0,
+      "pairwise_cosine_std": 0.0,
+      "to_centroid_cosine_mean": 1.0,
+      "to_centroid_cosine_min": 1.0
+    },
+    "Dresser_B": {
+      "item_id": 3,
+      "stage": "B",
+      "n_samples": 150,
+      "pairwise_cosine_mean": 0.98626,
+      "pairwise_cosine_min": 0.95627,
+      "pairwise_cosine_std": 0.00564,
+      "to_centroid_cosine_mean": 0.99315,
+      "to_centroid_cosine_min": 0.98584
+    },
+    "Sofa_A": {
+      "item_id": 4,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 1.0,
+      "pairwise_cosine_min": 1.0,
+      "pairwise_cosine_std": 0.0,
+      "to_centroid_cosine_mean": 1.0,
+      "to_centroid_cosine_min": 1.0
+    },
+    "Sofa_B": {
+      "item_id": 4,
+      "stage": "B",
+      "n_samples": 149,
+      "pairwise_cosine_mean": 0.96493,
+      "pairwise_cosine_min": 0.89839,
+      "pairwise_cosine_std": 0.01332,
+      "to_centroid_cosine_mean": 0.98243,
+      "to_centroid_cosine_min": 0.95001
+    },
+    "Television_A": {
+      "item_id": 5,
+      "stage": "A",
+      "n_samples": 31,
+      "pairwise_cosine_mean": 0.99999,
+      "pairwise_cosine_min": 0.99981,
+      "pairwise_cosine_std": 4e-05,
+      "to_centroid_cosine_mean": 0.99999,
+      "to_centroid_cosine_min": 0.99986
+    },
+    "Television_B": {
+      "item_id": 5,
+      "stage": "B",
+      "n_samples": 149,
+      "pairwise_cosine_mean": 0.98981,
+      "pairwise_cosine_min": 0.96663,
+      "pairwise_cosine_std": 0.00514,
+      "to_centroid_cosine_mean": 0.99493,
+      "to_centroid_cosine_min": 0.98867
+    }
+  },
+  "ask4_s24_ranges": {
+    "magnitude": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 lower-bound 'For magnitude: zero (bit-identical streams)'; upper-bound 'For magnitude: full-stream replacement (cosine drop of ~1.0 magnitude)'; operationalised pass2 \u00a74.1 'M = 0 ... M = 1 when they are orthogonal'."
+    },
+    "manifold_dim": {
+      "range": [
+        1.0,
+        1024.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 lower-bound 'For dimensionality: 1 (degenerate manifold)'; upper-bound 'For dimensionality: d=1024 (full ambient space)'; operationalised pass2 \u00a74.5 'D = 1 ... D = d = 1024'."
+    },
+    "continuity": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 does NOT enumerate continuity explicitly but states ranges are 'operationalised in pass 2 \u00a74'; pass2 \u00a74.3 'C = 0 corresponds to bit-identical consecutive positions (zero motion); C near 1 corresponds to consecutive positions being orthogonal'."
+    },
+    "locality": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "ambiguous": false,
+      "trace": "pass1 \u00a72.4 does NOT enumerate locality explicitly but states ranges are 'operationalised in pass 2 \u00a74'; pass2 \u00a74.2 'L = 1 when the perturbation affects only positions in S_pert (perfect locality); L = 0 when the perturbation shifts every other position's relations (no locality)'."
+    },
+    "repetition": {
+      "range": null,
+      "ambiguous": true,
+      "trace": "pass1 \u00a72.4 gives only qualitative bounds 'For repetition: no repetition (each stream position unique)' .. 'full pattern saturation'; pass2 \u00a74.4 defines repetition as a multi-dimensional (period P, fidelity F, coverage) structure with no single numerical range. Period sweep grid is uncommitted SCAFFOLDING (\u00a72.6 / Phase 0.5). AMBIGUOUS \u2014 surfaced for design-chat per ask #4."
+    }
+  },
+  "trajectory_unit": "whole_stream (design-chat decision); within-trajectory distributions",
+  "reference_estimation": "annotation-aligned (item, close_up_ordinal) median over Stage-A clean loops",
+  "per_axis_distributions": {
+    "magnitude": {
+      "distribution": {
+        "n": 8228,
+        "median": 0.0171361330643911,
+        "iqr": 0.024363817205248273,
+        "min": -1.0601073463512023e-07,
+        "max": 0.21420680187339458,
+        "multimodal": {
+          "multimodal": true,
+          "bic_improvement": 4184.308562077233,
+          "median": 0.0171361330643911,
+          "iqr": 0.024363817205248273,
+          "component_medians": [
+            0.012580867154090014,
+            0.052027421408327446
+          ]
+        }
+      },
+      "per_item_median": {
+        "Bed": 0.0044202576050297315,
+        "DiningTable": 0.02388376648672408,
+        "Dresser": 0.021569639766117366,
+        "Sofa": 0.02756355668775634,
+        "Television": 0.01321843051025251
+      },
+      "per_item_room": {
+        "Bed": "Bedroom",
+        "DiningTable": "Bedroom",
+        "Dresser": "Bedroom",
+        "Sofa": "LivingRoom",
+        "Television": "LivingRoom"
+      },
+      "detected_perturbed_n": 0,
+      "axis_value_detected_median": null
+    },
+    "locality": {
+      "distribution": {
+        "n": 150,
+        "median": 0.8363636363636364,
+        "iqr": 0.09090909090909083,
+        "min": 0.6545454545454545,
+        "max": 1.0,
+        "multimodal": {
+          "multimodal": false,
+          "bic_improvement": -14.082191999551299,
+          "median": 0.8363636363636364,
+          "iqr": 0.09090909090909083,
+          "component_medians": null
+        }
+      },
+      "defined": true,
+      "note": "perturbation is item-localised (LivingRoom items); items are transit-separated so frame-adjacency relations rarely cross items -> locality reads high. \u00a74.2 repetition-coverage prerequisite met (close-up states repeat across loops)."
+    },
+    "continuity": {
+      "distribution": {
+        "n": 181,
+        "median": 0.07744910567998886,
+        "iqr": 0.002225138247013092,
+        "min": 0.07474258542060852,
+        "max": 0.08137425780296326,
+        "multimodal": {
+          "multimodal": true,
+          "bic_improvement": 100.5554455673489,
+          "median": 0.07744910567998886,
+          "iqr": 0.002225138247013092,
+          "component_medians": [
+            0.07593264058232307,
+            0.0777578204870224
+          ]
+        }
+      },
+      "global_C": 0.07719433307647705,
+      "note": "per-loop C over consecutive frames (transit + close-up)."
+    },
+    "manifold_dim": {
+      "distribution_local_per_loop": {
+        "n": 181,
+        "median": 5.353424252690496,
+        "iqr": 0.05802119422603269,
+        "min": 5.225605030317564,
+        "max": 5.670017691219554,
+        "multimodal": {
+          "multimodal": true,
+          "bic_improvement": 28.578120239626628,
+          "median": 5.353424252690496,
+          "iqr": 0.05802119422603269,
+          "component_medians": [
+            5.353189906558475,
+            5.670017691219554
+          ]
+        }
+      },
+      "global_D": 13.745701789855957,
+      "local_D_whole_stream": 5.267878301716121
+    },
+    "repetition": {
+      "whole_stream": {
+        "period": 360,
+        "fidelity": 0.9739452600479126,
+        "coverage": 1.0,
+        "peak_offdiag_mean": 0.9739452600479126
+      },
+      "w4_status": "undetermined \u2014 \u00a72.4 repetition range unspecified (deferred to Phase 0.5 per ask #4)",
+      "note": "period reflects mean loop length (~359); loops are variable-length so the peak is smeared."
+    }
+  },
+  "w4_detection": {
+    "magnitude": {
+      "w4_status": "within-range",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "median": 0.0171361330643911
+    },
+    "locality": {
+      "w4_status": "within-range",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "median": 0.8363636363636364
+    },
+    "continuity": {
+      "w4_status": "within-range",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "median": 0.07744910567998886
+    },
+    "manifold_dim": {
+      "w4_status": "within-range",
+      "range": [
+        1.0,
+        1024.0
+      ],
+      "median": 13.745701789855957
+    },
+    "repetition": {
+      "w4_status": "undetermined (deferred to Phase 0.5)"
+    }
+  },
+  "any_w4_triggered": false,
+  "grid_mapping_status": "deferred \u2014 per-axis sweep grid is uncommitted SCAFFOLDING (Phase 0.5)"
+}
