@@ -1,0 +1,41 @@
+{
+  "candidates": [
+    {
+      "candidate": "per_object_material_setting",
+      "magnitude_ok": false,
+      "locality_ok": false,
+      "reproducibility_ok": false,
+      "substrate_ok": true,
+      "api_ok": true,
+      "overall_pass": false
+    },
+    {
+      "candidate": "asset_replacement",
+      "magnitude_ok": false,
+      "locality_ok": true,
+      "reproducibility_ok": true,
+      "substrate_ok": false,
+      "api_ok": false,
+      "overall_pass": false
+    },
+    {
+      "candidate": "hand_built_texture_swaps",
+      "magnitude_ok": false,
+      "locality_ok": true,
+      "reproducibility_ok": true,
+      "substrate_ok": false,
+      "api_ok": false,
+      "overall_pass": false
+    },
+    {
+      "candidate": "alternate_procthor_scene",
+      "magnitude_ok": false,
+      "locality_ok": true,
+      "reproducibility_ok": true,
+      "substrate_ok": false,
+      "api_ok": false,
+      "overall_pass": false
+    }
+  ],
+  "selected": null
+}

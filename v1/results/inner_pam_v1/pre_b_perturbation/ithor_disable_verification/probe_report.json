@@ -1,0 +1,44 @@
+{
+  "timestamp_utc": "2026-05-19T01:20:11.892572+00:00",
+  "authorisation": "Design chat 2026-05-19: iTHOR DisableObject verification, single call, 30-minute budget, v1 closing-document precision.",
+  "ai2thor_version": "5.0.0",
+  "scene": "FloorPlan1",
+  "device": "cuda",
+  "target_object_id": "Cabinet|-01.85|+02.02|+00.38",
+  "target_object_type": "Cabinet",
+  "target_object_position": {
+    "x": -1.8499999046325684,
+    "y": 2.015000104904175,
+    "z": 0.3799999952316284
+  },
+  "target_object_pickupable": false,
+  "agent_pose_at_capture": {
+    "position": {
+      "x": -1.0,
+      "y": 0.900999128818512,
+      "z": 1.0
+    },
+    "rotation": {
+      "x": -0.0,
+      "y": 270.0,
+      "z": 0.0
+    },
+    "horizon": 0.0
+  },
+  "pre_png_path": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v1/results/inner_pam_v1/pre_b_perturbation/ithor_disable_verification/pre_call.png",
+  "disable_call": {
+    "lastActionSuccess": true,
+    "errorMessage": "",
+    "wall_seconds": 0.03131103515625
+  },
+  "post_png_path": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v1/results/inner_pam_v1/pre_b_perturbation/ithor_disable_verification/post_call.png",
+  "pixel_sum_diff": 935069,
+  "dinov2_cosine": 0.9793248176574707,
+  "dinov2_cosine_drop": 0.020675182342529297,
+  "target_in_metadata_after_call": {
+    "present": true,
+    "visible": false
+  },
+  "outcome": "renders",
+  "conclusion": "ProcTHOR-specific limitation: DisableObject on iTHOR FloorPlan1 produces a visible render change (pixel_sum_diff = 935069, DINOv2 cosine drop = 0.020675). The render-NO-OP behaviour observed on ProcTHOR is therefore tied to procedural-house geometry / loading, not to DisableObject itself. The v1 substrate finding is ProcTHOR-scoped."
+}

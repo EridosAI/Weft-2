@@ -47,15 +47,28 @@ def load_house(
     min_rooms: int = 4,
     split: str = "train",
     scan_limit: int = 500,
+    revision: str | None = None,
 ) -> Dict[str, Any]:
     """Load one ProcTHOR-10K house with at least `min_rooms` rooms.
 
     Selection is deterministic in `seed`. Requires the `prior` package.
     Returned dict is directly passable to `ai2thor.controller.Controller(scene=...)`.
+
+    Args:
+      revision: optional procthor-10k git revision (e.g.
+        ``ab3cacd0fc17754d4c080a3fd50b18395fae8647`` for the
+        ai2thor-5.0.0-aligned revision per the AI2-THOR warning's
+        downgrade recommendation). Default None preserves the v0-pinned
+        behaviour (latest cached revision, currently `4391935...`). v1
+        scripts set this explicitly per the build-config investigation
+        2026-05-19 design-chat decision; v0 scripts left untouched.
     """
     import prior  # lazy import — heavy
 
-    dataset = prior.load_dataset("procthor-10k")
+    if revision is None:
+        dataset = prior.load_dataset("procthor-10k")
+    else:
+        dataset = prior.load_dataset("procthor-10k", revision=revision)
     data = dataset[split]
 
     candidates: List[Tuple[int, Dict[str, Any]]] = []

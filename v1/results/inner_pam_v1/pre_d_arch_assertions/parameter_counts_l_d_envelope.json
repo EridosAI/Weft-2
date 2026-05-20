@@ -1,0 +1,576 @@
+{
+  "l_d_values": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "primary": {
+    "1": {
+      "total": 17880577,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 4204032,
+        "output_proj_mean": 525312,
+        "output_proj_log_var": 513
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    },
+    "2": {
+      "total": 22084609,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 8408064,
+        "output_proj_mean": 525312,
+        "output_proj_log_var": 513
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    },
+    "3": {
+      "total": 26288641,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 12612096,
+        "output_proj_mean": 525312,
+        "output_proj_log_var": 513
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    },
+    "4": {
+      "total": 30492673,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 16816128,
+        "output_proj_mean": 525312,
+        "output_proj_log_var": 513
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    }
+  },
+  "ablation1": {
+    "1": {
+      "total": 17880065,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "shared_log_var": 1,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 4204032,
+        "output_proj_mean": 525312
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    },
+    "2": {
+      "total": 22084097,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "shared_log_var": 1,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 8408064,
+        "output_proj_mean": 525312
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    },
+    "3": {
+      "total": 26288129,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "shared_log_var": 1,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 12612096,
+        "output_proj_mean": 525312
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    },
+    "4": {
+      "total": 30492161,
+      "by_top_level_module": {
+        "output_queries": 8192,
+        "shared_log_var": 1,
+        "input_proj": 524800,
+        "pos_emb": 8192,
+        "encoder": 12609536,
+        "decoder": 16816128,
+        "output_proj_mean": 525312
+      },
+      "encoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 2048,
+          "other": 0,
+          "total": 3152384
+        }
+      ],
+      "decoder_per_layer": [
+        {
+          "layer": 0,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 1,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 2,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        },
+        {
+          "layer": 3,
+          "self_attn": 1050624,
+          "cross_attn": 1050624,
+          "ffn": 2099712,
+          "norms": 3072,
+          "other": 0,
+          "total": 4204032
+        }
+      ]
+    }
+  }
+}

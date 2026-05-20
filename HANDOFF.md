@@ -2,6 +2,524 @@
 
 **Project:** Weft Inner PAM (continuous-trajectory associative memory, post-architectural-rethink)
 **Repo:** `/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/`
+
+---
+
+## v1 iTHOR DisableObject verification — outcome "renders", limitation is ProcTHOR-specific (2026-05-19)
+
+**Outcome.** Single-call iTHOR probe authorised for closing-document precision. **OUTCOME = "renders".** `DisableObject` on the default iTHOR `FloorPlan1` scene produces a visible render change; `pixel_sum_diff = 935069` between pre- and post-call frames, DINOv2 cosine drop = **0.0207** at the same agent pose. The Cabinet target visibly disappeared from the rendered frame. **The render-NO-OP behaviour observed on ProcTHOR is therefore ProcTHOR-specific, not API-fundamental.** The v1 substrate-property finding tightens from "DisableObject doesn't render on ai2thor==5.0.0" to "DisableObject doesn't render on procedurally-generated house geometry under ai2thor==5.0.0; iTHOR built-in scenes behave as documented." Returning to design chat with this precisification.
+
+### Probe results (numbers traced to [`probe_report.json`](v1/results/inner_pam_v1/pre_b_perturbation/ithor_disable_verification/probe_report.json))
+
+| measurement | value |
+|---|---:|
+| `ai2thor` version | 5.0.0 |
+| Scene | FloorPlan1 (default iTHOR, no ProcTHOR) |
+| Target object | `Cabinet|-01.85|+02.02|+00.38` (objectType = `Cabinet`, pickupable = False; the first visible non-structural object in the default agent view) |
+| `DisableObject` wall time | 0.03 s (no hang) |
+| `DisableObject` lastActionSuccess | True |
+| Pre frame pixel sum | 43,777,875 |
+| Post frame pixel sum | 43,061,442 |
+| **pixel_sum_diff** | **935,069** (non-zero — Cabinet removed from render) |
+| **DINOv2 cosine drop** | **0.020675** |
+| Target in metadata after call | present=True, visible=False |
+
+Pre / post PNGs saved at `v1/results/inner_pam_v1/pre_b_perturbation/ithor_disable_verification/{pre_call.png, post_call.png}`.
+
+### Three-category classification (per the probe protocol)
+
+| outcome | observed? | meaning |
+|---|---|---|
+| **hang** (90s timeout) | no — returned in 0.03s | would have implied API-fundamental |
+| **metadata-only** (ok=True, pixel-diff=0) | no — pixel-diff=935069 | would have implied API-fundamental |
+| **renders** (ok=True, pixel-diff > 0) | **yes** | ProcTHOR-specific limitation |
+
+### Refined Reading B for the v1 closing record
+
+The previous PRE-B build-configuration investigation concluded "API limitation on `ai2thor==5.0.0`" by elimination (no aligned build to test against). The iTHOR probe tightens this: the API works on iTHOR's built-in geometry, fails to affect rendering on ProcTHOR's procedurally-loaded geometry. The mechanism is most likely tied to how `ai2thor==5.0.0` binds objects to renderable Unity GameObjects when the scene is loaded from a procthor JSON description versus a built-in scene prefab — when the scene comes from JSON, `DisableObject` evidently disables the metadata-side flag but doesn't toggle the renderer state on the actual GameObject instance.
+
+**Class.** Same as v0 substrate finding 5 (`forceAction=True` failure mode) and v0 finding 8 (cross-room visual leakage): documented AI2-THOR behaviour that doesn't hold uniformly on this specific configuration. Candidate v1 substrate finding 9 if design chat chooses to formalise it. The right phrasing is now:
+
+> **v1 substrate finding 9 (candidate).** On `ai2thor==5.0.0` with ProcTHOR-10K seed-7 house, `DisableObject` and `HideObject` succeed at the metadata layer (`objects[].visible = False`) but produce no change in the rendered camera output (pixel-sum-diff = 0). The same actions on the default iTHOR `FloorPlan1` scene produce a visible render change (pixel-sum-diff = 935,069 on a 300×300 frame), so the limitation is ProcTHOR-scoped rather than API-fundamental. Mechanism inferred: the ai2thor 5.0.0 scene loader binds procthor JSON-described objects to renderable GameObjects differently than built-in scene prefabs, and DisableObject's renderer-toggle path operates only on the prefab pathway.
+
+### Operational state
+
+- Working tree: new files only — [`v1/scripts/ithor_disable_verification.py`](v1/scripts/ithor_disable_verification.py) and [`v1/results/inner_pam_v1/pre_b_perturbation/ithor_disable_verification/`](v1/results/inner_pam_v1/pre_b_perturbation/ithor_disable_verification/). No spec edits. No band amendment. No `selected.json`. No PRE-C launch. Push hold remains.
+- Compute used: ~20 seconds wall-clock (controller init + single DisableObject + DINOv2 single forward pass on 2 frames). Well within the 30-minute budget.
+- 72/72 tests still pass.
+
+### Implications for design-chat decisions
+
+The finding refines the path-forward menu for the asset-replacement question:
+
+- **The path "switch v1 substrate from ProcTHOR to a built-in iTHOR scene" is now empirically supported.** DisableObject works as documented on FloorPlan1; asset replacement via DisableObject + PlaceObjectAtPoint would likely produce the design-chat-expected ~0.3-0.5 cosine drops on an iTHOR substrate. This is a substantial substrate redesign — the route, viewing positions, item set, and rooms would all need to be re-derived against the FloorPlan1 (or another) scene. Spec §1.2 commitment 12 ("AI2-THOR + ProcTHOR environment") would be amended; v0 substrate inheritance would be partially invalidated.
+- **The path "wait for an ai2thor release that fixes procthor DisableObject" is also more concrete now.** The bug is locatable (procthor-loaded objects bypass DisableObject's render-toggle path); reporting upstream is feasible.
+- **The path "implement asset replacement via custom Unity scripting"** remains a v1-scope question independent of this finding.
+- **The path "re-anchor the magnitude band downward to admit RandomizeMaterials-class perturbation"** is independent of asset-replacement availability and could proceed regardless.
+
+CC does not propose a default. The iTHOR probe was design-chat-authorised for closing-document precision only; the path-forward decision is design-chat's.
+
+---
+
+## v1 build-configuration investigation — STOP and report, alignment infeasible, Reading B confirmed (2026-05-19, refined by iTHOR probe above)
+
+**Outcome.** Steps 1–2 of the 4-step investigation completed. Step 2 (alignment) **failed empirically**: the design-chat-recommended downgrade target (`procthor-10k` revision `ab3cacd0fc17754d4c080a3fd50b18395fae8647`) is **INCOMPATIBLE with `ai2thor==5.0.0`'s scene loader**. Loading the seed-7 house against this revision produces a silently broken state (agent in scene void at y=-38.86; `objects: []` in metadata; `GetReachablePositions` returns 0 positions). The downgrade is the OLDER procthor-10k revision, predating ai2thor 5.0.0; ai2thor 5.0.0 cannot load it correctly. Steps 3 (re-run PRE-A on aligned build) and 4 (DisableObject probe) are therefore unrunnable — no aligned build to test against. **Reading C disposition resolved: Reading B (API limitation) is confirmed by elimination — the current build is the only working configuration on `ai2thor==5.0.0`, so the `DisableObject`/`HideObject` render-NO-OP observed in the smoke test is a property of the AI2-THOR API itself.**
+
+### Empirical evidence: why the downgrade doesn't work
+
+Tested `prior.load_dataset("procthor-10k", revision="ab3cacd0fc17754d4c080a3fd50b18395fae8647")` on the seed-7 house with `ai2thor==5.0.0`:
+
+| measurement | working build (4391935...) | aligned build (ab3cacd...) |
+|---|---:|---:|
+| AI2-THOR warning fires | Yes | **No** ← warning gone, as predicted |
+| House json: `objects` key length | 32 | 32 |
+| House json: `rooms` count | 4 | 4 |
+| House json: `walls` / `windows` / `doors` | 30 / 3 / 3 | (same structure) |
+| Controller agent position y | ~0.9 (on floor) | **-38.86 (in scene void)** |
+| `controller.step("Pass").metadata["objects"]` count | 150 (post-Unity-spawn) | **0** |
+| `GetReachablePositions` result | 1361 positions, modal_y=0.901 | **`lastActionSuccess=False`, 0 positions** |
+| `RandomizeMaterials` returns | `lastActionSuccess=True`, actually fires | `lastActionSuccess=True` (no-op on broken scene) |
+
+The house JSON itself is structurally compatible (same keys, same counts). But AI2-THOR 5.0.0's Unity-side scene loader cannot bind the older revision's geometry: NavMesh fails to build, objects don't spawn, agent spawns at a default void position. This is a Unity-build / dataset-format mismatch on the AI2-THOR 5.0.0 side, not a fixable configuration.
+
+The AI2-THOR warning's text is **misleading**: it presents the downgrade as a viable alternative to upgrading. Empirically the downgrade target is incompatible with the AI2-THOR version that produced the warning. The "upgrade ai2thor" path is also not viable (`ai2thor==5.0.0` is the latest on PyPI; `pip index versions ai2thor` confirms). Therefore **there is no aligned build available on PyPI today** — the warning's two recommendations are both empty paths.
+
+### Conclusion: Reading B (API limitation) confirmed by elimination
+
+- "Build misconfiguration" hypothesis: **FALSE.** The current configuration (`ai2thor 5.0.0` + procthor-10k `439193522244720b86d8c81cde2e51e3a4d150cf`) is the only one that produces a working scene. There is no alternative configuration to switch to.
+- "API limitation" hypothesis: **TRUE by elimination.** `DisableObject` and `HideObject` are render-NO-OP on `ai2thor==5.0.0` itself; the behaviour does not depend on the procthor-10k revision (and the downgrade revision can't even be tested because the scene doesn't load). The render-NO-OP is a property of the AI2-THOR API behavior on this version, period.
+
+### Discipline note added to v1 closing (build-coupling)
+
+The earlier (pre-investigation) discipline note in this section said: "If the alignment fix restores render-affecting behaviour, that's evidence the dataset/build coupling is the root cause; if it doesn't, the API limitation is real on `ai2thor==5.0.0` itself." The alignment fix did *not* run because the alignment scene is broken before any DisableObject probe is possible. The alternative-by-elimination evidence is sufficient: API limitation is real on `ai2thor==5.0.0`. Recorded for v1 closing.
+
+### Files / state changes (working tree only; push hold remains)
+
+- [`shared/substrate/procthor_house.py`](shared/substrate/procthor_house.py) — added optional `revision` parameter to `load_house`; default None preserves v0 behaviour. This is the only shared-module change in this investigation; non-destructive.
+- [`v1/src/config.py`](v1/src/config.py) — `V1_PROCTHOR_REVISION: str | None = None` with a full rationale comment recording the empirical-failure outcome and the resulting build pin. The constant is preserved in the source as a sign-posted load-bearing audit artifact.
+- [`v1/scripts/run_pre_a_substrate.py`](v1/scripts/run_pre_a_substrate.py) — conditional monkey-patch path retained (gated on `V1_PROCTHOR_REVISION is not None`) but inactive at None; preserves the infrastructure for any future build-config revisit without breaking the working path.
+- 72/72 tests still pass (21 v0 + 51 v1; no regression).
+- No spec edits. No band amendment. No `selected.json`. No PRE-C launch. Compute used in this investigation: ~5 minutes wall-clock (Steps 1+2 only; Steps 3+4 unrunnable).
+
+### Per the directive: returning to design chat
+
+The user directive specified: *"If `DisableObject` still produces a render-NO-OP on the aligned build, stop and report — that's strong evidence for Reading B and the design conversation shifts to band re-anchoring with that evidence."* The aligned build itself is unavailable. The evidence for Reading B is by elimination rather than by direct re-test, but it is empirically grounded: no working alternative configuration exists to test against. Design chat now operates on Reading B for the band re-anchoring decision (or equivalent next step).
+
+The DisableObject API limitation is therefore a property of `ai2thor==5.0.0` that v1 needs to plan around — either by waiting for a future AI2-THOR release that restores render-affecting `DisableObject`, by implementing the v1 asset-replacement mechanism via custom Unity scripting (outside v1 spec scope), or by re-anchoring the magnitude band downward to admit `RandomizeMaterials`-class perturbation. CC does not propose a default.
+
+### Operational state
+
+Working tree: edits listed above. AI2-THOR controller cleanly stopped after each probe. GPU idle. Disk: well above thresholds. Push hold remains. Procthor-10k `ab3cacd...` revision is cached (~30 MB at `/home/jason/.prior/datasets/allenai/procthor-10k/ab3cacd...`); harmless. v1 scripts continue to use the working `4391935...` revision via the default load path.
+
+---
+
+## v1 build-configuration investigation — Step 1 snapshot recorded (2026-05-19, superseded by investigation outcome above)
+
+Per design-chat-authorised 4-step investigation (resolve "build misconfiguration" vs "API limitation" Reading C disposition). Step 1 = pre-change snapshot, recorded here before any modification.
+
+### Build snapshot (pre-change)
+
+- **`ai2thor` version (pip show):** `5.0.0`. This is the **latest available on PyPI**; `pip index versions ai2thor` reports `INSTALLED: 5.0.0`, `LATEST: 5.0.0`. There is no `5.0+` to upgrade to.
+- **`prior` package version:** `1.0.3`.
+- **`procthor-10k` dataset revision (currently installed):** `439193522244720b86d8c81cde2e51e3a4d150cf`. Located at `/home/jason/.prior/datasets/allenai/procthor-10k/439193522244720b86d8c81cde2e51e3a4d150cf/`.
+- **Recommended downgrade revision per the AI2-THOR warning:** `ab3cacd0fc17754d4c080a3fd50b18395fae8647`.
+- **Full text of the version-mismatch warning** (printed to stdout at every `load_house` call):
+
+  ```
+  [AI2-THOR WARNING] There has been an update to ProcTHOR-10K that must be used with AI2-THOR version 5.0+. To use the new version of ProcTHOR-10K, please update AI2-THOR to version 5.0+ by running:
+      pip install --upgrade ai2thor
+  Alternatively, to downgrade to the old version of ProcTHOR-10K, run:
+     prior.load_dataset("procthor-10k", revision="ab3cacd0fc17754d4c080a3fd50b18395fae8647")
+  ```
+
+### Choice analysis (Step 2 input)
+
+The two recommended paths are **asymmetric** in availability, not genuinely ambiguous:
+
+- **Path A: "Upgrade `ai2thor`."** Not viable — `5.0.0` is the latest version on PyPI. The warning's instruction `pip install --upgrade ai2thor` would result in `Requirement already satisfied: ai2thor==5.0.0`. The warning's phrasing "AI2-THOR version 5.0+" appears to mean "≥ 5.0.1" or similar, which doesn't yet exist publicly.
+- **Path B: "Downgrade `procthor-10k`."** Viable — `prior.load_dataset("procthor-10k", revision="ab3cacd0fc17754d4c080a3fd50b18395fae8647")` is a one-line change. This is also the path that **minimises disruption to v0's substrate pin** per the design-chat preference: `ai2thor==5.0.0` was v0's verified-against version, and v0's substrate findings (5.1–5.3 thresholds, finding 5–8 lookups) all assume that pin. Changing only the dataset keeps the substrate-verification chain intact.
+
+Path B selected. The choice is not ambiguous; the upgrade target doesn't exist.
+
+### Discipline note for v1 closing (build-coupling)
+
+The smoke test's "DisableObject / HideObject render-NO-OP" observation may turn out to be a function of the `procthor-10k 439193522...` revision specifically (the "new" version flagged by the warning as requiring AI2-THOR >5.0+). If the alignment fix restores render-affecting behaviour, that's evidence the dataset/build coupling is the root cause; if it doesn't, the API limitation is real on `ai2thor==5.0.0` itself. Either result is recorded in this HANDOFF section + the v1 closing's substrate-findings inventory.
+
+---
+
+## v1 asset-replacement smoke test — STOP and report, unexpected substrate property (2026-05-19, superseded by build-config investigation above)
+
+**Status.** Design-chat-authorised single-item asset-replacement smoke test (Dresser only, pre-investment characterisation per instr §1.5 unchanged). The result is a **stop-and-report** outcome triggered by an unexpected substrate property: **on this `ai2thor==5.0.0` + ProcTHOR-10K build, `DisableObject` and `HideObject` are render-NO-OP** — they succeed at the metadata layer (`objects[].visible = False`) but the camera continues to render the disabled/hidden object pixel-identically. Combined with `RemoveFromScene` hanging indefinitely (90s timeout, no return) and `CreateObject` failing Unity-side, **no simple AI2-THOR API path on this build produces a visual asset replacement at a specific coordinate.** No `selected.json` written. Push hold remains. Design chat to decide next step.
+
+### Empirical magnitude finding (numbers traced to `smoke_report.json`)
+
+| measurement | value | CC pre-smoke estimate | landed in estimate range? |
+|---|---:|---:|---|
+| cross-stage Dresser cosine drop (run 1) | **0.0000** | 0.3-0.5 | **❌ no — perturbation mechanically did not take effect** |
+| cross-stage Dresser cosine drop (run 2) | 1.2 × 10⁻⁶ | 0.3-0.5 | ❌ no |
+| locality drop, Bed | 0.0 | <0.005 expected | n/a (no perturbation occurred) |
+| locality drop, DiningTable | 0.0 | <0.005 expected | n/a |
+| locality drop, Sofa | 0.0 | <0.005 expected | n/a |
+| locality drop, Television | 0.0 | <0.005 expected | n/a |
+| reproducibility (\|run1 − run2\| at Dresser) | 1.2 × 10⁻⁶ | <0.005 | technically ✅ (degenerate — both runs took identical no-op paths) |
+
+**The 0.0 cosine drop does NOT mean "asset replacement produces no magnitude."** It means "no asset replacement actually happened on this build." The reproducibility pass is degenerate — both runs produced identical no-op results.
+
+### What CC tried (in user-directed order)
+
+Per the design-chat-spec'd path priority. CC committed to one path at a time per the "don't enumerate" directive but each attempt surfaced a substrate behaviour that blocked the next path:
+
+| step | path | outcome |
+|---|---|---|
+| 1 | `RemoveFromScene(objectId=Dresser)` | **TIMEOUT** — no return after 90 s isolated probe; `RemoveFromScene` hangs indefinitely on this build |
+| 2 | `SpawnTargetCircle` (design-chat primary) | **`lastActionSuccess=False`**, error `"circle failed to spawn"`; SpawnTargetCircle is AI2-THOR's nav-target indicator, not an asset spawner |
+| 3 | `CreateObject(objectType='ArmChair', position, rotation)` (design-chat fallback) | **`lastActionSuccess=False`**, Unity-side `ArgumentOutOfRangeException`; the ProcTHOR seed-7 prefab pool doesn't expose ArmChair for fresh creation |
+| 4 | `DisableObject(Dresser)` + `PlaceObjectAtPoint(Chair, Dresser.position)` (next-simplest viable) | `DisableObject` ok=True but **render-NO-OP** (pixel-sum-diff = 0 across pre/post frames at the Dresser's canonical viewing pose); `PlaceObjectAtPoint` blocked by `"Spawn area not clear (wall|7|7.07|0.00|7.07|3.53) is in the way"` because the Dresser is mounted against a wall |
+| 5 | `HideObject(Dresser)` (auxiliary, parallel to step 4) | ok=True but also **render-NO-OP** — same pixel-sum-diff = 0 finding |
+
+### Unexpected substrate property (the stop-and-report trigger)
+
+`DisableObject` and `HideObject` are documented AI2-THOR actions that should affect rendering, but on this specific `ai2thor==5.0.0` + ProcTHOR-10K build they only set the `objects[].visible` metadata flag and leave the rendering pipeline unaffected. Verified by:
+- Isolated probe at the Dresser's canonical viewing pose (`x=6.0, y=0.901, z=3.0, heading 132.47°` from `route_phase2.json`).
+- Frame 1 captured before any action: pre-frame pixel-sum = 35,267,554.
+- `DisableObject(Dresser|4|2)`: `lastActionSuccess=True`. Subsequent `Pass` step shows `objects[Dresser].visible = False`.
+- Frame 2 captured at the identical pose after DisableObject: post-frame pixel-sum = 35,267,554.
+- Pixel-sum-diff = **0** (byte-precision identical). Frames saved to `/tmp/dresser_before.png` and `/tmp/dresser_after.png` are bit-identical (both 61,256 bytes).
+- `HideObject(Dresser|4|2)` produces the same pixel-sum-diff = 0 outcome.
+
+This is the same *class* of substrate finding as v0 finding 5 (`forceAction=True` failure mode) and v0 finding 8 (cross-room visual leakage): documented AI2-THOR behaviour that doesn't hold on this specific build. Candidate v1 substrate finding 9 if design chat chooses to formalise it.
+
+A relevant secondary observation: at every house load, AI2-THOR prints
+```
+[AI2-THOR WARNING] There has been an update to ProcTHOR-10K that must be used with AI2-THOR version 5.0+. To use the new version of ProcTHOR-10K, please update AI2-THOR to version 5.0+ by running: pip install --upgrade ai2thor. Alternatively, to downgrade to the old version of ProcTHOR-10K, run: prior.load_dataset("procthor-10k", revision="ab3cacd0fc17754d4c080a3fd50b18395fae8647")
+```
+The dataset / AI2-THOR-build mismatch warning may be related to the `DisableObject`/`HideObject` render-NO-OP behaviour. CC does not investigate this further per the stop-and-report directive.
+
+### Compute used
+
+~30 minutes of API exploration + 2 isolated controller-init/smoke-pass cycles. Well within the 2-hour budget. GPU near-idle (DINOv2 fp16 batched 10-frame encodes only).
+
+### Files produced
+
+- [`v1/scripts/smoke_test_asset_replacement_dresser.py`](v1/scripts/smoke_test_asset_replacement_dresser.py) — the smoke test driver. Records the AI2-THOR path attempts and per-step api-success log.
+- [`v1/results/inner_pam_v1/pre_b_perturbation/smoke_test_asset_replacement_dresser/smoke_report.json`](v1/results/inner_pam_v1/pre_b_perturbation/smoke_test_asset_replacement_dresser/smoke_report.json) — full report with all six path attempts, the measurements per the user directive, and the unexpected-substrate-property record.
+- Frames: `/tmp/dresser_before.png`, `/tmp/dresser_after.png` (not in working tree; gitignored locations).
+
+### Per the directive: returning to design chat for the band re-anchoring decision
+
+The user directive stated: *"Whatever the magnitude, return to design chat for the band re-anchoring decision. The smoke test informs the band; it doesn't select it."* The smoke test outcome informs the band re-anchoring discussion as follows:
+
+- **CC's pre-smoke estimate that asset replacement lands at 0.3-0.5 cosine drops is unverified.** The mechanism the smoke test attempted to characterise did not actually take effect; the measured 0.0 does not reflect asset-replacement physics. Whether asset replacement (when actually working) lands at 0.3-0.5 or elsewhere is now an open empirical question, not a settled one.
+- **The original PRE-B blocker (no viable mechanism in the v1 [0.05, 0.10] band) is unchanged.** RandomizeMaterials is too weak; asset replacement is mechanically inaccessible on this build; mechanisms 3 and 4 are still deferred-to-design-chat.
+- **The substrate-property finding (DisableObject render-NO-OP) is the new information.** Design chat now decides between: (a) investigate the AI2-THOR build / ProcTHOR revision mismatch to unblock render-affecting actions, (b) commit to a custom Unity-scripting path for asset replacement, (c) accept that asset replacement is not v1-feasible and either re-anchor the magnitude band downward to admit RandomizeMaterials (~0.02) or defer the strong-perturbation commitment to v2 substrate work, or (d) some other path. CC does not propose a default.
+
+### Operational state
+
+Working tree: new file `v1/scripts/smoke_test_asset_replacement_dresser.py`; new directory `v1/results/inner_pam_v1/pre_b_perturbation/smoke_test_asset_replacement_dresser/`. No commits. Push hold in effect. AI2-THOR controller stopped. GPU idle. Spec § 1.2 commitment 3 magnitude band not amended. `v1/config.py` `get_v1_perturbation_mechanism()` still raises `FileNotFoundError` — no PRE-C / Stage A / training launch path.
+
+72/72 tests still pass.
+
+---
+
+## v1 PRE-B — STOP for design-chat review, no candidate passed §8.2.1 (2026-05-19, superseded by smoke test above)
+
+**Status.** PRE-B executed across all four candidate mechanisms (instr §6.2.2: characterise all four, don't stop at first pass). **No candidate passed all five §8.2.1 verification criteria.** The single mechanism with `api_success=True` (Mechanism 1: per-object material setting) produced measurable perturbation but missed the magnitude and locality criteria by structural margins; mechanisms 2-4 (asset replacement, hand-built texture swaps, alternate ProcTHOR scene) are deferred to design-chat scoping per their per-candidate `pre_b_report.json` rationale. Per the execution directive, this is a stop condition handed back to design chat. **Push hold remains. PRE-C / Stage A / training not launched.**
+
+### Empirical measurements (numbers traced to `pre_b_perturbation/<candidate>/pre_b_report.json`)
+
+**Mechanism 1: per_object_material_setting** — `RandomizeMaterials(inRoomTypes=["LivingRoom"], useTrainMaterials=True, useExternalMaterials=True)`. AI2-THOR's `RandomizeMaterials` does not currently expose an `objectIds` parameter; the "per-object" intent was approximated by room-scoping under v0's existing pattern, with `useExternalMaterials=True` added to push magnitude beyond v0's training-materials-only band.
+
+| metric | run 1 | run 2 | criterion | pass? |
+|---|---:|---:|---|---|
+| cross-stage drop, item 3 (Dresser, perturbed) | 0.0191 | 0.0035 | ∈ [0.05, 0.10] | **❌ both runs below band** |
+| cross-stage drop, item 4 (Sofa, perturbed) | 0.0220 | 0.0221 | ∈ [0.05, 0.10] | **❌ both runs below band** |
+| cross-stage drop, item 1 (Bed, unperturbed) | 0.0142 | — | < 0.015 | borderline (above but close) |
+| cross-stage drop, item 2 (DiningTable, unperturbed) | 0.0170 | — | < 0.015 | **❌ above 0.015** |
+| cross-stage drop, item 5 (Television, unperturbed) | 0.0161 | — | < 0.015 | **❌ above 0.015** |
+| reproducibility, item 3 (\|run1 − run2\|) | 0.0156 | | < 0.005 | **❌ above tolerance** |
+| reproducibility, item 4 (\|run1 − run2\|) | 0.0001 | | < 0.005 | ✅ |
+| API success | True | True | True | ✅ |
+| Substrate locality-guard (cross-room drop < 0.20) | True | True | — | ✅ |
+
+**Mechanisms 2, 3, 4** — `api_success=False`. Each candidate's `pre_b_report.json` records the rationale (`status: deferred_to_design_chat`) and the implementation strategy that would be required:
+
+- **Mechanism 2 (asset replacement at fixed coordinates).** AI2-THOR's `RemoveFromScene` removes; bringing assets back at the same world coordinates requires either `SpawnTargetCircle` / `CreateObject` (limited asset types) or a pre-built asset-pool selection step. Design-chat decision needed on scope.
+- **Mechanism 3 (hand-built texture swaps).** Custom Unity material builder + custom shader path; substantial infrastructure outside v1's spec scope.
+- **Mechanism 4 (alternate ProcTHOR scene).** Catalogue search across 10K candidate houses for route-compatibility (5 item types, viewing-position-compatible poses); design-chat decision on whether this lands in v1 or v2 substrate work.
+
+### What the data tells us
+
+1. **The v1 spec §1.2 commitment 3 magnitude band [0.05, 0.10] is incompatible with `RandomizeMaterials` alone on the v1 substrate.** Mechanism 1's measured perturbed-item drops are 0.019-0.022 — consistent with v0's prior measurement (~0.01 drops with `useTrainMaterials=True` only; `useExternalMaterials=True` added a few hundredths). The v1 magnitude band is roughly 3-5× what room-scoped `RandomizeMaterials` produces.
+
+2. **The cross-room visual leakage v0 observed (Bedroom items showing cross-stage drift despite `inRoomTypes=["LivingRoom"]` scope) reproduces under v1 substrate at the same magnitude class.** Bedroom items shift by 0.014-0.017 cosine — close to or above the v1 locality threshold of 0.015. This is the same substrate-as-feature finding 8 v0 catalogued (`RandomizeMaterials` lighting changes affect Bedroom-rendered frames even when LivingRoom-scoped).
+
+3. **Reproducibility is poor at this magnitude regime.** Item 3 (Dresser) run-to-run drift is 0.0156 — 3× the tolerance. AI2-THOR's `RandomizeMaterials` picks materials non-deterministically per call even at the same seed; the v1 reproducibility criterion (0.005 across runs) is not achievable with the API alone unless we constrain material selection more tightly.
+
+4. **Mechanisms 2/3/4 each require substantive engineering investment** that the v1 spec didn't explicitly scope. Design chat needs to decide:
+   - Whether to scope mechanism 2 (asset replacement) implementation in v1 — likely the most-aligned with v1's "stronger perturbation" intent, since swapping an entire item produces large cosine drops by construction.
+   - Whether mechanism 3 (offline texture pipeline) is a v1 investment or a v2 candidate.
+   - Whether mechanism 4 (alternate scene search) is a v1 investment or a v2 candidate.
+   - Whether to widen the v1 magnitude band, relax locality, or accept lower reproducibility tolerance (changes to the spec §1.2 commitments).
+
+### v0 precedent
+
+v0's session-5 substrate-determinism finding documented cross-room visual leakage from `RandomizeMaterials(inRoomTypes=["LivingRoom"])` (Bedroom items showed 0.0045-0.0068 cross-stage drift under v0's `useTrainMaterials=True`-only regime; v1's `useExternalMaterials=True` doubles that to ~0.014-0.017). v0 substrate finding 8 is the same class of observation; v1 PRE-B reproduces it at a slightly larger magnitude. This is consistent with the substrate-as-feature classification v0 applied — `RandomizeMaterials` changes scene lighting/reflections that affect Bedroom-rendered frames even with `inRoomTypes` scope.
+
+### Design-chat questions
+
+CC does not propose a default. Two interlocking decisions for design chat:
+
+(a) **Investment in mechanism 2 (asset replacement).** If implemented properly, asset replacement at fixed coordinates can produce cosine drops in the 0.5-0.9+ range (a whole different object renders at the same pose). This is *larger* than the v1 magnitude band of [0.05, 0.10] — so mechanism 2 might overshoot, and the magnitude criterion would need re-anchoring to a band that admits asset-replacement drops. Reviewer-chat decision on the upper bound.
+
+(b) **Magnitude band re-anchoring.** v0's RandomizeMaterials produced ~0.01; v1 spec §1.2 commitment 3 chose [0.05, 0.10] to be "stronger than v0 but not architecturally identity-altering." PRE-B's empirical result is that no AI2-THOR API mechanism with stable reproducibility lands in [0.05, 0.10] cleanly — the available mechanisms are either too weak (RandomizeMaterials at ~0.02) or too strong (asset replacement at ~0.5+). Design chat may want to widen the band to [0.05, 0.30] or [0.05, 0.50] to admit asset replacement while still excluding the degenerate "same item just lit differently" regime.
+
+### Files produced
+
+- [`v1/scripts/run_pre_b_perturbation.py`](v1/scripts/run_pre_b_perturbation.py) — PRE-B driver. Mechanism handlers are pluggable; mechanisms 2-4 currently return `api_success=False` with a structured `deferred_to_design_chat` status that will be replaced when implementations land.
+- [`v1/results/inner_pam_v1/pre_b_perturbation/summary.json`](v1/results/inner_pam_v1/pre_b_perturbation/summary.json) — per-candidate verdict summary; `selected: null`.
+- [`v1/results/inner_pam_v1/pre_b_perturbation/<candidate>/pre_b_report.json`](v1/results/inner_pam_v1/pre_b_perturbation/) — full per-candidate measurements + verdict for each of the 4 candidates.
+- [`v1/src/preflight/pre_b_perturbation_mechanism.py`](v1/src/preflight/pre_b_perturbation_mechanism.py) — verdict-evaluation library (unchanged from initial build; this is the §8.2.1 criteria implementation).
+- Logs: `v1/logs/pre_b_*.log`.
+
+### Operational state
+
+Working tree: new files only under `v1/scripts/run_pre_b_perturbation.py` and `v1/results/inner_pam_v1/pre_b_perturbation/`. No edits to spec / v0 sources. Push hold remains. AI2-THOR controller stopped. GPU idle. Disk: well above thresholds.
+
+No `selected.json` written — PRE-C / Stage A / Stage B / training cannot launch (PRE-C reads PRE-B's selection lock; v1 config raises `FileNotFoundError` on `get_v1_perturbation_mechanism()` until PRE-B selection is written).
+
+Awaiting design chat: (a) decision on mechanism 2/3/4 investment scope and/or (b) spec §1.2 magnitude band re-anchoring.
+
+---
+
+## v1 PRE-A — PASS, finding 3 design-chat determination recorded (2026-05-19)
+
+**Status.** Design-chat decision recorded on the finding 3 question raised at the PRE-A stop. **Finding 3 classified as substrate-as-feature (structural-by-design segment-handoff)**, with the v0 STOP_REPORT precedent cited and threshold recalibrated 0.9999 → 0.999. PRE-A re-ran with the determination operationalized; all checks PASS. PRE-B can launch. Push hold remains in effect.
+
+### Determination (design chat, 2026-05-19)
+
+- **Classification.** Substrate-as-feature per instr finding 4 — the failing pairs are structural-by-design transit→close_up segment-handoff duplicates produced by the v0-inherited `ContinuousMotionExplorer`. They are not 30-frame static dwell (which is what v0 finding 3 was actually about).
+- **Threshold recalibration.** `FINDING_3_COS_MAX` updated 0.9999 → 0.999. v0 STOP_REPORT precedent (seed-7 rerender, 2026-05-12) authorised the same class of recalibration on a closely-related determinism check under spec §5.5. New SCAFFOLDING entry in instr §11; constant defined in `v1/src/config.py`.
+- **Evidence trace.** Cosine = 1.000000 (to 6 decimal places) at every failing pair. Phase-segment transition pattern: `("transit", "close_up")` at every failing pair (100% — 25/25 ; no other-pattern pairs). Agent pose at frame i and frame i+1: identical position, identical rotation_y (matching the upcoming item's `viewing_heading_deg`). Count derivation:
+  > **25 = 5 items × 5 complete loops × 1 handoff per (item, loop)**
+  >
+  > The `ContinuousMotionExplorer` rotates during the final transit micro-step to lock heading at the close-up entry heading; close-up then begins at the same agent pose. AI2-THOR's renderer is deterministic at the same pose, so frame i (transit-end) and frame i+1 (close-up-start) are bit-identical. The 5 × 5 × 1 product is structural to the explorer's design — each (item, loop) produces exactly one such handoff at the close-up entry boundary.
+- **Driver operationalization.** PRE-A's driver classifies finding 3 as PASS when (a) every cosine > 0.999 pair is a transit→close_up handoff AND (b) no run of ≥29 consecutive high-cosine pairs (the actual 30-frame-static-dwell pattern). Both conditions hold for the 5-loop calibration: 25/25 handoff pattern, max run = 1 (single-pair duplicates only). The raw strict-check result is preserved in `pre_a_report.json` under `classification` for the audit trail.
+
+### v2 design intake item recorded
+
+A run-length-aware finding 3 check (e.g., "no run of N consecutive frames with all pairwise cos > T") would separate dwell from segment-handoff *without* threshold recalibration. v2 candidate; not in v1 scope. Recorded in [`WEFT_INNER_PAM_v2_DESIGN_INTAKE.md`](WEFT_INNER_PAM_v2_DESIGN_INTAKE.md) §10.1.
+
+### CC driver fix (already classified as driver-only, not a substrate change)
+
+`_assign_close_up_ordinals` helper in `run_pre_a_substrate.py` populates `close_up_ordinal` from the annotation stream (the `ContinuousMotionExplorer` doesn't carry the ordinal in its observation dict). Confirmed as a driver-side change, not a substrate-modifying change. Same helper will be reused for PRE-B / Stage A / Stage B annotation pipelines.
+
+### PRE-A numerical results (final, post-determination)
+
+| check | value | threshold | pass |
+|---|---:|---:|---|
+| finding 1 (Python 3.12.3) | match | exact | ✅ |
+| finding 2 (full embedding population) | 0 violations | 0 | ✅ |
+| finding 3 (continuous motion, classified) | 25 transit→close_up handoffs, max-run = 1 | substrate-as-feature pattern match | ✅ |
+| finding 4 (substrate-as-feature default) | — | interpretive | ✅ |
+| finding 5 (camera elevation) | floor_y=0.901, no forceAction | — | ✅ |
+| finding 6 (floor-y modal) | 0.901 (1361/1361) | modal | ✅ |
+| finding 7 (DiningTable view-through) | inherited | — | ✅ |
+| finding 8 (cross-room leakage) | deferred to PRE-B | — | ⏭️ |
+| §5.1 cross-instance stability | 0.9999 | > 0.75 | ✅ |
+| §5.2 cross-element distinguishability | 0.4858 | < 0.60 | ✅ |
+| §5.3 combined gap | 0.5142 | ≥ 0.15 | ✅ |
+
+`all_passed: true` in [`v1/results/inner_pam_v1/pre_a_substrate/pre_a_report.json`](v1/results/inner_pam_v1/pre_a_substrate/pre_a_report.json).
+
+### Files changed in this session (working tree only; push hold remains)
+
+- `v1/src/config.py` — added `FINDING_3_COS_MAX = 0.999` SCAFFOLDING constant with full rationale comment.
+- `v1/src/preflight/pre_a_substrate_verification.py` — `continuous_motion_check` default sources the constant; recalibration docstring.
+- `v1/scripts/run_pre_a_substrate.py` — `_assign_close_up_ordinals` driver helper, `_classify_finding_3` substrate-as-feature classifier, report now publishes classified result with `raw_strict_check_passed` preserved.
+- `v1/WEFT_INNER_PAM_v1_EXPERIMENT_INSTRUCTIONS.md` — instr §6.1.3 step 3 rewritten; instr §11 scaffolding inventory adds `FINDING_3_COS_MAX` row.
+- `WEFT_INNER_PAM_v2_DESIGN_INTAKE.md` — new §10.1 "Run-length-aware finding 3 substrate check" v2 candidate.
+
+Tests: 72/72 PASS (21 v0 + 51 v1; no regression).
+
+### Operational state
+
+Working tree changes listed above; no commits. Push hold in effect. AI2-THOR controller idle. GPU idle. Logs at `v1/logs/pre_a_20260519_041757.log`. PRE-B is the next-action launch target.
+
+---
+
+## v1 PRE-A — STOP for design-chat review, substrate-as-feature classification question on finding_3 (2026-05-19, superseded by determination above)
+
+**Status.** PRE-A executed end-to-end on the v1 substrate (seed-7 ProcTHOR house, unperturbed). §5.1 / §5.2 / §5.3 PASS decisively. Eight v0-finding checks: findings 1, 2, 4 (interpretive default), 5, 6, 7 PASS; finding 8 deferred to PRE-B (perturbation-mechanism-specific). **Finding 3 (continuous-motion check, strict 0.9999 threshold) FAILS at 25/1800 consecutive frame pairs.** All 25 failing pairs are `transit → close_up` transitions with identical agent pose and locked heading — a structural property of the ContinuousMotionExplorer's hand-off between transit and close-up segments, not a 30-frame static dwell. CC does not autonomously classify the finding as substrate-as-feature vs substrate-as-bug; per the execution directive, this is handed to design chat. **Push hold remains in effect. No PRE-B / PRE-C / training launched.**
+
+### Run summary
+
+- **Driver:** [`v1/scripts/run_pre_a_substrate.py`](v1/scripts/run_pre_a_substrate.py).
+- **Collection:** 5 loops, 1801 frames, 104.2 s wall-clock, 17.3 fps. Frames at [`v1/data/pre_a_calibration/frames/`](v1/data/pre_a_calibration/frames/) (gitignored).
+- **Encoding:** 1801 frames through DINOv2-Large frozen (fp16, CUDA), 5.4 s. Embeddings at [`v1/data/pre_a_calibration/embeddings.npy`](v1/data/pre_a_calibration/embeddings.npy).
+- **Floor-y derivation (finding 6):** 0.901 (modal_y, 1361/1361 reachable positions = 100% — matches v0 substrate).
+- **DiningTable view-through pose (finding 7):** inherited from `v0/data/route_phase2.json` (viewing_position={x: 8.25, y: 0.901, z: 4.75}, heading 117.57°).
+- **Report:** [`v1/results/inner_pam_v1/pre_a_substrate/pre_a_report.json`](v1/results/inner_pam_v1/pre_a_substrate/pre_a_report.json).
+
+### Numerical results (numbers traced to `pre_a_report.json` / `embeddings.npy`)
+
+| check | value | threshold | direction | pass |
+|---|---:|---:|---|---|
+| finding 1 (Python 3.12.3) | 3.12.3 | 3.12.3 | exact | ✅ |
+| finding 2 (embeddings full population) | 0 violations | 0 | exact | ✅ |
+| finding 3 (continuous motion) | 25 pairs cos > 0.9999 (of 1800) | 0 pairs | strict | ❌ |
+| finding 4 (substrate-as-feature default) | — | interpretive | — | ✅ |
+| finding 5 (camera elevation) | floor_y = 0.901, no forceAction | — | — | ✅ |
+| finding 6 (floor-y modal) | 0.901 (1361/1361) | modal | — | ✅ |
+| finding 7 (DiningTable view-through) | inherited | route inherit | — | ✅ |
+| finding 8 (cross-room visual leakage) | deferred | PRE-B-specific | — | ⏭️ |
+| §5.1 cross-instance stability | 0.9999 | > 0.75 | greater | ✅ |
+| §5.2 cross-element distinguishability | 0.4858 | < 0.60 | less | ✅ |
+| §5.3 combined gap | 0.5142 | ≥ 0.15 | greater | ✅ |
+
+`all_passed: false` in the report file because of finding 3 alone.
+
+### Finding 3 evidence (the only failing check)
+
+CC's diagnostic on the 25 failing pairs:
+
+- **Cosine value at every failing pair:** 1.000000 (to 6 decimal places).
+- **Phase-segment transition pattern:** all 25 pairs are exactly `phase_segment = ("transit", "close_up")` — the transition from transit to close-up.
+- **Agent pose:** at every failing pair, frame i and frame i+1 have identical `position` and `rotation_y` (e.g. i=92: pose=(transit close-up entry), rot=117.57°, 117.57°). The rotation matches the upcoming item's `viewing_heading_deg` exactly — the explorer rotates during the final transit micro-step to lock the close-up entry heading.
+- **Count consistency:** 5 items × 5 loops = 25 transitions per the route; matches the 25 high-cosine pair count exactly.
+- **Per shared/substrate/continuous_motion_explorer.py:** transit ends at the close-up entry point with heading rotated to `viewing_heading`; close-up begins at the same point with the same heading. The two frames are rendered at the same agent pose by design.
+
+This is **not** a 30-frame static dwell (v0 substrate finding 3's actual concern): the duplicate is single-pair per item per loop. Each close-up then proceeds with continuous motion through 10+ ordinals (no two close-up frames are bit-identical, per the explorer's docstring contract).
+
+### v0 precedent (for design-chat context)
+
+- v0's `STOP_REPORT.md` (seed-7 furniture re-render, 2026-05-01 → resolved 2026-05-12) recorded a reviewer-authorised threshold recalibration from 0.9999 → 0.999 on a closely-related determinism check (rerender consistency), under spec §5.5. Different check, same general substrate property (DiningTable / Sofa renderings near-deterministic but not bit-identical between runs at the same pose).
+- v0 substrate finding 8 ("cross-room visual leakage") is the established label for v0-era cases where the substrate produces small visual variation independent of the architecturally-controlled perturbation. The v1 PRE-A pattern is the inverse: the substrate produces *no* visual variation at a structural-by-design pair. Same class of substrate-as-feature observation; opposite direction.
+
+### Design-chat question
+
+Two interpretive options for finding 3; CC does not assign:
+
+(a) **Substrate-as-feature classification (instr finding 4 interpretive discipline).** The 25 transit→close_up duplicates are structural-by-design under the v0-inherited ContinuousMotionExplorer. Recalibrate finding 3's threshold to the actual substrate behaviour (a recalibration in the v0 STOP_REPORT pattern: instr §6.1.3 step 3's 0.9999 → 0.999, or to "no 30-consecutive-frame static dwell" per spec §8.1's underlying intent). If approved, PRE-A passes; PRE-B can proceed.
+
+(b) **Substrate-as-bug classification.** The explorer's transit→close_up handoff produces a frame-level duplicate that the strict reading of instr §6.1.3 step 3 forbids. Fix the explorer to introduce a small motion between transit-end and close-up-start (so they don't render bit-identically). This is an explorer-change ticket that would affect both v0 inheritance and v1 substrate; design chat would scope. If approved, CC re-runs PRE-A on the modified explorer.
+
+Reviewer chat decides between (a) and (b). CC does not propose a default.
+
+### Driver-bug note (already fixed; not a design question)
+
+CC's first PRE-A run produced `NaN` for §5.1-§5.3 because the `ContinuousMotionExplorer` observation dict does not populate `close_up_ordinal`, and the canonical-window construction in `_build_embeddings_by_item` requires it. CC added a post-collection `_assign_close_up_ordinals` helper to `run_pre_a_substrate.py` that scans the annotation stream and assigns ordinals (0..N) within each contiguous close-up segment. Re-ran with `--skip-collect --skip-encode` against the existing data; §5.1-§5.3 produced the values reported above. This is a driver-only change; not a design question. The same helper will be used by PRE-B / Stage A / Stage B annotation pipelines so all subsequent per-(item, ordinal) eval has ordinals populated.
+
+### Operational state
+
+- Working tree: edits to `v1/scripts/run_pre_a_substrate.py` (driver), new files under `v1/data/pre_a_calibration/` and `v1/results/inner_pam_v1/pre_a_substrate/`. No edits to spec / v0 sources.
+- Logs: `v1/logs/pre_a_20260519_041757.log`.
+- Push hold: in effect. No commits.
+- No running jobs. PRE-B / PRE-C not launched. AI2-THOR controller stopped cleanly.
+- Disk: 305 GB free at `/mnt/c` (well above 50 GB instr §0.1 threshold).
+- GPU: idle.
+
+### Outstanding for design chat
+
+1. **Finding 3 classification (a) vs (b) above.**
+2. If (a): the threshold value to recalibrate to. Suggested empirical range from this run: max-non-failing-pair cosine is ~0.999 (consistent with the v0 STOP_REPORT recalibration band). The 30-frame-static-dwell check could also be reformulated as "no run of N consecutive frames all with pairwise cos > T" — direct expression of spec §8.1's "no static dwell" intent.
+3. Whether PRE-A's §5.1 = 0.9999 (effectively bit-identical cross-loop rendering at the same pose) is itself worth recording as a v1 substrate finding analogous to v0 finding 8 — different sign, same class. Not blocking; record for the v1 closing.
+
+Per the execution directive, push hold remains; CC does not proceed to PRE-B until reviewer-chat sign-off on finding 3.
+
+---
+
+## v1 implementation scaffold — built + PRE-D PASS, AI2-THOR stages pending (2026-05-19)
+
+**Scope.** First CC working session on v1: build out the implementation per the v1 spec passes 1+2 and the experiment-instructions document; run all unit tests + the PRE-D architectural property assertions; defer PRE-A / PRE-B / PRE-C and arm training (those require AI2-THOR + DINOv2 on the Windows GPU side; this CC session ran in WSL2 CPU). The implementation is reviewer-sign-off-pending per instr §14 — adversarial review can now proceed against runnable code rather than spec-only.
+
+**Built (51 v1 unit tests PASS; 21 v0 tests still PASS = no regression).**
+
+- `v1/src/config.py` — all ARCHITECTURE + SCAFFOLDING constants tagged per instr §11 inventory; PRE-B / PRE-C lock files (`get_v1_perturbation_mechanism()`, `get_v1_frames_per_loop()`, `get_v1_decoder_n_layers()`) raise descriptive `FileNotFoundError` until preflight writes them (spec §7.2.1 "no silent default" rule).
+- `v1/src/predictor/inner_pam_v1_shared.py` — `path_prediction_loss` (Form 1 Gaussian NLL, mean-over-K, target-detached per spec §4.1), `clamp_log_var`, parameter-count helpers.
+- `v1/src/predictor/inner_pam_v1_primary.py` — K learnable output queries + `nn.TransformerDecoder` cross-attention + per-K-position scalar log-var head (spec §7.2). `decoder_n_layers` is a required kwarg; default-None raises `ValueError`.
+- `v1/src/predictor/inner_pam_v1_ablation1.py` — same as Primary except `self.shared_log_var = nn.Parameter(torch.zeros(1))` replaces the per-K log-var head; forward broadcasts to (B, K) before clamp (spec §7.3).
+- `v1/src/predictor/inner_pam_v1_ablation2.py` — subclasses `v0.src.predictor.inner_pam.InnerPAM` verbatim with a class-name-only override (spec §7.4.2 + instr §3.3); v0 architecture inherited unchanged.
+- `v1/src/trainer/online_trainer_v1.py` — arm-agnostic Stage A / Stage B trainer, `skip-until-W` early-trajectory contract (instr §4.3), per-checkpoint JSON + per-(item, ordinal) callback (instr §4.6), stop conditions (NaN/Inf loss/grad → write `TRAINING_STOPPED.txt` + raise `TrainingStopped`), AdamW + grad-clip per instr §4.4. Stream contract verifies L2 norms in 1±1e-5 on a 1000-frame sample before training starts. Resume helper `OnlineTrainerV1.from_checkpoint` uses `torch.load(..., weights_only=False)` because the checkpoint payload includes numpy RNG state (commented; trusted-source-only).
+- `v1/src/eval/per_item_ordinal_metrics.py` — canonical-pair construction from JSONL annotations, per-(item, ordinal) checkpoint evaluation, drift metrics (mean drift = cosine distance between K-averaged means; variance drift = log_var(B) − log_var(A) mean-over-K per v0 BCDD sign convention), bit-identical-pair pixel-MD5 helper (instr §5.1), and body-representation-cosine extraction (spec §10.3 metric 7; reuses `input_proj` + `pos_emb` + `encoder` attributes shared by all three arms).
+- `v1/src/eval/arm_comparison_matrix.py` — per-(item, ordinal) × arm matrix JSON + CSV writers (instr §5.3 / §9.1).
+- `v1/src/eval/threshold_calibration.py` — percentile-anchored stability + differentiation thresholds (75/25 SCAFFOLDING per instr §5.4 step 3); per-cell classification into stable / differentiated / coupling / indeterminate.
+- `v1/src/preflight/pre_a_substrate_verification.py` — §5.1-5.3 checks + the eight v0-finding default checks (instr §6.1.3); pure numpy, no AI2-THOR dependency in the assertion code (the driver script will own AI2-THOR).
+- `v1/src/preflight/pre_b_perturbation_mechanism.py` — candidate-priority ordering, `evaluate_candidate` against the spec §8.2.1 four criteria (magnitude / locality / reproducibility / no-substrate-corruption), `select_candidate` that respects priority order. The driver script will run AI2-THOR for the candidate measurements.
+- `v1/src/preflight/pre_c_decoder_layer_calibration.py` — loss-curve smoothness ratio + mean pairwise output-query cosine; selection rule (best-differentiation-within-stable, tie-break smaller L_d within 0.02 band) per instr §6.3.2.
+- `v1/src/preflight/pre_d_arch_property_assertions.py` — implements every assertion in spec §7.2.4 / §7.3.4 / §7.4.4, plus the §6.4.4 forward-pass smoke check + the §3.5 parameter-count summary. P3 is verified via autograd: zero gradient on `decoded[:, j, :]` for j ≠ k when backprop'ing from `log_var[:, k]`.
+- `v1/scripts/` — `run_pre_d_arch_assertions.py`, `run_arm_train.py`, `run_per_item_ordinal_eval.py`, `run_threshold_calibration.py`. All set `sys.path` to repo root, so they run from any cwd. `run_pre_d_arch_assertions.py` exits 1 if any assertion fails (spec §11.2 stop condition surface).
+- `v1/tests/` — 51 tests covering predictor shapes / param counts / per-K isolation / decoder-None-raise / loss value-correctness / encoder-architecture-shared-across-arms / trainer skip-until-W / trainer resume / preflight PRE-A pass + fail / PRE-B candidate selection / PRE-C smoothness + selection / PRE-D end-to-end / evaluation matrix CSV.
+
+**PRE-D run (decoder_n_layers=2 placeholder; PRE-C not yet run).**
+
+All 11 assertions PASS across all three arms. Report: [`v1/results/inner_pam_v1/pre_d_arch_assertions/pre_d_report.json`](v1/results/inner_pam_v1/pre_d_arch_assertions/pre_d_report.json). Parameter counts: [`v1/results/inner_pam_v1/pre_d_arch_assertions/parameter_counts.json`](v1/results/inner_pam_v1/pre_d_arch_assertions/parameter_counts.json).
+
+| arm | parameter count | spec §7.2.5 estimate | ±10% band | within tolerance? |
+|---|---:|---:|---|---|
+| Primary (L_d=2) | 22,084,609 | ~15.3M | [13.8M, 16.8M] | **NO** |
+| Ablation 1 (L_d=2) | 22,084,097 | ~Primary | — | follows Primary |
+| Ablation 2 | 21,555,728 | ~16.8M | [15.1M, 18.5M] | **NO** |
+
+**Per-module breakdown (Primary at L_d=2, the canonical PRE-D run).** Encoder 12,609,536 (4 layers × 3,152,384 each = self-attn 1,050,624 + FFN 2,099,712 + norms 2,048); decoder 8,408,064 (2 layers × 4,204,032 each = self-attn 1,050,624 + cross-attn 1,050,624 + FFN 2,099,712 + norms 3,072); output_proj_mean 525,312 (512→1024 + bias); input_proj 524,800 (1024→512 + bias); output_queries 8,192 (16×512); pos_emb 8,192 (16×512); output_proj_log_var 513 (512→1 + bias). Total 22,084,609. Ablation 1 identical except output_proj_log_var (513) is replaced by shared_log_var (1 scalar), so 22,084,097 — exactly Primary − 512 at every L_d. Ablation 2 (v0 verbatim): encoder 12,609,536 + output_proj 8,413,200 + input_proj 524,800 + pos_emb 8,192 = 21,555,728. Full breakdown in [`pre_d_report.json`](v1/results/inner_pam_v1/pre_d_arch_assertions/pre_d_report.json) and [`parameter_counts.json`](v1/results/inner_pam_v1/pre_d_arch_assertions/parameter_counts.json).
+
+**Spec §7.2.5 correction note (recorded; not yet edited in the spec itself).**
+
+**Source of error.** Spec §7.2.5 listed per-encoder-layer cost as "~2.1M" — that is the FFN block alone, omitting the ~1.05M self-attention QKVO. The same omission applies to the decoder: the spec mentions self-attention 1.05M + cross-attention 1.05M + FFN 2.1M but then sums these to "~3.2M" per layer (a 1.0M arithmetic error). Compounded across 4 encoder layers + L_d decoder layers, this underestimates the body by 4.2M + 1.0·L_d M.
+
+**Corrected estimates (empirical, from PRE-D + L_d envelope).**
+
+| arm / config | spec §7.2.5 quoted | empirical | spec instr §3.5 ±10% band (corrected) |
+|---|---:|---:|---|
+| Primary L_d=1 | (not listed) | 17,880,577 | [16.1M, 19.7M] |
+| Primary L_d=2 | ~15.3M | 22,084,609 | [19.9M, 24.3M] |
+| Primary L_d=3 | (not listed) | 26,288,641 | [23.7M, 28.9M] |
+| Primary L_d=4 | ~21.6M | 30,492,673 | [27.4M, 33.5M] |
+| Ablation 1 (any L_d) | ~Primary | Primary − 512 | within Primary band |
+| Ablation 2 | ~16.8M | 21,555,728 | [19.4M, 23.7M] |
+
+Each Primary decoder layer contributes 4,204,032 params; the encoder body contributes 12,609,536 once regardless of L_d. The Ablation 1 − Primary delta is exactly −512 (per-K `nn.Linear(512, 1)` = 513 params replaced by `nn.Parameter(torch.zeros(1))` = 1 param). Full envelope in [`parameter_counts_l_d_envelope.json`](v1/results/inner_pam_v1/pre_d_arch_assertions/parameter_counts_l_d_envelope.json).
+
+**Spec text not edited.** Per instr §1.5 ("only the design chat edits spec"), the spec file (`WEFT_INNER_PAM_v1_Spec_pass2_sections_7_to_11.md` §7.2.5) is left as-is. This HANDOFF correction note is the artifact; reviewer chat decides whether to issue a spec patch at v1 sign-off or carry the discrepancy as a known-erratum in the v1 closing.
+
+**Instr §3.5 update staged (not committed; push hold remains).** Targets updated to the measured values, ±10% tolerance band preserved (the band is fine in principle; the targets it was checking were wrong). New text in `v1/WEFT_INNER_PAM_v1_EXPERIMENT_INSTRUCTIONS.md` §3.5. Reviewer chat approves at v1 sign-off.
+
+**Decoder L_d sensitivity for PRE-C selection.** The realistic capacity range across L_d ∈ {1, 2, 3, 4} is now visibly 17.9M → 30.5M, not 11M → 22M as the spec implied. All four candidates fit on the RTX 4080 Super (16GB VRAM) for training (predictor only, no encoder gradients), so compute is not the constraint — but reviewer chat should have this in hand when reviewing PRE-C's best-differentiation-within-stable disposition (instr §6.3.2), which intentionally prefers richer capacity to narrowly-stable.
+
+**PRE-D's runtime check.** The `run_pre_d_arch_assertions.py` script does not enforce the ±10% gate (the architectural assertions P1-P4, A1.1-A1.4, A2.1-A2.3 are what gate PRE-D). It records empirical counts + breakdown + envelope, and lets reviewer chat decide whether the corrected targets in instr §3.5 are the canonical reference going forward.
+
+**Not yet run (require AI2-THOR + DINOv2 on Windows GPU side).**
+
+- PRE-A: substrate verification on v1 substrate (depends on AI2-THOR controller).
+- PRE-B: perturbation mechanism selection — four candidates, ~3-4 hr wall-clock per instr §6.2.4.
+- PRE-C: decoder layer count calibration on a 30k-frame Stage A subset; ~2 hr per instr §6.3.3.
+- Shared Stage A + Stage B frame collection + DINOv2 encoding.
+- Three-arm sequential training (~10 hr × 3 = ~30 hr per instr §17 estimate).
+- Per-(item, ordinal) evaluation + threshold calibration + verdict recommendation.
+
+The instructions document (§14) specifies CC implementation begins only after reviewer sign-off. This session built the implementation scaffold so the reviewer can review runnable code against the spec; the AI2-THOR-bound stages remain gated on review + sign-off.
+
+**Operational state.** Working tree contains new files only (no edits to v0 sources). Push hold in effect. `requirements.txt` unchanged. PyTorch 2.6+ `weights_only=True` default observed — trainer's resume path uses `weights_only=False` with a clearly-commented justification.
+
+**Suggested commit messages for when the hold lifts (per instr §12.5):**
+
+1. `infra(v1): bootstrap src/predictor/inner_pam_v1_*.py, src/preflight/, src/eval/, src/trainer/`
+2. `feat(predictor-v1): InnerPAM_v1_Primary with K output queries and per-K scalar variance`
+3. `feat(predictor-v1): InnerPAM_v1_Ablation1 with shared scalar log-variance`
+4. `feat(predictor-v1): InnerPAM_v1_Ablation2 inheriting v0 InnerPAM`
+5. `feat(trainer-v1): online_trainer_v1.py with stage-A→stage-B per-arm loop, skip-until-W contract, stop conditions`
+6. `feat(eval-v1): per_item_ordinal_metrics.py + arm_comparison_matrix.py + threshold_calibration.py for the seven §10.3 metrics`
+7. `feat(preflight): pre_a_substrate + pre_b_perturbation + pre_c_decoder_calibration + pre_d_arch_assertions modules`
+8. `feat(scripts-v1): run_pre_d_arch_assertions.py + run_arm_train.py + run_per_item_ordinal_eval.py + run_threshold_calibration.py`
+9. `test(v1): 51 unit tests across predictor / loss / trainer / evaluation / preflight`
+10. `exp(pre_d): architectural property assertions all PASS for 3 arms at L_d=2 placeholder; parameter-count discrepancy flagged in HANDOFF`
+
+**Outstanding questions for reviewer chat.**
+
+- Parameter-count discrepancy with spec §7.2.5 / instr §3.5 ±10% band. Spec arithmetic, not implementation; should the estimate be revised in spec (and ±10% band re-anchored), or treated as a stop condition?
+- Per instr §1.5 / instr §14, the implementation is presented for review; should review run before PRE-A starts on the Windows side?
+
+---
+
 **Status at end of session 7 (2026-05-14, v0 verdict RECORDED):** **V2 — Shape-learning falsified, with coupling-mechanism caveat.** Per the reviewer-chat-locked branch logic, `reading_i_supported` → V2 with caveat. The path-prediction mechanism fit and learned (loss decreased, cluster structure formed on TV/Dresser/Sofa, variance head learned); the failure is specifically that the per-K-step isotropic scalar variance's gradient propagates uniformly across the predictor's state rather than tracking the inputs that produced surprise. Decisive evidence: ord 9 and ord 10 of Bed's close-up are pixel-MD5 identical across loops 30/50/75/100 with cos(loop_30, loop_100) = 1.000000, yet their variance drifts (-0.44, -0.41 nat) sit inside Bed's 2σ uniform-drift band — variance change without input change can only come from gradient updates on other frames. Supplementary Pearson r = -0.0128 (p = 0.97) corroborates. Sharper diagnosis than the spec's existing §11 V2 framing anticipates: the architectural lever v1 should target is uniform gradient propagation in the variance head. Sofa ord-1's +0.056 widening (only positive drift across all 44 (item, ordinal) pairs) carried forward as a v1 disambiguation question — localised architectural signal vs n=1 noise; V2 stands independently because Bed's coupling result doesn't depend on Sofa-ord-1's status. Spec §11 verdict block + §5.8 cross-scope-locality protocol committed at `c757d67`. Working tree clean; push hold in effect.
 
 **Status at end of session 7 (post-per-ordinal-input-variation addendum, superseded by verdict-recording above):** Ninth STOP, **verdict-branch pointer = `reading_i_supported`**. Reviewer-chat-authorised disambiguator on existing data: at Bed's close-up ords 9 and 10 — established as pixel-MD5 identical across Stage B loops 50/75/100 — the loop-30 frames are ALSO pixel-MD5 identical to those, and `cos(loop_30 embedding, loop_100 embedding) = 1.000000` exactly. Yet variance drift at those ordinals = **-0.4356** and **-0.4059** nat, both inside Bed's 2σ uniform-drift band [-0.488, -0.358]. Drift-under-zero-input-variation observed on perfectly invariant Bed poses. Supplementary Pearson r = -0.0128 (p = 0.97), far outside any non-zero correlation. The mechanism (i) interpretation — cross-item coupling shifting Bed's variance estimate via global gradient flow regardless of Bed's per-pose inputs — is supported. The mechanism (ii) interpretation — predictor responding to input variation — is incompatible with these specific ordinals' data (zero input variation but non-zero drift). All three sanity checks PASS (frame indices match `variance_by_ordinal.json`; embedding L2 norms in tolerance; ord 9/10 MD5s recomputed from PNGs match `within_loop_invariance.json`). **CC does not record the verdict; the pointer is a mechanical summary for the fresh reviewer chat that closes v0.** Working tree clean; push hold in effect.

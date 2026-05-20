@@ -1,0 +1,58 @@
+{
+  "candidate": "hand_built_texture_swaps",
+  "measurements": {
+    "candidate": "hand_built_texture_swaps",
+    "perturbed_item_cosine_drops": {
+      "3": 0.0,
+      "4": 0.0
+    },
+    "unperturbed_item_cosine_drops": {
+      "1": 0.0,
+      "2": 0.0,
+      "5": 0.0
+    },
+    "reproducibility_run1": {
+      "3": 0.0,
+      "4": 0.0
+    },
+    "reproducibility_run2": {
+      "3": 0.0,
+      "4": 0.0
+    },
+    "eight_finding_checks": {
+      "mechanism_api_success": false,
+      "substrate_passes_locality_guard": true
+    },
+    "frames_per_loop": 0,
+    "api_success": false
+  },
+  "verdict": {
+    "magnitude_ok": false,
+    "locality_ok": true,
+    "reproducibility_ok": true,
+    "substrate_ok": false,
+    "api_ok": false,
+    "overall_pass": false,
+    "detail": {
+      "perturbed_item_cosine_drops": {
+        "3": 0.0,
+        "4": 0.0
+      },
+      "unperturbed_item_cosine_drops": {
+        "1": 0.0,
+        "2": 0.0,
+        "5": 0.0
+      },
+      "reproducibility_diffs": [
+        0.0,
+        0.0
+      ],
+      "eight_finding_checks": {
+        "mechanism_api_success": false,
+        "substrate_passes_locality_guard": true
+      },
+      "frames_per_loop": 0,
+      "api_success": false
+    }
+  }
+}

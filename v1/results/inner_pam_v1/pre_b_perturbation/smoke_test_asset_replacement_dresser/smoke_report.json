@@ -1,0 +1,66 @@
+{
+  "timestamp_utc": "2026-05-19T05:36:00+00:00",
+  "outcome": "STOP_AND_REPORT_substrate_property",
+  "outcome_summary": "No simple AI2-THOR API path on this build produces a visual asset replacement at a specific coordinate. DisableObject and HideObject are render-NO-OP on this ai2thor==5.0.0 + ProcTHOR-10K build, contrary to their documented behaviour; RemoveFromScene hangs indefinitely; CreateObject fails Unity-side. The mechanisms that SHOULD have worked do not, and the failure mode is unexpected substrate behaviour per the design-chat stop-and-report directive (2026-05-19).",
+  "authorisation": "Design-chat 2026-05-19: asset-replacement smoke test, single item (Dresser), single path, no selection commitment, no band amendment.",
+  "ai2thor_path_attempted_summary": {
+    "1_RemoveFromScene": {
+      "purpose": "remove the Dresser entirely from the scene (design-chat primary path)",
+      "lastActionSuccess": "TIMEOUT (no return after 90s)",
+      "outcome": "unusable — action hangs indefinitely; verified by 90s wall-clock timeout with no return from controller.step",
+      "evidence": "isolated probe at 2026-05-19 ~04:47Z showed: house load 1.4s, controller up 5.6s, Pass step 0.1s, then RemoveFromScene never returned within 90s"
+    },
+    "2_SpawnTargetCircle": {
+      "purpose": "spawn a substitute asset at the Dresser's coordinates (design-chat primary path)",
+      "lastActionSuccess": false,
+      "errorMessage": "circle failed to spawn",
+      "outcome": "unusable — SpawnTargetCircle is AI2-THOR's nav-target indicator placement, not a generic asset spawner; documented purpose is to mark interaction targets for object-nav tasks"
+    },
+    "3_CreateObject": {
+      "purpose": "fall-back path per design-chat (CreateObject with built-in asset type)",
+      "lastActionSuccess": false,
+      "errorMessage": "ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. Parameter name: index",
+      "outcome": "unusable — Unity-side error on this ProcTHOR seed-7 scene; the prefab pool does not expose the requested asset type (tried 'ArmChair') for fresh creation"
+    },
+    "4_DisableObject_plus_PlaceObjectAtPoint": {
+      "purpose": "next-simplest viable path: render-disable the Dresser, then relocate an existing Chair to the Dresser's position",
+      "DisableObject_lastActionSuccess": true,
+      "DisableObject_metadata_effect": "Dresser metadata flag 'visible' became False",
+      "DisableObject_render_effect": "NONE — pre/post frame pixel-sum-diff is 0 across multiple isolated probes; Dresser still renders identically",
+      "PlaceObjectAtPoint_lastActionSuccess": false,
+      "PlaceObjectAtPoint_errorMessage": "Spawn area not clear (wall|7|7.07|0.00|7.07|3.53) is in the way), can't place object at that point",
+      "outcome": "unusable — DisableObject is render-NO-OP on this build (sets interaction-validity flag only); PlaceObjectAtPoint blocked by the wall the Dresser is mounted against"
+    },
+    "5_HideObject": {
+      "purpose": "alternative render-disable action (auxiliary probe)",
+      "lastActionSuccess": true,
+      "render_effect": "NONE — pre/post frame pixel-sum-diff is 0; HideObject also render-NO-OP on this build",
+      "outcome": "unusable for the same reason as DisableObject"
+    }
+  },
+  "measurements_per_user_directive": {
+    "perturbed_item_id": 3,
+    "perturbed_item_name": "Dresser",
+    "cross_stage_cosine_drop_at_dresser_run1": 0.0,
+    "cross_stage_cosine_drop_at_dresser_run2": 0.000001192,
+    "locality_drops_run1": {
+      "1_Bed": 0.0,
+      "2_DiningTable": 0.0,
+      "4_Sofa": 0.0,
+      "5_Television": 0.0
+    },
+    "reproducibility_diffs": {
+      "1": 0.0, "2": 0.0, "3": 0.000001192, "4": 0.0, "5": 0.0
+    },
+    "reproducibility_pass": true,
+    "api_success_summary_per_call_per_run": "see ai2thor_path_attempted_summary block above; both runs failed PlaceObjectAtPoint at the wall-occupancy check despite DisableObject succeeding",
+    "interpretation": "The cross-stage cosine drop at Dresser is 0.0 (not 0.3-0.5 as CC's pre-smoke estimate guessed) because the perturbation MECHANICALLY DID NOT TAKE EFFECT on the rendered scene. The 0.0 value does NOT mean 'asset replacement produces no magnitude'; it means 'no asset replacement actually happened on this build'. Reproducibility is technically 'pass' (both runs produced identical 0.0 results because both runs took identical no-op code paths) but this is a degenerate pass — uninformative about whether a working asset-replacement mechanism would reproduce."
+  },
+  "unexpected_substrate_property": {
+    "summary": "DisableObject and HideObject are documented as render-affecting actions in AI2-THOR's API surface but on this ai2thor==5.0.0 + ProcTHOR-10K build they are render-NO-OP. They succeed at the metadata layer (visible=False in objects[].visible) but the camera continues to render the disabled/hidden object pixel-identically.",
+    "v0_precedent_class": "v0 substrate findings 5 ('camera elevation forceAction=True failure mode') and 8 ('cross-room visual leakage') are the same class of finding: documented AI2-THOR behaviour that doesn't hold on this specific build. This new finding (DisableObject/HideObject render-NO-OP) is a candidate v1 substrate finding 9 if design chat chooses to formalise it.",
+    "verification_method": "isolated probe captured frames at the Dresser's canonical viewing pose (route_phase2.json: x=6.0, y=0.901, z=3.0, heading 132.47°) before vs after DisableObject; pixel-sum-diff = 0 to byte precision across multiple runs; frames also saved to /tmp/dresser_before.png and /tmp/dresser_after.png are bit-identical (61256 bytes each)"
+  },
+  "compute_used": "well within 2-hour budget: ~30 minutes of API exploration + 2 controller-init + smoke-pass cycles (~5 minutes wall-clock). Single GPU instance (DINOv2 fp16), single AI2-THOR controller at a time.",
+  "recommendation_to_design_chat": "Asset replacement as a v1 perturbation mechanism is not achievable on this ai2thor==5.0.0 + ProcTHOR-10K build via the simple-API path category. Implementing it would require one of: (a) custom Unity scripting to bypass the render-NO-OP behaviour of DisableObject/HideObject, (b) fixing RemoveFromScene's hang via AI2-THOR upstream investigation, (c) procthor-10k revision downgrade to the older ab3cacd revision (the warning that fires at every house load suggests this is even feasible), or (d) deferring asset-replacement to a v2 substrate investment alongside body-family work. CC does not propose a default."
+}

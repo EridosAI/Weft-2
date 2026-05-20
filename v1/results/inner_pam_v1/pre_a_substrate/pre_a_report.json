@@ -1,0 +1,149 @@
+{
+  "all_passed": true,
+  "timestamp_utc": "2026-05-18T20:36:39.103765+00:00",
+  "collection_summary": {
+    "frame_count": 1801,
+    "skipped": true
+  },
+  "checks": [
+    {
+      "name": "finding_1_python_version",
+      "value": 12.03,
+      "threshold": 12.03,
+      "threshold_direction": "equal",
+      "passed": true,
+      "notes": "actual=3.12.3, expected (3, 12, 3)"
+    },
+    {
+      "name": "finding_2_embeddings_full_population",
+      "value": 0.0,
+      "threshold": 0,
+      "threshold_direction": "equal",
+      "passed": true,
+      "notes": "zero_rows=0, l2_norm_violations=0"
+    },
+    {
+      "name": "5.1_cross_instance_stability",
+      "value": 0.9999360275268555,
+      "threshold": 0.75,
+      "threshold_direction": "greater",
+      "passed": true,
+      "notes": "n_pairs=100"
+    },
+    {
+      "name": "5.2_cross_element_distinguishability",
+      "value": 0.48578380346298217,
+      "threshold": 0.6,
+      "threshold_direction": "less",
+      "passed": true,
+      "notes": "n_pairs=10"
+    },
+    {
+      "name": "5.3_combined_gap",
+      "value": 0.5141522240638734,
+      "threshold": 0.15,
+      "threshold_direction": "greater",
+      "passed": true,
+      "notes": ""
+    },
+    {
+      "name": "finding_3_continuous_motion",
+      "value": 25.0,
+      "threshold": 0,
+      "threshold_direction": "equal",
+      "passed": true,
+      "raw_strict_check_passed": false,
+      "classification": {
+        "pass": true,
+        "total_pairs_above_threshold": 25,
+        "transit_to_closeup_count": 25,
+        "other_pattern_count": 0,
+        "other_pattern_samples": [],
+        "max_consecutive_run": 1,
+        "items_seen": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "loops_seen": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "design_chat_classification": "substrate-as-feature (2026-05-19)",
+        "evidence_trace_5x5x1": "25 = 5 items \u00d7 5 complete loops \u00d7 1 handoff per (item, loop) \u2014 ContinuousMotionExplorer locks heading to viewing_heading during the final transit micro-step, then close-up begins at the same pose",
+        "v0_precedent": "STOP_REPORT.md (seed-7 rerender, 2026-05-12; 0.9999 \u2192 0.999)",
+        "notes": "transit\u2192close_up handoffs: 25 (structural-by-design segment-handoff duplicates; audit derivation 5 items \u00d7 N complete loops \u00d7 1 handoff per item-loop); other-pattern pairs: 0; max consecutive-pair run: 1 (30-frame dwell would be \u226529)"
+      },
+      "notes": "pairs_with_cos>0.999: 25/1800"
+    },
+    {
+      "name": "finding_4_substrate_as_feature_vs_bug",
+      "interpretive": true,
+      "default_classification": "substrate-as-feature unless positive bug evidence",
+      "pass": true,
+      "notes": "no observed substrate properties to classify yet"
+    },
+    {
+      "name": "finding_5_camera_elevation",
+      "pass": true,
+      "floor_y": 0.901,
+      "notes": "explorer sets agent y to floor-y modal value; no forceAction"
+    },
+    {
+      "name": "finding_6_floor_y_derivation",
+      "pass": true,
+      "floor_y": 0.901
+    },
+    {
+      "name": "finding_7_view_through_pose",
+      "pass": true,
+      "viewing_position": {
+        "x": 8.25,
+        "y": 0.9009997844696045,
+        "z": 4.75
+      },
+      "viewing_heading_deg": 117.56511489014792,
+      "source": "v0/data/route_phase2.json (inherited)"
+    },
+    {
+      "name": "finding_8_cross_room_visual_leakage",
+      "pass": true,
+      "deferred_to_pre_b": true,
+      "notes": "v1 perturbation mechanism not yet selected; checked at PRE-B"
+    }
+  ],
+  "floor_y_info": {
+    "floor_y": 0.901,
+    "modal_y": 0.901,
+    "modal_count": 1361,
+    "n_positions": 1361,
+    "y_distribution_top3": [
+      [
+        0.901,
+        1361
+      ]
+    ],
+    "pass": true
+  },
+  "view_through": {
+    "pass": true,
+    "viewing_position": {
+      "x": 8.25,
+      "y": 0.9009997844696045,
+      "z": 4.75
+    },
+    "viewing_heading_deg": 117.56511489014792,
+    "source": "v0/data/route_phase2.json (inherited)"
+  },
+  "thresholds": {
+    "cross_instance_stability_min": 0.75,
+    "cross_element_distinguishability_max": 0.6,
+    "combined_gap_min": 0.15
+  }
+}

@@ -237,4 +237,18 @@ Push hold remains in effect through v1 and v2 design. This document is instituti
 
 ---
 
+## 10. Inherited refinement candidates from v1 execution
+
+Items surfaced during v1 execution that don't belong in v1's scope but are candidates for v2 refinement. Each is recorded with the originating v1 evidence so v2 design can revisit without re-discovery.
+
+### 10.1 Run-length-aware finding 3 substrate check
+
+**From v1 PRE-A (2026-05-19).** Instr §6.1.3 step 3 (continuous-motion check) is currently a strict per-pair cosine threshold (`FINDING_3_COS_MAX = 0.999` in v1, recalibrated from v0's 0.9999 — see v0 STOP_REPORT precedent). The strict per-pair form catches structural-by-design transit→close_up segment-handoff duplicates (5 items × 5 loops × 1 pair = 25 duplicates per 5-loop calibration collection) that are *not* the 30-frame static dwell v0 substrate finding 3 was actually about. The threshold recalibration is the v1 workaround; the underlying check shape is what's wrong.
+
+**v2 candidate.** Reformulate finding 3 as a *run-length-aware* check: "no run of N consecutive frames with all pairwise cos > T" (with N = 30 expressing v0 finding 3's actual concern, and T at or near 0.999). This separates legitimate 30-frame static dwell (which N catches) from structural single-pair segment handoffs (which N excludes). Threshold recalibration no longer needs to absorb the segment-handoff signal.
+
+**Scope.** Substrate-verification refinement, not architectural. Cheap to implement; reviewer-chat decision at v2 design time on whether to ship in v2 spec or treat as a separate substrate-tooling refinement. Not in v1 scope; v1's threshold recalibration covers the immediate need.
+
+---
+
 *End of v2 design intake (pre-v1-verdict draft). Companion to `WEFT_INNER_PAM_v0_CLOSING.md`, the forthcoming `WEFT_INNER_PAM_v1_Spec.md`, and the v1 closing document that will be produced after v1's verdict lands. This document is revisited and refined after v1's verdict; the body-architecture analysis itself is preserved as v2's design starting point regardless of v1 outcome.*

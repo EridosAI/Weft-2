@@ -1,0 +1,58 @@
+{
+  "candidate": "per_object_material_setting",
+  "measurements": {
+    "candidate": "per_object_material_setting",
+    "perturbed_item_cosine_drops": {
+      "3": 0.01911485195159912,
+      "4": 0.02202761173248291
+    },
+    "unperturbed_item_cosine_drops": {
+      "1": 0.014171838760375977,
+      "2": 0.017037272453308105,
+      "5": 0.016130685806274414
+    },
+    "reproducibility_run1": {
+      "3": 0.01911485195159912,
+      "4": 0.02202761173248291
+    },
+    "reproducibility_run2": {
+      "3": 0.0035325288772583008,
+      "4": 0.02214890718460083
+    },
+    "eight_finding_checks": {
+      "mechanism_api_success": true,
+      "substrate_passes_locality_guard": true
+    },
+    "frames_per_loop": 0,
+    "api_success": true
+  },
+  "verdict": {
+    "magnitude_ok": false,
+    "locality_ok": false,
+    "reproducibility_ok": false,
+    "substrate_ok": true,
+    "api_ok": true,
+    "overall_pass": false,
+    "detail": {
+      "perturbed_item_cosine_drops": {
+        "3": 0.01911485195159912,
+        "4": 0.02202761173248291
+      },
+      "unperturbed_item_cosine_drops": {
+        "1": 0.014171838760375977,
+        "2": 0.017037272453308105,
+        "5": 0.016130685806274414
+      },
+      "reproducibility_diffs": [
+        0.01558232307434082,
+        0.00012129545211791992
+      ],
+      "eight_finding_checks": {
+        "mechanism_api_success": true,
+        "substrate_passes_locality_guard": true
+      },
+      "frames_per_loop": 0,
+      "api_success": true
+    }
+  }
+}
