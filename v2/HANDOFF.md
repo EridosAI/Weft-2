@@ -6,7 +6,9 @@
 
 Sanity sweep: all 5 spec axes 3/3 within 10% tolerance (magnitude, locality, continuity, repetition period, manifold dim) + fidelity supplementary 3/3. Stream contract PASS (L2 norms 1±1e-5). Arch-forward smoke PASS (3 arms finite). `V2_TRAINING_STEPS = 10000` (loss-plateau-calibrated; lock-file-gated via `config.get_v2_training_steps()`). Outputs in `results/pre_a/`; `data/embedding_U.npy` persisted (spec §5.5).
 
-Next sub-phase: **0.2 — V2-PRE-C** (architectural assertions on v2 substrate). Note: §7.2 = 11 assertions total (4 Primary + 4 Ablation 1 + 3 Ablation 2), not "33"; build the thin wrapper in `src/preflight/pre_c_arch_assertions_v2_substrate.py` invoking v1's `pre_d_arch_property_assertions.run_assertions` against a mid-parameter synthetic stream at L_d=2.
+**Sub-phase 0.2 (V2-PRE-C) COMPLETE — no STOP triggers.** 11/11 architectural assertions PASS on the v2 substrate (4 Primary + 4 Ablation 1 + 3 Ablation 2; param counts match v1 exactly: 22,084,609 / 22,084,097 / 21,555,728) + v2 synthetic-window forward smoke OK. Wrapper: `src/preflight/pre_c_arch_assertions_v2_substrate.py`; output `results/pre_c/arch_assertions_v2_substrate.json`. Note: v1 has no `run_assertions(predictor, stream)` — it exposes `assert_{primary,ablation1,ablation2}(model, device=...)` with internally-generated random windows; the 11 assertions are architecture-level (input-independent), so PRE-C runs them unchanged AND adds a genuine v2-synthetic-window forward smoke.
+
+Next sub-phase: **0.3 — V2-PRE-B** (worked-example measurement). Locate the DINOv2-on-AI2-THOR embeddings cache (`v0/data/phase2_embeddings/embeddings.npy` per HANDOFF BCDD; verify L2-norm + correct substrate version), apply the §6 protocol over the trajectory collection, produce per-axis empirical distributions, multi-modal detection (§6.3), grid mapping, and W4 detection. STOP if the cache is missing / wrong substrate version (fresh DINOv2 forward-pass is a GPU-side step outside CC scope).
 
 Earlier setup (commit `8ebf068`): v2 directory + reference docs in `v2/docs/`.
 

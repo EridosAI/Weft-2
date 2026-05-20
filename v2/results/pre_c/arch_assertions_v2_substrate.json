@@ -1,0 +1,212 @@
+{
+  "substrate_source": "v2_synthetic",
+  "l_d": 2,
+  "mid_params": {
+    "period_P": 256,
+    "manifold_dim_D": 16,
+    "continuity_center": 24,
+    "fidelity_F": 0.97,
+    "magnitude_M": 0.5,
+    "locality_L": 0.5,
+    "n_repetitions": 12,
+    "eps_std": 0.001,
+    "seed": 7,
+    "perturbed_reps": null
+  },
+  "total_assertions": 11,
+  "all_assertions_passed": true,
+  "v2_substrate_forward_smoke_ok": true,
+  "parameter_counts_match_v1": true,
+  "arms": [
+    {
+      "arm": "primary",
+      "parameter_count": 22084609,
+      "source_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v1/src/predictor/inner_pam_v1_primary.py",
+      "assertions": [
+        {
+          "name": "P1_output_queries_per_K_parameters",
+          "passed": true,
+          "detail": "output_queries.numel()=8192, expected K*hidden=8192"
+        },
+        {
+          "name": "P2_cross_attention_preserves_K_positional_structure",
+          "passed": true,
+          "detail": "decoded.shape=(2, 16, 512), expected (2, 16, 512)"
+        },
+        {
+          "name": "P3_per_K_variance_reads_from_position_distinguished_vectors",
+          "passed": true,
+          "detail": "grad |\u00b7| on j\u2260k: 0.0; on j=k=0: 23.033706665039062"
+        },
+        {
+          "name": "P4_no_pooled_last_token_readout",
+          "passed": true,
+          "detail": "no pooled readout pattern"
+        }
+      ],
+      "random_window_smoke": {
+        "mean_shape": [
+          2,
+          16,
+          1024
+        ],
+        "log_var_shape": [
+          2,
+          16
+        ],
+        "shape_ok": true,
+        "finite_ok": true,
+        "clamp_ok": true,
+        "log_var_min": -0.07303094118833542,
+        "log_var_max": 0.40008679032325745
+      },
+      "v2_synthetic_window_smoke": {
+        "mean_shape": [
+          4,
+          16,
+          1024
+        ],
+        "log_var_shape": [
+          4,
+          16
+        ],
+        "shape_ok": true,
+        "finite_ok": true,
+        "clamp_ok": true,
+        "log_var_min": 0.003905133344233036,
+        "log_var_max": 0.19640323519706726
+      }
+    },
+    {
+      "arm": "ablation1",
+      "parameter_count": 22084097,
+      "source_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v1/src/predictor/inner_pam_v1_ablation1.py",
+      "assertions": [
+        {
+          "name": "A1_1_output_queries_per_K_parameters",
+          "passed": true,
+          "detail": "output_queries.numel()=8192, expected K*hidden=8192"
+        },
+        {
+          "name": "A1_2_cross_attention_preserves_K_positional_structure",
+          "passed": true,
+          "detail": "decoded.shape=(2, 16, 512), expected (2, 16, 512)"
+        },
+        {
+          "name": "A1_3_variance_parameter_shared_across_K",
+          "passed": true,
+          "detail": "shared_log_var.numel()=1, expected 1"
+        },
+        {
+          "name": "A1_4_no_pooled_last_token_readout",
+          "passed": true,
+          "detail": "no pooled readout pattern"
+        }
+      ],
+      "random_window_smoke": {
+        "mean_shape": [
+          2,
+          16,
+          1024
+        ],
+        "log_var_shape": [
+          2,
+          16
+        ],
+        "shape_ok": true,
+        "finite_ok": true,
+        "clamp_ok": true,
+        "log_var_min": 0.0,
+        "log_var_max": 0.0
+      },
+      "v2_synthetic_window_smoke": {
+        "mean_shape": [
+          4,
+          16,
+          1024
+        ],
+        "log_var_shape": [
+          4,
+          16
+        ],
+        "shape_ok": true,
+        "finite_ok": true,
+        "clamp_ok": true,
+        "log_var_min": 0.0,
+        "log_var_max": 0.0
+      }
+    },
+    {
+      "arm": "ablation2",
+      "parameter_count": 21555728,
+      "source_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v0/src/predictor/inner_pam.py",
+      "assertions": [
+        {
+          "name": "A2_1_architecture_matches_v0_verbatim",
+          "passed": true,
+          "detail": "isinstance(output_proj, Linear)=True, out_features=16400, expected 16400"
+        },
+        {
+          "name": "A2_2_pooled_last_token_readout_retained",
+          "passed": true,
+          "detail": "matched [:, -1, :] in v0 InnerPAM source"
+        },
+        {
+          "name": "A2_3_no_output_queries_no_decoder",
+          "passed": true,
+          "detail": "output_queries-prefix keys: False; decoder-prefix keys: False"
+        }
+      ],
+      "random_window_smoke": {
+        "mean_shape": [
+          2,
+          16,
+          1024
+        ],
+        "log_var_shape": [
+          2,
+          16
+        ],
+        "shape_ok": true,
+        "finite_ok": true,
+        "clamp_ok": true,
+        "log_var_min": -1.407165765762329,
+        "log_var_max": 2.257488965988159
+      },
+      "v2_synthetic_window_smoke": {
+        "mean_shape": [
+          4,
+          16,
+          1024
+        ],
+        "log_var_shape": [
+          4,
+          16
+        ],
+        "shape_ok": true,
+        "finite_ok": true,
+        "clamp_ok": true,
+        "log_var_min": -1.4614639282226562,
+        "log_var_max": 2.194776773452759
+      }
+    }
+  ],
+  "parameter_count_check": {
+    "primary": {
+      "v2_count": 22084609,
+      "v1_committed_count": 22084609,
+      "match": true
+    },
+    "ablation1": {
+      "v2_count": 22084097,
+      "v1_committed_count": 22084097,
+      "match": true
+    },
+    "ablation2": {
+      "v2_count": 21555728,
+      "v1_committed_count": 21555728,
+      "match": true
+    }
+  },
+  "instruction_note": "v1 exposes assert_{primary,ablation1,ablation2}(model, device=...), not run_assertions(predictor, stream); the 11 assertions are architectural (input-independent). v2-substrate input is exercised via the v2_synthetic_window_smoke. \u00a77.2 '33 (11x3)' corrected to 11 total (4+4+3)."
+}
