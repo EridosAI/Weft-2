@@ -67,15 +67,13 @@ def main() -> int:
             disc = sum(1 for p in valid if p.get(f"classification_n{n}", {}).get("discriminable"))
             band = sum(1 for p in valid if p.get(f"classification_n{n}", {}).get("band_resident"))
             agg[f"n{n}"] = {"discriminable": disc, "band_resident": band, "total": len(valid)}
-        gain = (agg["n10"]["band_resident"] - agg["n20"]["band_resident"]) / max(len(valid), 1)
-        if agg["n10"]["band_resident"] <= max(1, int(0.2 * len(valid))):
-            framing = "n=10 sufficient (low band-residence at n=10)"
-        elif gain >= 0.1:
-            framing = "n=10 marginal (band-residence drops materially n=10->n=20)"
-        else:
-            framing = "n=20 needed" if agg["n10"]["band_resident"] > 0.5 * len(valid) else "n=10 sufficient"
-        agg["n10_to_n20_band_resident_reduction_fraction"] = round(gain, 3)
+        gain, framing = d2.recommend_framing(
+            agg["n10"]["band_resident"], agg["n20"]["band_resident"], len(valid))
+        agg["n10_to_n20_band_resident_reduction_fraction"] = gain
         agg["recommendation_framing"] = framing
+        # Per-rep Diff_mu variance is the band-residence driver — surface it.
+        all_mu = np.concatenate([np.array(p["diff_mu_values"]) for p in valid]) if valid else np.array([0.0])
+        agg["diff_mu_overall_cv"] = float(all_mu.std() / (abs(all_mu.mean()) + 1e-12))
 
     report = {
         "config": f"10 sweep points x n=20 x Primary @ L_d={d2.L_D_INTERMEDIATE} (intermediate, §11.6)",

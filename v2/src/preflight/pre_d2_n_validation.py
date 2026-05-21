@@ -100,6 +100,32 @@ def classify_head(vals, threshold: float, n: int) -> dict:
             "threshold": threshold, "category": cat}
 
 
+def recommend_framing(band_n10: int, band_n20: int, total: int) -> tuple[float, str]:
+    """Phase 0.5 Input-2 framing from band-residence at n=10 vs n=20 (§7.7 step 6).
+
+    Adds a fourth reading beyond the spec's three (sufficient / marginal /
+    n=20-needed): when n=20 gives no resolution gain AND band-residence is high
+    at both n, the limit is per-rep VARIANCE, not sample size — n=20 is not
+    justified over n=10, but per-point reliability is a §9.8 / closing concern.
+    """
+    gain = (band_n10 - band_n20) / max(total, 1)   # positive = n=20 reduces band-residence
+    if band_n10 <= max(1, int(0.2 * total)):
+        f = "n=10 sufficient (low band-residence at n=10)"
+    elif gain >= 0.1:
+        f = "n=10 marginal (n=20 materially reduces band-residence)"
+    elif gain <= 0.0 and band_n10 >= 0.3 * total:
+        f = ("variance-limited: n=20 gives NO resolution gain over n=10 "
+             "(band-residence not reduced) and band-residence is high at both n -> "
+             "working-region determination is variance-limited, not sample-limited at "
+             "n<=20. n=20 NOT justified over n=10; per-point reliability is a §9.8 / "
+             "closing concern (the architecture's Diff_mu is high-variance at L_d=2).")
+    elif band_n10 > 0.5 * total:
+        f = "n=20 needed (high band-residence at n=10 with resolution gain at n=20)"
+    else:
+        f = "mixed: n=20 marginally changes resolution; design-chat judgement"
+    return round(gain, 3), f
+
+
 def classify_point(diff_mu_vals, diff_sigma_vals, th: dict, n: int) -> dict:
     h_mu = classify_head(diff_mu_vals, th["mu"], n)
     h_sigma = classify_head(diff_sigma_vals, th["sigma"], n)
