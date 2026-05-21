@@ -1,6 +1,27 @@
 # Weft Inner PAM v2 — HANDOFF
 
-## Current state
+## PHASE 0 COMPLETE — hands off to the Phase 0.5 design chat
+
+**Outcome: all seven Phase 0 sub-phases completed; no unresolved STOP.** PRE-A (0.1) · PRE-C (0.2) · PRE-B (0.3) · PRE-D1c (0.4) · PRE-D1a (0.5) · PRE-E (0.6) · PRE-D2 (0.7). Commits: `60c8680, dbe6e34, 65fecf3, c1c9d16, ca3972d, de80e76, 63eb9c5, b2d0ec7`. Arm-runs consumed: PRE-A 1 (smoke), PRE-C 0, PRE-B 0, PRE-D1c 0, PRE-D1a 40, PRE-E 0, PRE-D2 200 = **~241**.
+
+**Regression canaries — all 5 green:** v0 21/21 + v1 51/51 + v2 37/37 = **109 pytest PASS**; v1 PRE-D 11 assertions PASS (`run_pre_d_arch_assertions.py --decoder-n-layers 2`); v0/v1/shared unmodified (`git diff 58e91d7 HEAD -- v0 v1 shared` empty); push hold preserved (no `git push`). Working tree clean.
+
+**Calibrated SCAFFOLDING:** `results/pre_e/scaffolding_calibration.json` (runtime source via `config.load_calibrated_thresholds()`; `config.py` constants synced). τ_W per head μ≈0.0613 / σ≈1.68e-7. `V2_TRAINING_STEPS=10000` (lock file; PRE-A-calibrated, PRE-D1a-confirmed adequate). **Worked-example region:** `results/pre_b/worked_example_region.json`.
+
+### The four Phase 0.5 inputs (§10)
+
+1. **Per-arm cost** (PRE-D1a → `results/pre_d1a/endpoint_stability_report.json`): L_d=1 ≈95s, L_d=4 ≈165s, mean 130s on RTX 4080 Super. Phase 1 n=10 envelope (~5220 arm-runs) ≈ **~8 days serial** — the empirical wall-clock for the density/n trade-off.
+2. **n=10 vs n=20 CI** (PRE-D2 → `results/pre_d2/n_validation_report.json`): **variance-limited** — n=20 gives NO resolution gain over n=10 (band-residence 5/10→6/10); ~50-60% of points band-resident at both n because per-rep Diff_μ CV is high (2.09 overall) with several medians near the threshold. **n=20 not justified over n=10**, but per-point reliability at L_d=2 is fragile (a §9.8 reliability-over-coverage / closing concern). Does not fit the spec's three pre-committed framings — a fourth reading.
+3. **Corner reachability** (PRE-D1c → `results/pre_d1c/corner_reachability_assessment.md`): magnitude/continuity/manifold-dim **near-extreme-low** → §3.5 corner-avoidance does NOT hold on the linear reading; manifold-dim log-scale reads central → **Phase 0.5 must commit the dimensionality sweep scale** before finalising this. Phase 0.5 weighs corner-sampled crosses vs §9.8.
+4. **Worked-example outcome / W4** (PRE-B → `results/pre_b/worked_example_region.json`): magnitude 0.017 (genuinely bimodal, item-specific), locality 0.836, continuity 0.077, manifold-dim global≈13.75, repetition period 360 / coverage 1.0. All 4 determinable axes within §2.4 range → **no W4**. **Repetition W4 deferred to Phase 0.5** (§2.4 range ambiguous, ask #4) — design chat must define the repetition axis's W4 range (which sub-property; numerical bounds).
+
+### Next immediate action + Phase 1 hard-gate
+
+Phase 0.5 design chat reviews the four inputs above and commits: density (3/4/5 crosses; 5 vs fewer per-axis values; axis count), sample size (n=10 retained per Input 2, or n=20 with density reduction per the §9.1 hard floor), corner-sampling (retain §3.5 avoidance or add corner crosses per Input 3), the **dimensionality sweep scale** (Input 3 caveat), and the **repetition W4 range** (Input 4 deferral). **Phase 1 HARD-GATE (adversarial-review Finding 4):** CC does not initiate any Phase 1 work until the Phase 0.5 chat produces the Phase 1 CC instructions document — there is no Phase 1 instructions doc in scope; attempting Phase 1 is itself a STOP.
+
+---
+
+## Current state (per-sub-phase detail)
 
 **Phase 0 sub-phase 0.1 (V2-PRE-A) COMPLETE — no STOP triggers.** Construction primitives (§5.1-5.3), property measurement (§4), measurement protocol (§6.2), grid mapping (§6.3), `config.py` (ARCHITECTURE/SCAFFOLDING), unit tests, and `scripts/run_pre_a.py` implemented. Library-import model: v2 imports v1 from `v1.src.*` (v1 frozen, not copied).
 
