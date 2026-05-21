@@ -1,0 +1,593 @@
+{
+  "purpose": "Phase-1 pre-build grid calibration + range/stability validation",
+  "d_grid": [
+    4,
+    16,
+    128
+  ],
+  "p_grid": [
+    32,
+    256,
+    2048
+  ],
+  "mag_grid": [
+    0.1,
+    0.3,
+    0.7
+  ],
+  "loc_grid": [
+    0.3,
+    0.5,
+    0.9
+  ],
+  "c_targets": [
+    0.077,
+    0.4,
+    0.8
+  ],
+  "cross_positions": {
+    "low": {
+      "P": 32,
+      "D": 4
+    },
+    "mid": {
+      "P": 256,
+      "D": 16
+    },
+    "high": {
+      "P": 2048,
+      "D": 128
+    }
+  },
+  "pre_validated_ranges": {
+    "D": [
+      4,
+      64
+    ],
+    "P": [
+      64,
+      256
+    ]
+  },
+  "grid_revision_provenance": {
+    "summary": "manifold_dim_D grid revised {4,32,256} -> {4,16,128} via surface-and-confirm (design-chat-within-Phase-1, 2026-05-22); not CC drifting from spec.",
+    "original_phase05_commitment_D": [
+      4,
+      32,
+      256
+    ],
+    "revised_D": [
+      4,
+      16,
+      128
+    ],
+    "drivers": [
+      "D=256 is construction-infeasible at P in {32,256} (centered_harmonics needs P>=2D, i.e. P>=512); in the original {4,32,256}x{32,256,2048} grid this is 3 infeasible (D,P) pairs (32,32),(256,32),(256,256) = 6 cross-structure cell-measurements per L_d_main.",
+      "D=256 is also outside the PRE-A/PRE-D-validated D range (PRE swept D in {4,16,64}; max 64)."
+    ],
+    "log_spacing": "x4 (4->16) then x8 (16->128); original was uniform x8 (4->32->256).",
+    "infeasible_remaining": "1 unique pair (D=128,P=32) = 2 cross-structure cell-measurements per L_d_main; dropped -> not_characterised.",
+    "pre_a_range_fact_check": "CORRECTION to the drafted note 'stays within PRE-A's validated range': D=128 is NOT within PRE-A's validated D range (PRE max D=64). Only D=4 and D=16 are. D=128 is out-of-range and is the reason sub-phase 1.0 ran the stability smokes at D=128 (and P in {32,2048}) \u2014 all trained stably (no NaN/Inf), justifying the extension.",
+    "decision_reference": "Phase 1 first-session design chat (2026-05-21/22); see v2/PHASE1_PROGRESS.md"
+  },
+  "A_feasibility": {
+    "cells": [
+      {
+        "manifold_dim_D": 4,
+        "period_P": 32,
+        "P_ge_2D": true,
+        "min_period_for_D": 8,
+        "out_of_pre_range": true,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 0.9043291419087275,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 0.9193278641461545,
+          "D_global": 4.60768925300212,
+          "D_local": 4.659203927390236
+        }
+      },
+      {
+        "manifold_dim_D": 4,
+        "period_P": 256,
+        "P_ge_2D": true,
+        "min_period_for_D": 8,
+        "out_of_pre_range": false,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 0.9877330814181454,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 0.9894288378521957,
+          "D_global": 4.530419223686616,
+          "D_local": 3.817174787065431
+        }
+      },
+      {
+        "manifold_dim_D": 4,
+        "period_P": 2048,
+        "P_ge_2D": true,
+        "min_period_for_D": 8,
+        "out_of_pre_range": true,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 0.9984660288377113,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 0.9987254339081528,
+          "D_global": 4.754267395149043,
+          "D_local": 2.361661520608654
+        }
+      },
+      {
+        "manifold_dim_D": 16,
+        "period_P": 32,
+        "P_ge_2D": true,
+        "min_period_for_D": 32,
+        "out_of_pre_range": true,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 1.0625,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 1.0110894947208697,
+          "D_global": 17.635091598373446,
+          "D_local": 17.274284101936967
+        }
+      },
+      {
+        "manifold_dim_D": 16,
+        "period_P": 256,
+        "P_ge_2D": true,
+        "min_period_for_D": 32,
+        "out_of_pre_range": false,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 0.9878068548739919,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 0.9890594858122582,
+          "D_global": 18.274640791285616,
+          "D_local": 12.98479993857403
+        }
+      },
+      {
+        "manifold_dim_D": 16,
+        "period_P": 2048,
+        "P_ge_2D": true,
+        "min_period_for_D": 32,
+        "out_of_pre_range": true,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 0.9984661732173179,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 0.9987698741237454,
+          "D_global": 19.14652008021615,
+          "D_local": 3.6098712704874547
+        }
+      },
+      {
+        "manifold_dim_D": 128,
+        "period_P": 32,
+        "P_ge_2D": false,
+        "min_period_for_D": 256,
+        "out_of_pre_range": true,
+        "built": false,
+        "note": "infeasible: needs P>=256, got P=32"
+      },
+      {
+        "manifold_dim_D": 128,
+        "period_P": 256,
+        "P_ge_2D": true,
+        "min_period_for_D": 256,
+        "out_of_pre_range": true,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 1.0078125,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 1.0083671237647676,
+          "D_global": 143.2415039762117,
+          "D_local": 87.85422206381011
+        }
+      },
+      {
+        "manifold_dim_D": 128,
+        "period_P": 2048,
+        "P_ge_2D": true,
+        "min_period_for_D": 256,
+        "out_of_pre_range": true,
+        "built": true,
+        "norm_min": 0.9999999999999998,
+        "norm_max": 1.0000000000000002,
+        "construction_continuity_C": 0.9984758568592489,
+        "measured": {
+          "n_frames_measured": 4096,
+          "C": 0.9986443270568235,
+          "D_global": 149.71433295989078,
+          "D_local": 19.774785803204182
+        }
+      }
+    ],
+    "infeasible_DP_pairs": [
+      [
+        128,
+        32
+      ]
+    ],
+    "n_infeasible": 1
+  },
+  "B_continuity_calibration": {
+    "targets": [
+      0.077,
+      0.4,
+      0.8
+    ],
+    "contexts": {
+      "low": {
+        "P": 32,
+        "D": 4,
+        "feasible": true,
+        "controllable": true,
+        "achievable_C_range": [
+          0.15274275542466575,
+          1.8349082155808416
+        ],
+        "center_band": [
+          3,
+          14
+        ],
+        "sweep": [
+          {
+            "continuity_center": 3,
+            "measured_C": 0.15274275542466575,
+            "analytic_C": 0.13918969839909756
+          },
+          {
+            "continuity_center": 4,
+            "measured_C": 0.27208038072835805,
+            "analytic_C": 0.24549346024500462
+          },
+          {
+            "continuity_center": 5,
+            "measured_C": 0.41673435418003324,
+            "analytic_C": 0.38079248528155385
+          },
+          {
+            "continuity_center": 6,
+            "measured_C": 0.5674426525896464,
+            "analytic_C": 0.539887307853158
+          },
+          {
+            "continuity_center": 7,
+            "measured_C": 0.7292842598365376,
+            "analytic_C": 0.7166640031497948
+          },
+          {
+            "continuity_center": 8,
+            "measured_C": 0.910143180743124,
+            "analytic_C": 0.9043291419087275
+          },
+          {
+            "continuity_center": 9,
+            "measured_C": 1.0887562766750745,
+            "analytic_C": 1.0956708580912724
+          },
+          {
+            "continuity_center": 10,
+            "measured_C": 1.2600284471237493,
+            "analytic_C": 1.283335996850205
+          },
+          {
+            "continuity_center": 11,
+            "measured_C": 1.4362724182411157,
+            "analytic_C": 1.4601126921468417
+          },
+          {
+            "continuity_center": 12,
+            "measured_C": 1.5944024787238504,
+            "analytic_C": 1.6192075147184462
+          },
+          {
+            "continuity_center": 13,
+            "measured_C": 1.7215197215138751,
+            "analytic_C": 1.7545065397549955
+          },
+          {
+            "continuity_center": 14,
+            "measured_C": 1.8349082155808416,
+            "analytic_C": 1.8608103016009025
+          }
+        ],
+        "picks": {
+          "0.077": {
+            "continuity_center": 3,
+            "realised_C": 0.15274275542466575,
+            "deviation": 0.07574275542466576,
+            "reachable": false
+          },
+          "0.4": {
+            "continuity_center": 5,
+            "realised_C": 0.41673435418003324,
+            "deviation": 0.016734354180033217,
+            "reachable": true
+          },
+          "0.8": {
+            "continuity_center": 7,
+            "realised_C": 0.7292842598365376,
+            "deviation": 0.07071574016346249,
+            "reachable": true
+          }
+        }
+      },
+      "mid": {
+        "P": 256,
+        "D": 16,
+        "feasible": true,
+        "controllable": true,
+        "achievable_C_range": [
+          0.029865618889941534,
+          1.9700740736562987
+        ],
+        "center_band": [
+          9,
+          120
+        ],
+        "sweep": [
+          {
+            "continuity_center": 9,
+            "measured_C": 0.029865618889941534,
+            "analytic_C": 0.02793232578182936
+          },
+          {
+            "continuity_center": 19,
+            "measured_C": 0.11109018016481617,
+            "analytic_C": 0.1070664552303725
+          },
+          {
+            "continuity_center": 29,
+            "measured_C": 0.2458232935203038,
+            "analytic_C": 0.2397207833135141
+          },
+          {
+            "continuity_center": 39,
+            "measured_C": 0.4248752640170102,
+            "analytic_C": 0.4179443420893112
+          },
+          {
+            "continuity_center": 49,
+            "measured_C": 0.636580371240945,
+            "analytic_C": 0.6310548581423254
+          },
+          {
+            "continuity_center": 59,
+            "measured_C": 0.8689437027028043,
+            "analytic_C": 0.8662790212782111
+          },
+          {
+            "continuity_center": 70,
+            "measured_C": 1.1318496928604949,
+            "analytic_C": 1.1337209787217888
+          },
+          {
+            "continuity_center": 80,
+            "measured_C": 1.3634959951897059,
+            "analytic_C": 1.3689451418576744
+          },
+          {
+            "continuity_center": 90,
+            "measured_C": 1.5753636385045522,
+            "analytic_C": 1.5820556579106886
+          },
+          {
+            "continuity_center": 100,
+            "measured_C": 1.754193632196453,
+            "analytic_C": 1.7602792166864858
+          },
+          {
+            "continuity_center": 110,
+            "measured_C": 1.8890263502743578,
+            "analytic_C": 1.8929335447696276
+          },
+          {
+            "continuity_center": 120,
+            "measured_C": 1.9700740736562987,
+            "analytic_C": 1.9720676742181706
+          }
+        ],
+        "picks": {
+          "0.077": {
+            "continuity_center": 19,
+            "realised_C": 0.11109018016481617,
+            "deviation": 0.03409018016481617,
+            "reachable": true
+          },
+          "0.4": {
+            "continuity_center": 39,
+            "realised_C": 0.4248752640170102,
+            "deviation": 0.02487526401701018,
+            "reachable": true
+          },
+          "0.8": {
+            "continuity_center": 59,
+            "realised_C": 0.8689437027028043,
+            "deviation": 0.06894370270280425,
+            "reachable": true
+          }
+        }
+      },
+      "high": {
+        "P": 2048,
+        "D": 128,
+        "feasible": true,
+        "controllable": true,
+        "achievable_C_range": [
+          0.026887478828041877,
+          1.973111487681507
+        ],
+        "center_band": [
+          65,
+          960
+        ],
+        "sweep": [
+          {
+            "continuity_center": 65,
+            "measured_C": 0.026887478828041877,
+            "analytic_C": 0.025802751532535195
+          },
+          {
+            "continuity_center": 146,
+            "measured_C": 0.10502537353811082,
+            "analytic_C": 0.1037722427609793
+          },
+          {
+            "continuity_center": 228,
+            "measured_C": 0.2401507516135394,
+            "analytic_C": 0.23875917084371934
+          },
+          {
+            "continuity_center": 309,
+            "measured_C": 0.4205261718660838,
+            "analytic_C": 0.41919466071552147
+          },
+          {
+            "continuity_center": 390,
+            "measured_C": 0.6362922314536911,
+            "analytic_C": 0.6353133956296033
+          },
+          {
+            "continuity_center": 472,
+            "measured_C": 0.8772349454357086,
+            "analytic_C": 0.8768617772063716
+          },
+          {
+            "continuity_center": 553,
+            "measured_C": 1.1227755600099003,
+            "analytic_C": 1.1231382227936282
+          },
+          {
+            "continuity_center": 635,
+            "measured_C": 1.3637045284919553,
+            "analytic_C": 1.3646866043703965
+          },
+          {
+            "continuity_center": 716,
+            "measured_C": 1.5794682128057456,
+            "analytic_C": 1.5808053392844785
+          },
+          {
+            "continuity_center": 797,
+            "measured_C": 1.7598476068039943,
+            "analytic_C": 1.7612408291562804
+          },
+          {
+            "continuity_center": 879,
+            "measured_C": 1.8949753244882261,
+            "analytic_C": 1.896227757239021
+          },
+          {
+            "continuity_center": 960,
+            "measured_C": 1.973111487681507,
+            "analytic_C": 1.9741972484674648
+          }
+        ],
+        "picks": {
+          "0.077": {
+            "continuity_center": 146,
+            "realised_C": 0.10502537353811082,
+            "deviation": 0.028025373538110826,
+            "reachable": true
+          },
+          "0.4": {
+            "continuity_center": 309,
+            "realised_C": 0.4205261718660838,
+            "deviation": 0.020526171866083798,
+            "reachable": true
+          },
+          "0.8": {
+            "continuity_center": 472,
+            "realised_C": 0.8772349454357086,
+            "deviation": 0.07723494543570852,
+            "reachable": true
+          }
+        }
+      }
+    },
+    "note": "centre per (target-C, period) since C ~ 1-cos(2pi*center/P) is period-dependent; magnitude=0 reference (perturbation adds a small C offset in live cells, recorded post-hoc per cell)."
+  },
+  "C_stability_smokes": {
+    "training_steps": 2000,
+    "points": [
+      {
+        "manifold_dim_D": 4,
+        "period_P": 32,
+        "steps": 2000,
+        "wall_s": 35.5,
+        "nan_inf": false,
+        "stability_flag": "stable",
+        "still_descending": false,
+        "final_interval_loss": 1984.206344,
+        "diff_mu": 0.002672496484592557,
+        "diff_sigma": 1.654464298894709e-08
+      },
+      {
+        "manifold_dim_D": 16,
+        "period_P": 32,
+        "steps": 2000,
+        "wall_s": 35.7,
+        "nan_inf": false,
+        "stability_flag": "stable",
+        "still_descending": false,
+        "final_interval_loss": 1959.698599,
+        "diff_mu": 0.5198614597320557,
+        "diff_sigma": 1.0292313845639e-06
+      },
+      {
+        "manifold_dim_D": 128,
+        "period_P": 256,
+        "steps": 2000,
+        "wall_s": 35.8,
+        "nan_inf": false,
+        "stability_flag": "stable",
+        "still_descending": false,
+        "final_interval_loss": 1928.701695,
+        "diff_mu": 7.515040488215163e-05,
+        "diff_sigma": 3.3674247418291614e-11
+      },
+      {
+        "manifold_dim_D": 4,
+        "period_P": 2048,
+        "steps": 2000,
+        "wall_s": 35.6,
+        "nan_inf": false,
+        "stability_flag": "stable",
+        "still_descending": false,
+        "final_interval_loss": 1762.888007,
+        "diff_mu": 0.5507640242576599,
+        "diff_sigma": 5.77219383401939e-10
+      },
+      {
+        "manifold_dim_D": 128,
+        "period_P": 2048,
+        "steps": 2000,
+        "wall_s": 35.6,
+        "nan_inf": false,
+        "stability_flag": "stable",
+        "still_descending": false,
+        "final_interval_loss": 1932.057644,
+        "diff_mu": 0.00019790491205640137,
+        "diff_sigma": 5.293572247211387e-10
+      }
+    ],
+    "all_finite": true
+  }
+}
