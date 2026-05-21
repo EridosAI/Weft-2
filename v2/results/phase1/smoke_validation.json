@@ -1,0 +1,248 @@
+{
+  "training_steps": 10000,
+  "device": "cuda",
+  "step3_reproducibility": {
+    "ref_diff_mu_seed0": 0.020366676151752472,
+    "reproduced_diff_mu": 0.020366676151752472,
+    "delta": 0.0,
+    "tolerance": 0.11290836706757545,
+    "tolerance_basis": "n=10 CI half-width (CI=[0.02037,0.24618] -> 0.11291) vs 0.02, whichever wider. NOTE: instructions' parenthetical '~0.063' mis-derives this half-width (=0.113); 0.063 ~ tau_W_mu, a conflation.",
+    "passed": true,
+    "stability_flag": "stable",
+    "nan_inf": false
+  },
+  "step6_eval_semantics": {
+    "diff_mu": 0.029196128249168396,
+    "diff_sigma": 2.6773559511639178e-05,
+    "per_stream_point_scalars": true,
+    "finite": true,
+    "passed": true,
+    "note": "untrained net (semantics/shape check, not value calibration)"
+  },
+  "step5_classification_replication": {
+    "all_match": true,
+    "n_points": 10,
+    "thresholds_used": {
+      "mu": 0.0889793811365962,
+      "sigma": 2.964990064580064e-07,
+      "baseline_mu_median": 0.027678046375513077,
+      "baseline_sigma_median": 1.2858989606456817e-07,
+      "tau_W_mu": 0.061301334761083126,
+      "tau_W_sigma": 1.6790911039343825e-07
+    }
+  },
+  "step5_per_point": [
+    {
+      "label": "magnitude@0.3",
+      "n10": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "magnitude@0.7",
+      "n10": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "locality@0.3",
+      "n10": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "locality@0.7",
+      "n10": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "continuity@16",
+      "n10": {
+        "mine_overall": "discriminably_working",
+        "mine_mu": "discriminably_working",
+        "mine_sigma": "discriminably_working",
+        "stored_mu": "discriminably_working",
+        "stored_sigma": "discriminably_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "band_resident",
+        "mine_mu": "discriminably_working",
+        "mine_sigma": "band_resident",
+        "stored_mu": "discriminably_working",
+        "stored_sigma": "band_resident",
+        "match": true
+      }
+    },
+    {
+      "label": "continuity@40",
+      "n10": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "period@96",
+      "n10": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "band_resident",
+        "stored_mu": "band_resident",
+        "stored_sigma": "band_resident",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "band_resident",
+        "stored_mu": "band_resident",
+        "stored_sigma": "band_resident",
+        "match": true
+      }
+    },
+    {
+      "label": "period@192",
+      "n10": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "dim@8",
+      "n10": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "discriminably_non_working",
+        "mine_mu": "discriminably_non_working",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "discriminably_non_working",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    },
+    {
+      "label": "dim@32",
+      "n10": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      },
+      "n20": {
+        "mine_overall": "band_resident",
+        "mine_mu": "band_resident",
+        "mine_sigma": "discriminably_non_working",
+        "stored_mu": "band_resident",
+        "stored_sigma": "discriminably_non_working",
+        "match": true
+      }
+    }
+  ],
+  "step4_parallelism": {
+    "baseline_n1": {
+      "n": 1,
+      "wall_s": 53.2,
+      "vram_peak_mb": 7164,
+      "vram_total_mb": 16376,
+      "oom": false
+    },
+    "n2": {
+      "n": 2,
+      "wall_s": 77.0,
+      "vram_peak_mb": 9119,
+      "vram_total_mb": 16376,
+      "oom": false
+    },
+    "ratio_2x": 1.447,
+    "vram_ok_2x": true,
+    "parallelism_locked": 2,
+    "stop": null
+  },
+  "stop_triggers": [],
+  "all_passed": true
+}

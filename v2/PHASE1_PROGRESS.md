@@ -83,11 +83,29 @@ Log-spacing: ×4 then ×8 (original was uniform ×8).
   D_global vs D_local discrepancy, BIC-without-effect-size, worked-example outside the
   magnitude grid (5–6× extrapolation), §9.3/§3.3 L_d_main spec inconsistency.
 
-## 6. Next immediate action
-Build remaining sub-phase 1.1 modules: `arm_runner.py` (thin wrapper over the proven
-PRE-D1a `train_one` + its per-stream-point `compute_diff_metrics`), `classification.py`
-(PRE-D2 `classify_head`/`classify_point` + three-category aggregation + §12.4
-conflicting-head rule), `parallel_harness.py`, then the §7.1 smoke validation (reproduce
-PRE-D2 `magnitude@0.3` L_d=2 seed0 = 0.020366676151752472 within tolerance; classification
-replicates PRE-D2; 2x/3x parallelism). Then the §1.2 controls fail-fast gate before main
-effects. Regression canaries green; push hold preserved.
+## 6. Sub-phase 1.1 — modules + smoke (COMPLETE, all PASS)
+Modules: `arm_runner.py` (wraps PRE-D1a `train_one` + CLI for subprocess concurrency),
+`classification.py` (PRE-D2 `classify_head` + three-category + §12.4 conflicting-head),
+`parallel_harness.py` (subprocess pool + VRAM monitor + `measure_concurrency`).
+Tests `v2/tests/phase1/` 12/12 (8 sweep_grid + 4 classification). Smoke
+`scripts/run_phase1_smoke.py` -> `results/phase1/smoke_validation.json`:
+
+- **step 3 reproducibility:** reproduced magnitude@0.3 L_d=2 seed0 Diff_μ =
+  0.020366676151752472, **delta = 0.0 (bit-identical)**, tolerance = 0.11291 (n=10 CI
+  half-width; the instructions' "≈0.063" is a mis-derivation — corrected). PASS.
+- **step 6 eval semantics:** per-stream-point scalars confirmed (not per-(item,ordinal)). PASS.
+- **step 5 classification:** all 10 PRE-D2 points × {n10,n20} replicate exactly
+  (load_thresholds() == PRE-D2 stored thresholds). PASS.
+- **step 4 parallelism:** n1=53.2s, n2=77.0s -> **ratio 1.447×**, VRAM 9119/16376 MB,
+  no OOM. Above the 1.2× escalation gate (so 3x not attempted) and below the 1.5× STOP
+  -> **parallelism LOCKED = 2x**. Effective throughput ≈ 2/1.447 = 1.38× vs serial.
+
+**Budget-reconciliation note (§13):** the §7 table's ~32 hr-at-2x estimate assumed
+≤1.2× overhead; the measured 1.447× means main-effects (1350 runs @ ~130s) ≈ 35 hr and
+total Phase 1 ≈ ~45 hr at the locked 2x. To re-confirm at the 100-cell checkpoint (§7.3).
+
+## 7. Next immediate action
+Sub-phase 1.2 controls C1 (bit-identical, magnitude=0) + C2 (magnitude-only, locality=0.9):
+120 arm-runs, fail-fast gate before the 1350-run main effects. STOP if C1 >15%
+discriminably-working or any cell consistent across all 3 L_d_main (§7.2). Regression
+canaries green; push hold preserved.
