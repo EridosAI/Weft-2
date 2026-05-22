@@ -1,0 +1,51 @@
+{
+  "label": "basevar_contHigh_s1",
+  "axis": "phase1",
+  "endpoint": "cell",
+  "L_d_main": 1,
+  "seed": 1,
+  "stream_construction": {
+    "period_P": 256,
+    "manifold_dim_D": 16,
+    "continuity_C": 0.8662790212782111,
+    "fidelity_F": 0.97,
+    "magnitude_M": 0.0,
+    "locality_L": 0.50390625,
+    "locality_L_dial": 0.50390625,
+    "n_perturbed_positions_per_rep": 43,
+    "n_perturbed_reps": 1
+  },
+  "wall_clock_s": 188.61,
+  "steps_trained": 10000,
+  "final_interval_loss": -2982.487813,
+  "loss_trajectory": [
+    -2712.238891,
+    -2897.928298,
+    -2950.807335,
+    -2971.541158,
+    -2982.487813
+  ],
+  "diff_mu": 0.009501082822680473,
+  "diff_sigma": 2.865547577002303e-09,
+  "nan_inf": false,
+  "variance_collapse": true,
+  "body_repr_cosine": 0.149022,
+  "plateau_rel_improvement": 0.00368,
+  "still_descending": false,
+  "stability_flag": "stable",
+  "spec": {
+    "tag": "contHigh",
+    "params": {
+      "period_P": 256,
+      "manifold_dim_D": 16,
+      "continuity_center": 59,
+      "fidelity_F": 0.97,
+      "magnitude_M": 0.0,
+      "locality_L": 0.5
+    },
+    "L_d_main": 1,
+    "seed": 1,
+    "label": "basevar_contHigh_s1",
+    "out_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v2/results/phase1/baseline_variance/_runs/basevar_contHigh_s1.json"
+  }
+}

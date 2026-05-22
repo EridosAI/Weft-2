@@ -1,0 +1,51 @@
+{
+  "label": "basevar_D4_s2",
+  "axis": "phase1",
+  "endpoint": "cell",
+  "L_d_main": 1,
+  "seed": 2,
+  "stream_construction": {
+    "period_P": 256,
+    "manifold_dim_D": 4,
+    "continuity_C": 0.414422670122373,
+    "fidelity_F": 0.97,
+    "magnitude_M": 0.0,
+    "locality_L": 0.50390625,
+    "locality_L_dial": 0.50390625,
+    "n_perturbed_positions_per_rep": 43,
+    "n_perturbed_reps": 1
+  },
+  "wall_clock_s": 188.46,
+  "steps_trained": 10000,
+  "final_interval_loss": -2820.370583,
+  "loss_trajectory": [
+    -2485.117572,
+    -2435.397872,
+    -2789.144619,
+    -2630.530887,
+    -2820.370583
+  ],
+  "diff_mu": 0.44417253136634827,
+  "diff_sigma": 1.4520717073196465e-08,
+  "nan_inf": false,
+  "variance_collapse": false,
+  "body_repr_cosine": 0.167048,
+  "plateau_rel_improvement": 0.07217,
+  "still_descending": true,
+  "stability_flag": "stable",
+  "spec": {
+    "tag": "D4",
+    "params": {
+      "period_P": 256,
+      "manifold_dim_D": 4,
+      "continuity_center": 39,
+      "fidelity_F": 0.97,
+      "magnitude_M": 0.0,
+      "locality_L": 0.5
+    },
+    "L_d_main": 1,
+    "seed": 2,
+    "label": "basevar_D4_s2",
+    "out_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v2/results/phase1/baseline_variance/_runs/basevar_D4_s2.json"
+  }
+}

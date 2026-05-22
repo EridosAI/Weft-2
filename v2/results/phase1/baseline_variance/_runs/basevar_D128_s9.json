@@ -1,0 +1,51 @@
+{
+  "label": "basevar_D128_s9",
+  "axis": "phase1",
+  "endpoint": "cell",
+  "L_d_main": 1,
+  "seed": 9,
+  "stream_construction": {
+    "period_P": 256,
+    "manifold_dim_D": 128,
+    "continuity_C": 1.0078125,
+    "fidelity_F": 0.97,
+    "magnitude_M": 0.0,
+    "locality_L": 0.50390625,
+    "locality_L_dial": 0.50390625,
+    "n_perturbed_positions_per_rep": 43,
+    "n_perturbed_reps": 1
+  },
+  "wall_clock_s": 184.2,
+  "steps_trained": 10000,
+  "final_interval_loss": -3030.831575,
+  "loss_trajectory": [
+    -2689.194898,
+    -2974.694407,
+    -3001.678211,
+    -3019.744161,
+    -3030.831575
+  ],
+  "diff_mu": 2.6817311663762666e-05,
+  "diff_sigma": 3.865824327320411e-11,
+  "nan_inf": false,
+  "variance_collapse": true,
+  "body_repr_cosine": 0.364314,
+  "plateau_rel_improvement": 0.00367,
+  "still_descending": false,
+  "stability_flag": "stable",
+  "spec": {
+    "tag": "D128",
+    "params": {
+      "period_P": 256,
+      "manifold_dim_D": 128,
+      "continuity_center": 39,
+      "fidelity_F": 0.97,
+      "magnitude_M": 0.0,
+      "locality_L": 0.5
+    },
+    "L_d_main": 1,
+    "seed": 9,
+    "label": "basevar_D128_s9",
+    "out_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v2/results/phase1/baseline_variance/_runs/basevar_D128_s9.json"
+  }
+}

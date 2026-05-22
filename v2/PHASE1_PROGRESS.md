@@ -132,6 +132,40 @@ confound, ~doubles arm-runs; (B) a baseline grid keyed by construction config + 
 (recalibrate threshold per cross/L_d); (C) reconsider the Diff_μ indicator
 (config-normalised); (D) accept + document as closing caveat (risks confounded map).
 
-## 8. Next immediate action
-HALT. Design chat resolves the threshold-transfer finding before main effects (1.3).
-Controls data is valid and preserved. Regression canaries green; push hold preserved.
+## 8. Sub-phase 1.2.5 — baseline-variance diagnostic -> Option 1 (decisive)
+40 new runs (mid cross, L_d=1, magnitude=0; D-axis {4,16,128} + continuity {0.077,0.4,0.8};
+midpoint reused from C1-L_d1). `results/phase1/baseline_variance_diagnostic.json`:
+
+| axis | low | mid | high | rel. spread |
+|---|---|---|---|---|
+| D {4,16,128} | 0.2553 | 0.1590 | 0.0000 (D=128 boundary) | **1.61** |
+| continuity {0.077,0.4,0.8} | 0.2840 | 0.1590 | 0.0041 | **1.76** |
+
+max relative spread **1.76 ≫ 0.35 -> Option 1 (per-config bit-identical baseline), decisively.**
+The magnitude=0 Diff_μ baseline is monotonically continuity-driven (~70× across the
+continuity axis) and collapses to **0** at the D=128/P=256 boundary (continuity forced ≈1.0).
+A single global threshold is invalid; each cell must be judged vs its own zero-perturbation twin.
+
+**Option-1 scale (from the locked grid):** 129 feasible main-effects cells; **75 unique
+magnitude=0 baseline configs** (magnitude axis collapses; avg 1.72 cells/baseline) -> 750
+baseline runs @n=10. Main+baseline @n=10 ≈ **2040 arm-runs**. At the *measured* throughput
+(~0.5 runs/min @2x; observed ~177 s/run, not the §7 table's 130 s) ≈ **~60–70 hr (~3 days)**,
+not the 12–15 hr the rule's text assumed. Budget-reconciliation item.
+
+**Design-chat must specify before step 5 (baseline collection):**
+1. Baseline granularity: 75 configs keyed by (locality, continuity_center, period, dim, L_d),
+   magnitude=0 (confirmed shared across the magnitude sweep). Baseline n (10 or 20)?
+2. τ_W under per-config baselines: apply the existing per-head τ_W as the margin above each
+   cell's own baseline median, or recalibrate τ_W per-config? (PRE-E τ_W was a Wilcoxon margin
+   vs the single PRE-D1a baseline distribution.)
+3. Working test: discriminably_working ⟺ cell Diff CI-low > (own-baseline median + τ_W)?
+4. Boundary/degenerate cells: D=128 (and high-continuity) baselines ≈ 0 with ~0 variance
+   (variance collapse) -> the working test may be degenerate/hypersensitive. Special handling
+   or `not_characterised`?
+5. σ head: per-config baseline for Diff_σ too (1.2.5 measured Diff_μ only)?
+
+## 9. Next immediate action
+CHECKPOINT. Option 1 selected (decisive). Design chat specifies the Option-1 structure
+(items 1–5 above) + confirms the ~3-day compute before I build step 5 (baseline collection)
+-> step 6 (recalibrate τ_W) -> step 7 (main effects with per-config thresholds). Controls +
+diagnostic data committed; canaries green; push hold preserved.

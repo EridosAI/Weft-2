@@ -1,0 +1,57 @@
+{
+  "design": "mid cross, L_d=1, magnitude=0, n=10; D-axis {4,16,128} + continuity {0.077,0.4,0.8}",
+  "midpoint_reused_from": "C1-L_d1 (all-midpoint config)",
+  "d_axis": {
+    "D4": {
+      "n": 10,
+      "median": 0.25533004105091095,
+      "iqr": 0.08768422529101372,
+      "min": 0.025203516706824303,
+      "max": 0.6734365820884705
+    },
+    "D16_midpoint(=C1_Ld1)": {
+      "n": 10,
+      "median": 0.15900690853595734,
+      "iqr": 0.16472919005900621,
+      "min": 0.011274736374616623,
+      "max": 0.4297246038913727
+    },
+    "D128": {
+      "n": 10,
+      "median": 2.3939091079228092e-05,
+      "iqr": 5.457955012388993e-06,
+      "min": 2.043789208983071e-05,
+      "max": 2.9549497412517667e-05
+    }
+  },
+  "continuity_axis": {
+    "contLow_0.077": {
+      "n": 10,
+      "median": 0.28402121365070343,
+      "iqr": 0.3290347084403038,
+      "min": 0.13782690465450287,
+      "max": 0.8709381818771362
+    },
+    "contMid_0.4(=C1_Ld1)": {
+      "n": 10,
+      "median": 0.15900690853595734,
+      "iqr": 0.16472919005900621,
+      "min": 0.011274736374616623,
+      "max": 0.4297246038913727
+    },
+    "contHigh_0.8": {
+      "n": 10,
+      "median": 0.004067718284204602,
+      "iqr": 0.008110114751616493,
+      "min": 0.0006334891077131033,
+      "max": 0.1113528162240982
+    }
+  },
+  "d_axis_relative_spread": 1.6056,
+  "continuity_axis_relative_spread": 1.7606,
+  "max_relative_spread": 1.7606,
+  "spread_metric": "(max-min)/median over the 3 position-medians",
+  "decision_rule": "<=0.25 -> Option 2; >=0.35 -> Option 1; (0.25,0.35) -> surface",
+  "decision": "Option 1 (per-config bit-identical baseline) \u2014 decisively wide",
+  "caveat_D128": "(D=128,P=256) is the D==P//2 boundary: harmonics fill the whole band so its continuity is forced ~1.0 (not mid 0.4); its baseline conflates D with that forced continuity."
+}
