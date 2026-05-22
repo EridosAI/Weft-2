@@ -74,9 +74,12 @@ def _launch(spec: dict, repo_root: str):
     return p, f.name
 
 
-def run_batch(specs: list[dict], n_concurrent: int, repo_root: str) -> list[dict]:
+def run_batch(specs: list[dict], n_concurrent: int, repo_root: str,
+              progress: bool = True) -> list[dict]:
     """Run `specs` with <= n_concurrent subprocesses; return result dicts (order = completion)."""
     results, running, queue = [], [], list(specs)
+    total = len(specs)
+    t0 = time.time()
     while queue or running:
         while queue and len(running) < n_concurrent:
             spec = queue.pop(0)
@@ -96,6 +99,12 @@ def run_batch(specs: list[dict], n_concurrent: int, repo_root: str) -> list[dict
                     os.unlink(fn)
                 except OSError:
                     pass
+                if progress:
+                    el = time.time() - t0
+                    dmu = res.get("diff_mu")
+                    print(f"[harness] {len(results)}/{total} ({el/60:.1f} min) "
+                          f"{spec.get('label', '')} diff_mu={dmu} flag={res.get('stability_flag')}",
+                          flush=True)
         running = still
     return results
 

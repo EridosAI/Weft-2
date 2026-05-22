@@ -1,0 +1,52 @@
+{
+  "label": "C2_mag@0.1_Ld2_s5",
+  "axis": "phase1",
+  "endpoint": "cell",
+  "L_d_main": 2,
+  "seed": 5,
+  "stream_construction": {
+    "period_P": 256,
+    "manifold_dim_D": 16,
+    "continuity_C": 0.4179443420893112,
+    "fidelity_F": 0.97,
+    "magnitude_M": 0.1,
+    "locality_L": 0.9190283400809717,
+    "locality_L_dial": 0.90234375,
+    "n_perturbed_positions_per_rep": 9,
+    "n_perturbed_reps": 1
+  },
+  "wall_clock_s": 244.53,
+  "steps_trained": 10000,
+  "final_interval_loss": -2871.676414,
+  "loss_trajectory": [
+    964.746581,
+    -2363.857769,
+    -2573.542792,
+    -2679.606997,
+    -2871.676414
+  ],
+  "diff_mu": 0.16775494813919067,
+  "diff_sigma": 2.4332313941499706e-08,
+  "nan_inf": false,
+  "variance_collapse": false,
+  "body_repr_cosine": 0.098071,
+  "plateau_rel_improvement": 0.07168,
+  "still_descending": true,
+  "stability_flag": "stable",
+  "spec": {
+    "control": "C2",
+    "cell": "mag@0.1",
+    "params": {
+      "period_P": 256,
+      "manifold_dim_D": 16,
+      "continuity_center": 39,
+      "fidelity_F": 0.97,
+      "magnitude_M": 0.1,
+      "locality_L": 0.9
+    },
+    "L_d_main": 2,
+    "seed": 5,
+    "label": "C2_mag@0.1_Ld2_s5",
+    "out_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v2/results/phase1/controls/_runs/C2_mag01_Ld2_s5.json"
+  }
+}

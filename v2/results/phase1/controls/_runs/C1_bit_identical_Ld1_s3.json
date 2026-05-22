@@ -1,0 +1,52 @@
+{
+  "label": "C1_bit_identical_Ld1_s3",
+  "axis": "phase1",
+  "endpoint": "cell",
+  "L_d_main": 1,
+  "seed": 3,
+  "stream_construction": {
+    "period_P": 256,
+    "manifold_dim_D": 16,
+    "continuity_C": 0.4179443420893112,
+    "fidelity_F": 0.97,
+    "magnitude_M": 0.0,
+    "locality_L": 0.50390625,
+    "locality_L_dial": 0.50390625,
+    "n_perturbed_positions_per_rep": 43,
+    "n_perturbed_reps": 1
+  },
+  "wall_clock_s": 187.36,
+  "steps_trained": 10000,
+  "final_interval_loss": -2882.139196,
+  "loss_trajectory": [
+    -2762.168026,
+    -2906.317212,
+    -2612.799793,
+    -2625.605393,
+    -2882.139196
+  ],
+  "diff_mu": 0.0436476431787014,
+  "diff_sigma": 3.735723339559627e-07,
+  "nan_inf": false,
+  "variance_collapse": false,
+  "body_repr_cosine": 0.105493,
+  "plateau_rel_improvement": 0.0977,
+  "still_descending": true,
+  "stability_flag": "stable",
+  "spec": {
+    "control": "C1",
+    "cell": "bit_identical",
+    "params": {
+      "period_P": 256,
+      "manifold_dim_D": 16,
+      "continuity_center": 39,
+      "fidelity_F": 0.97,
+      "magnitude_M": 0.0,
+      "locality_L": 0.5
+    },
+    "L_d_main": 1,
+    "seed": 3,
+    "label": "C1_bit_identical_Ld1_s3",
+    "out_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v2/results/phase1/controls/_runs/C1_bit_identical_Ld1_s3.json"
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "control": "C2 (magnitude-only: mag swept, locality=0.9 grid-max, others midpoint)",
+  "note": "comparison vs main-effects magnitude axis is deferred to sub-phase 1.7 aggregate (main effects not yet run)",
+  "thresholds": {
+    "mu": 0.0889793811365962,
+    "sigma": 2.964990064580064e-07,
+    "baseline_mu_median": 0.027678046375513077,
+    "baseline_sigma_median": 1.2858989606456817e-07,
+    "tau_W_mu": 0.061301334761083126,
+    "tau_W_sigma": 1.6790911039343825e-07
+  },
+  "n_per_cell": 10,
+  "cells": {
+    "C2|mag@0.1|Ld1": {
+      "control": "C2",
+      "cell": "mag@0.1",
+      "L_d_main": 1,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.037714533507823944,
+      "diff_sigma_median": 6.652503969917234e-08,
+      "diff_mu_ci": [
+        0.01974704535678029,
+        0.09537193179130554
+      ]
+    },
+    "C2|mag@0.1|Ld2": {
+      "control": "C2",
+      "cell": "mag@0.1",
+      "L_d_main": 2,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.09641418233513832,
+      "diff_sigma_median": 1.9297230124948328e-07,
+      "diff_mu_ci": [
+        0.05930915102362633,
+        0.19996733590960503
+      ]
+    },
+    "C2|mag@0.1|Ld4": {
+      "control": "C2",
+      "cell": "mag@0.1",
+      "L_d_main": 4,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "band_resident",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.11157427728176117,
+      "diff_sigma_median": 9.51569596452373e-08,
+      "diff_mu_ci": [
+        0.04875399172306061,
+        0.12837253883481026
+      ]
+    },
+    "C2|mag@0.3|Ld1": {
+      "control": "C2",
+      "cell": "mag@0.3",
+      "L_d_main": 1,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "discriminably_non_working",
+      "head_mu": "discriminably_non_working",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.016686667688190937,
+      "diff_sigma_median": 1.9635153947206163e-08,
+      "diff_mu_ci": [
+        0.00366901489906013,
+        0.07373614236712456
+      ]
+    },
+    "C2|mag@0.3|Ld2": {
+      "control": "C2",
+      "cell": "mag@0.3",
+      "L_d_main": 2,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.04643111862242222,
+      "diff_sigma_median": 3.2146843409464054e-08,
+      "diff_mu_ci": [
+        0.014981694053858519,
+        0.1850132793188095
+      ]
+    },
+    "C2|mag@0.3|Ld4": {
+      "control": "C2",
+      "cell": "mag@0.3",
+      "L_d_main": 4,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.20900051295757294,
+      "diff_sigma_median": 6.190929724425587e-08,
+      "diff_mu_ci": [
+        0.07599209249019623,
+        0.5749209523200989
+      ]
+    },
+    "C2|mag@0.7|Ld1": {
+      "control": "C2",
+      "cell": "mag@0.7",
+      "L_d_main": 1,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "band_resident",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.06966941989958286,
+      "diff_sigma_median": 9.524774213787168e-08,
+      "diff_mu_ci": [
+        0.011997275054454803,
+        0.2403787449002266
+      ]
+    },
+    "C2|mag@0.7|Ld2": {
+      "control": "C2",
+      "cell": "mag@0.7",
+      "L_d_main": 2,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "band_resident",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.10118388012051582,
+      "diff_sigma_median": 7.668901602642109e-08,
+      "diff_mu_ci": [
+        0.052259497344493866,
+        0.2677096724510193
+      ]
+    },
+    "C2|mag@0.7|Ld4": {
+      "control": "C2",
+      "cell": "mag@0.7",
+      "L_d_main": 4,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "band_resident",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.1259000226855278,
+      "diff_sigma_median": 6.20113347338247e-08,
+      "diff_mu_ci": [
+        0.0332643985748291,
+        0.36044076085090637
+      ]
+    }
+  }
+}

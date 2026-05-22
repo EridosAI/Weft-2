@@ -104,8 +104,34 @@ Tests `v2/tests/phase1/` 12/12 (8 sweep_grid + 4 classification). Smoke
 ≤1.2× overhead; the measured 1.447× means main-effects (1350 runs @ ~130s) ≈ 35 hr and
 total Phase 1 ≈ ~45 hr at the locked 2x. To re-confirm at the 100-cell checkpoint (§7.3).
 
-## 7. Next immediate action
-Sub-phase 1.2 controls C1 (bit-identical, magnitude=0) + C2 (magnitude-only, locality=0.9):
-120 arm-runs, fail-fast gate before the 1350-run main effects. STOP if C1 >15%
-discriminably-working or any cell consistent across all 3 L_d_main (§7.2). Regression
-canaries green; push hold preserved.
+## 7. Sub-phase 1.2 controls — RUN COMPLETE; STOP AT GATE (threshold non-transfer)
+120 arm-runs in 255 min at 2x (0 diverged). Observed single-run cost ≈177s (10000
+steps, P=256), not the §7 table's 130s — full Phase 1 ≈ ~60 hr at 2x (budget item).
+
+**Finding (fail-fast gate did its job):** the PRE-D1a-calibrated working threshold
+(baseline 0.0277 + τ_W → **0.0890**) does **not transfer** to the Phase-1 construction config.
+- **C1 (magnitude=0, should sit at baseline 0.0277):** Diff_μ medians **0.159 / 0.117 / 0.246**
+  (L_d 1/2/4) — 4–9× baseline, above threshold. At L_d=4 the whole μ-CI [0.170,0.259]
+  clears threshold → **μ-head `discriminably_working` on a non-perturbed stream**.
+  Holds at L_d=1 too (0.159 vs 0.0277, same L_d as baseline) ⇒ **construction-config
+  dependence** (Phase-1 mid P=256/center=39 vs PRE-D1a P=128/center=24), beyond the
+  known L_d-dependence caveat (PRE-D2 baseline_caveat §11.7).
+- **C2 (perturbed):** Diff_μ 0.017–0.209, comparable-to-LOWER than bit-identical C1, no
+  monotonic magnitude dependence ⇒ Diff_μ here is **config-structure-dominated, not
+  perturbation signal**.
+- **Gate readings:** overall-cell = 0/3 working (script exit 0); **head-level = 1/6 = 16.7%
+  > 15%** (trips §7.2 trigger); §7.2 calls C1 unexpected discriminably-working a
+  "substrate or τ_W issue" STOP. Building the 1350-cell map vs a non-transferring
+  threshold ⇒ confounded map. **STOPPED before main effects** (~7% of Phase-1 compute spent).
+
+Reports: `results/phase1/controls/{c1_report.json,c2_report.json}` (+ 120 `_runs/*.json`).
+
+**Resolution = design-chat decision (per §11/§2.1; τ_W not lowered to admit signal):**
+(A) per-config bit-identical baseline (each cell's own magnitude=0 twin) — corrects the
+confound, ~doubles arm-runs; (B) a baseline grid keyed by construction config + L_d
+(recalibrate threshold per cross/L_d); (C) reconsider the Diff_μ indicator
+(config-normalised); (D) accept + document as closing caveat (risks confounded map).
+
+## 8. Next immediate action
+HALT. Design chat resolves the threshold-transfer finding before main effects (1.3).
+Controls data is valid and preserved. Regression canaries green; push hold preserved.

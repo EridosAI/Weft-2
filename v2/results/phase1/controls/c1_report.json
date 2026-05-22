@@ -1,0 +1,74 @@
+{
+  "control": "C1 (bit-identical, magnitude=0, others midpoint)",
+  "expected": "discriminably_non_working / band_resident (no working-region signal)",
+  "thresholds": {
+    "mu": 0.0889793811365962,
+    "sigma": 2.964990064580064e-07,
+    "baseline_mu_median": 0.027678046375513077,
+    "baseline_sigma_median": 1.2858989606456817e-07,
+    "tau_W_mu": 0.061301334761083126,
+    "tau_W_sigma": 1.6790911039343825e-07
+  },
+  "n_per_cell": 10,
+  "stop_check": {
+    "n_c1_classifications": 3,
+    "discriminably_working_fraction": 0.0,
+    "cross_L_d_consistent_working": false,
+    "fully_diverged": [],
+    "stop": null
+  },
+  "cells": {
+    "C1|bit_identical|Ld1": {
+      "control": "C1",
+      "cell": "bit_identical",
+      "L_d_main": 1,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "band_resident",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.15900690853595734,
+      "diff_sigma_median": 2.531833871444178e-07,
+      "diff_mu_ci": [
+        0.0436476431787014,
+        0.2825721651315689
+      ]
+    },
+    "C1|bit_identical|Ld2": {
+      "control": "C1",
+      "cell": "bit_identical",
+      "L_d_main": 2,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "band_resident",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": false,
+      "diff_mu_median": 0.11699610576033592,
+      "diff_sigma_median": 9.036866188694148e-08,
+      "diff_mu_ci": [
+        0.04192637279629707,
+        0.3623312711715698
+      ]
+    },
+    "C1|bit_identical|Ld4": {
+      "control": "C1",
+      "cell": "bit_identical",
+      "L_d_main": 4,
+      "n_valid": 10,
+      "n_nan": 0,
+      "overall": "band_resident",
+      "head_mu": "discriminably_working",
+      "head_sigma": "discriminably_non_working",
+      "conflicting_heads": true,
+      "diff_mu_median": 0.2457447052001953,
+      "diff_sigma_median": 8.567991827135302e-08,
+      "diff_mu_ci": [
+        0.16994871199131012,
+        0.2587280869483948
+      ]
+    }
+  },
+  "wall_minutes": 255.3
+}
