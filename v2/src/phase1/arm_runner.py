@@ -63,18 +63,28 @@ def main() -> int:
     spec = json.loads(open(args.spec_file).read())
 
     params = params_from_dict(spec["params"])
-    r = run_arm(params, int(spec["L_d_main"]), int(spec["seed"]),
-                training_steps=spec.get("training_steps"),
-                label=spec.get("label", ""),
-                axis=spec.get("axis", "phase1"),
-                endpoint=spec.get("endpoint", "cell"))
+    steps = spec.get("training_steps")
+    if steps is None:
+        steps = get_v2_training_steps()
 
-    res = asdict(r)
+    if spec.get("perk"):                       # pilot per-K path (refinement 2)
+        from v2.src.phase1.eval_perk import train_one_perk
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        res = train_one_perk(params, int(spec["L_d_main"]), int(spec["seed"]),
+                             load_or_create_U(), device, steps, spec.get("label", ""))
+        diff_mu, diff_sigma, flag = res["diff_mu"], res["diff_sigma"], res["stability_flag"]
+    else:
+        r = run_arm(params, int(spec["L_d_main"]), int(spec["seed"]),
+                    training_steps=steps, label=spec.get("label", ""),
+                    axis=spec.get("axis", "phase1"), endpoint=spec.get("endpoint", "cell"))
+        res = asdict(r)
+        diff_mu, diff_sigma, flag = r.diff_mu, r.diff_sigma, r.stability_flag
+
     res["spec"] = spec
     with open(spec["out_file"], "w") as f:
         json.dump(res, f, indent=2, default=str)
     print(f"[arm] {spec.get('label', '')} seed={spec['seed']} L_d={spec['L_d_main']} "
-          f"diff_mu={r.diff_mu} diff_sigma={r.diff_sigma} flag={r.stability_flag}")
+          f"diff_mu={diff_mu} diff_sigma={diff_sigma} flag={flag}")
     return 0
 
 
