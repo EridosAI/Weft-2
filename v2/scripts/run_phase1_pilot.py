@@ -40,7 +40,7 @@ from v2.src.preflight.pre_d1a_endpoint_stability import VARIANCE_COLLAPSE_EPS
 
 REPO_ROOT = str(pathlib.Path(__file__).resolve().parents[2])
 PILOT_MAGS = [0.1, 0.3, 0.7, 0.9]      # incl. R1 high-mag probe 0.9 (grid max is 0.7)
-N_CELL, N_BASE, L_D = 10, 20, 1
+N_CELL, N_BASE = 10, 20
 K15_IDX = 14                            # k=15 (k = idx+1, PREDICT_K=16)
 
 
@@ -49,7 +49,7 @@ def _params(mag, loc, center, P, D):
             "fidelity_F": FIDELITY_F, "magnitude_M": mag, "locality_L": loc}
 
 
-def build_specs(runs: pathlib.Path):
+def build_specs(runs: pathlib.Path, l_d: int):
     runs.mkdir(parents=True, exist_ok=True)
     cells = []   # (tag, cross, mag, params)
     for cross in ("low", "mid", "high"):
@@ -76,18 +76,27 @@ def build_specs(runs: pathlib.Path):
             specs.append({"kind": "cell", "tag": tag, "cross": cross, "magnitude": mag,
                           "baseline_key": [p["locality_L"], p["continuity_center"],
                                            p["period_P"], p["manifold_dim_D"]],
-                          "params": p, "L_d_main": L_D, "seed": s, "perk": True,
+                          "params": p, "L_d_main": l_d, "seed": s, "perk": True,
                           "label": f"cell_{tag}_s{s}",
                           "out_file": str(runs / f"cell_{tag}_s{s}.json")})
-    for (loc, center, P, D) in base_keys:
+    for (loc, center, P, D) in base_keys:                       # L_d-SPECIFIC baselines
         btag = f"base_loc{loc}_c{center}_P{P}_D{D}"
         for s in range(N_BASE):
             specs.append({"kind": "baseline",
                           "baseline_key": [loc, center, P, D],
                           "params": _params(0.0, loc, center, P, D),
-                          "L_d_main": L_D, "seed": s, "perk": True,
+                          "L_d_main": l_d, "seed": s, "perk": True,
                           "label": f"{btag}_s{s}", "out_file": str(runs / f"{btag}_s{s}.json")})
     return specs, len(cells), len(base_keys)
+
+
+def _outcome(working_fraction: float) -> str:
+    """Pre-registered (design-chat) reading of an L_d arm's working density."""
+    if working_fraction < 0.05:
+        return "robust_null (<5% working)"
+    if working_fraction > 0.25:
+        return "capacity_signal (>25% working — capacity matters)"
+    return "marginal (5-25% working — design-chat decides)"
 
 
 def _collect(results):
@@ -139,13 +148,15 @@ def classify_pilot(cells, bases, th):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--l-d", type=int, default=1, help="decoder capacity L_d_main")
     args = ap.parse_args()
-    out_dir = RESULTS_ROOT / "phase1" / "pilot"
-    specs, n_cells, n_bases = build_specs(out_dir / "_runs")
+    l_d = args.l_d
+    out_dir = RESULTS_ROOT / "phase1" / ("pilot" if l_d == 1 else f"pilot_Ld{l_d}")
+    specs, n_cells, n_bases = build_specs(out_dir / "_runs", l_d)
     n_cell_runs = sum(1 for s in specs if s["kind"] == "cell")
     n_base_runs = sum(1 for s in specs if s["kind"] == "baseline")
-    print(f"[pilot] {n_cells} cells x n={N_CELL} = {n_cell_runs} + {n_bases} baselines x n={N_BASE} "
-          f"= {n_base_runs}  => {len(specs)} runs (L_d={L_D}, perk)")
+    print(f"[pilot] L_d={l_d}: {n_cells} cells x n={N_CELL} = {n_cell_runs} + {n_bases} "
+          f"L_d-specific baselines x n={N_BASE} = {n_base_runs}  => {len(specs)} runs (perk)")
     if args.dry_run:
         for s in specs[:2] + [s for s in specs if s["kind"] == "baseline"][:1]:
             print(f"  {s['label']}: kind={s['kind']} params={s['params']}")
@@ -182,7 +193,10 @@ def main() -> int:
 
     report = {
         "design": "Option-1 pilot (per-config baseline); R1 mag=0.9, R2 per-K, R3 cont/dim depth",
+        "L_d_main": l_d, "baselines": "L_d-specific (n=20)",
         "n_cells": n_cells, "n_baseline_configs": n_bases,
+        "outcome_Kagg": _outcome(density("class_Kagg")["fraction"]),
+        "outcome_k15": _outcome(density("class_k15")["fraction"]),
         "thresholds_tau_W": {"mu": th["tau_W_mu"], "sigma": th["tau_W_sigma"]},
         "classification_definition": ("cell Diff CI-low > own mag=0 baseline median + τ_W; "
                                       "k=15 reuses aggregate-calibrated τ_W (APPROX — flagged); "

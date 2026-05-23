@@ -12,6 +12,7 @@ Writes results/phase1/pilot/paired_analysis.json.
 
 from __future__ import annotations
 
+import argparse
 import json
 import pathlib
 
@@ -20,14 +21,13 @@ import numpy as np
 from v2.config import RESULTS_ROOT
 from v2.src.phase1.classification import load_thresholds
 
-RUNS = RESULTS_ROOT / "phase1" / "pilot" / "_runs"
 N_PAIR = 10   # cells have seeds 0..9; baselines 0..19 -> pair on 0..9
 
 
-def _load(prefix: str, n: int) -> dict:
+def _load(runs: pathlib.Path, prefix: str, n: int) -> dict:
     out = {}
     for s in range(n):
-        f = RUNS / f"{prefix}_s{s}.json"
+        f = runs / f"{prefix}_s{s}.json"
         if f.exists():
             d = json.loads(f.read_text())
             if not d.get("nan_inf"):
@@ -43,7 +43,12 @@ def _boot_ci(vals, nb: int = 2000, seed: int = 0):
 
 
 def main() -> int:
-    rep = json.loads((RESULTS_ROOT / "phase1" / "pilot" / "pilot_report.json").read_text())
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--l-d", type=int, default=1)
+    args = ap.parse_args()
+    pilot_dir = RESULTS_ROOT / "phase1" / ("pilot" if args.l_d == 1 else f"pilot_Ld{args.l_d}")
+    runs = pilot_dir / "_runs"
+    rep = json.loads((pilot_dir / "pilot_report.json").read_text())
     tw = load_thresholds()["tau_W_mu"]
     cells = {}
     resolvable = 0
@@ -52,8 +57,8 @@ def main() -> int:
         if c.get("baseline", {}).get("degenerate") or "baseline_key" not in c:
             continue
         loc, center, P, D = c["baseline_key"]
-        cell = _load(f"cell_{tag}", N_PAIR)
-        base = _load(f"base_loc{loc}_c{center}_P{P}_D{D}", N_PAIR)
+        cell = _load(runs, f"cell_{tag}", N_PAIR)
+        base = _load(runs, f"base_loc{loc}_c{center}_P{P}_D{D}", N_PAIR)
         seeds = sorted(set(cell) & set(base))
         if len(seeds) < 5:
             continue
@@ -78,8 +83,8 @@ def main() -> int:
                        "confirming a variance-limited (not sample-limited) null at L_d=1."),
         "cells": cells,
     }
-    (RESULTS_ROOT / "phase1" / "pilot" / "paired_analysis.json").write_text(json.dumps(out, indent=2))
-    print(f"paired resolvable: {resolvable}/{tested} (unpaired 0/14); see paired_analysis.json")
+    (pilot_dir / "paired_analysis.json").write_text(json.dumps(out, indent=2))
+    print(f"[L_d={args.l_d}] paired resolvable: {resolvable}/{tested}; see {pilot_dir}/paired_analysis.json")
     return 0
 
 

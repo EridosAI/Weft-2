@@ -192,10 +192,23 @@ this characterises inner-PAM-in-isolation; the outer associative memory is out o
 includes L_d∈{1,2,4}; PRE-D2 (L_d=2) was variance-limited but had some discriminable
 (mostly non-working) points. L_d=2/4 (decoder capacity) is NOT de-risked by this pilot.
 
-## 10. Next immediate action
-CHECKPOINT — full-collection decision. The L_d=1 null is robust; a ~3-day full collection at
-L_d=1 would near-certainly confirm it (low info gain). Open question: does decoder capacity
-(L_d=2/4) change the picture? Options: (A) conclude Phase 1 with the variance-limited /
-no-working-region finding; (B) focused L_d=2/4 pilot extension on a cell subset (~2-4 hr) to
-de-risk capacity before any full collection; (C) full collection anyway. Pilot + paired data
-committed; canaries green; push hold preserved.
+## 10. Decision: Path B — L_d=2/4 capacity pilot extension
+Design chat chose (B). De-risk the one open dimension (decoder capacity) before any
+conclude/full decision, same 14-cell + 5-baseline structure, per-K eval.
+
+Confirmations:
+- **Baselines are L_d-SPECIFIC** (cannot reuse L_d=1's — the mag=0 baseline is L_d-dependent,
+  cf. 1.2.5 C1 medians 0.159/0.117/0.246 at L_d 1/2/4). Each of L_d=2,4 gets its own 5
+  baselines @ n=20. -> 240 runs/L_d, **480 total**.
+- **Wall-clock (measured ratios L_d2=1.12×, L_d4=1.66× per step):** L_d=2 arm ≈7.2 hr,
+  L_d=4 arm ≈10.1 hr -> **~17 hr total** sequential (not the 9–12 hr first guessed; 2x is the
+  parallelism cap). Surfaced so the completion checkpoint expects ~17 hr.
+- **Pre-registered outcome reading** (per arm, K-agg working fraction): <5% robust_null /
+  5–25% marginal / >25% capacity_signal. Recorded in each `pilot_Ld{N}/pilot_report.json`.
+
+Runner parametrised by `--l-d` (output namespaced `pilot_Ld2/`, `pilot_Ld4/`).
+
+## 11. Next immediate action
+Run L_d=2 then L_d=4 pilots sequentially (~17 hr), each + paired analysis. On completion:
+report all three L_d arms (1/2/4) together against the pre-registered outcomes -> conclude
+Phase 1 or scope a targeted capacity-dependent collection. Push hold preserved.
