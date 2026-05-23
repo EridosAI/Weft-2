@@ -1,0 +1,363 @@
+{
+  "design": "Option-1 pilot (per-config baseline); R1 mag=0.9, R2 per-K, R3 cont/dim depth",
+  "n_cells": 14,
+  "n_baseline_configs": 5,
+  "thresholds_tau_W": {
+    "mu": 0.061301334761083126,
+    "sigma": 1.6790911039343825e-07
+  },
+  "classification_definition": "cell Diff CI-low > own mag=0 baseline median + \u03c4_W; k=15 reuses aggregate-calibrated \u03c4_W (APPROX \u2014 flagged); \u03c3 variance-collapse baselines -> baseline_degenerate",
+  "signal_density_Kagg": {
+    "working": 0,
+    "total": 14,
+    "fraction": 0.0
+  },
+  "signal_density_k15": {
+    "working": 0,
+    "total": 14,
+    "fraction": 0.0
+  },
+  "high_mag_probe_0.9_vs_0.7": {
+    "low": {
+      "mag0.7": {
+        "class_Kagg": "band_resident",
+        "mu_agg_median": 0.8241091370582581
+      },
+      "mag0.9": {
+        "class_Kagg": "band_resident",
+        "mu_agg_median": 1.2590144872665405
+      }
+    },
+    "mid": {
+      "mag0.7": {
+        "class_Kagg": "band_resident",
+        "mu_agg_median": 0.0584135502576828
+      },
+      "mag0.9": {
+        "class_Kagg": "discriminably_non_working",
+        "mu_agg_median": 0.05671161413192749
+      }
+    },
+    "high": {
+      "mag0.7": {
+        "class_Kagg": "baseline_degenerate",
+        "mu_agg_median": 4.3750371332862414e-05
+      },
+      "mag0.9": {
+        "class_Kagg": "baseline_degenerate",
+        "mu_agg_median": 0.00010509722778806463
+      }
+    }
+  },
+  "cells": {
+    "mag0.1_low": {
+      "cross": "low",
+      "magnitude": 0.1,
+      "baseline_key": [
+        0.3,
+        3,
+        32,
+        4
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.7890313267707825,
+        "sigma_agg_median": 6.446420286465582e-07,
+        "mu_k15_median": 0.8133064806461334,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.8537539839744568,
+      "cell_mu_k15_median": 0.7804750800132751,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.3_low": {
+      "cross": "low",
+      "magnitude": 0.3,
+      "baseline_key": [
+        0.3,
+        3,
+        32,
+        4
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.7890313267707825,
+        "sigma_agg_median": 6.446420286465582e-07,
+        "mu_k15_median": 0.8133064806461334,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.7589720487594604,
+      "cell_mu_k15_median": 0.7879990637302399,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.7_low": {
+      "cross": "low",
+      "magnitude": 0.7,
+      "baseline_key": [
+        0.3,
+        3,
+        32,
+        4
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.7890313267707825,
+        "sigma_agg_median": 6.446420286465582e-07,
+        "mu_k15_median": 0.8133064806461334,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.8241091370582581,
+      "cell_mu_k15_median": 0.8046747148036957,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.9_low": {
+      "cross": "low",
+      "magnitude": 0.9,
+      "baseline_key": [
+        0.3,
+        3,
+        32,
+        4
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.7890313267707825,
+        "sigma_agg_median": 6.446420286465582e-07,
+        "mu_k15_median": 0.8133064806461334,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 1.2590144872665405,
+      "cell_mu_k15_median": 1.1488597393035889,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.1_mid": {
+      "cross": "mid",
+      "magnitude": 0.1,
+      "baseline_key": [
+        0.5,
+        39,
+        256,
+        16
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.05796103924512863,
+        "sigma_agg_median": 1.0532309602240275e-07,
+        "mu_k15_median": 0.0551426000893116,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.13104799389839172,
+      "cell_mu_k15_median": 0.12977545708417892,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.3_mid": {
+      "cross": "mid",
+      "magnitude": 0.3,
+      "baseline_key": [
+        0.5,
+        39,
+        256,
+        16
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.05796103924512863,
+        "sigma_agg_median": 1.0532309602240275e-07,
+        "mu_k15_median": 0.0551426000893116,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.02946058940142393,
+      "cell_mu_k15_median": 0.029141205362975597,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.7_mid": {
+      "cross": "mid",
+      "magnitude": 0.7,
+      "baseline_key": [
+        0.5,
+        39,
+        256,
+        16
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.05796103924512863,
+        "sigma_agg_median": 1.0532309602240275e-07,
+        "mu_k15_median": 0.0551426000893116,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.0584135502576828,
+      "cell_mu_k15_median": 0.055044570937752724,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "mag0.9_mid": {
+      "cross": "mid",
+      "magnitude": 0.9,
+      "baseline_key": [
+        0.5,
+        39,
+        256,
+        16
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.05796103924512863,
+        "sigma_agg_median": 1.0532309602240275e-07,
+        "mu_k15_median": 0.0551426000893116,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.05671161413192749,
+      "cell_mu_k15_median": 0.05707903765141964,
+      "class_Kagg": "discriminably_non_working",
+      "class_k15": "discriminably_non_working"
+    },
+    "mag0.1_high": {
+      "cross": "high",
+      "magnitude": 0.1,
+      "baseline_key": [
+        0.9,
+        472,
+        2048,
+        128
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 5.498273276316468e-05,
+        "sigma_agg_median": 2.6952633180865604e-10,
+        "mu_k15_median": 5.515583325177431e-05,
+        "degenerate": true
+      },
+      "cell_mu_agg_median": 5.986777614452876e-05,
+      "cell_mu_k15_median": 6.105605280026793e-05,
+      "class_Kagg": "baseline_degenerate",
+      "class_k15": "baseline_degenerate"
+    },
+    "mag0.3_high": {
+      "cross": "high",
+      "magnitude": 0.3,
+      "baseline_key": [
+        0.9,
+        472,
+        2048,
+        128
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 5.498273276316468e-05,
+        "sigma_agg_median": 2.6952633180865604e-10,
+        "mu_k15_median": 5.515583325177431e-05,
+        "degenerate": true
+      },
+      "cell_mu_agg_median": 0.00010387331349193119,
+      "cell_mu_k15_median": 8.357822662219405e-05,
+      "class_Kagg": "baseline_degenerate",
+      "class_k15": "baseline_degenerate"
+    },
+    "mag0.7_high": {
+      "cross": "high",
+      "magnitude": 0.7,
+      "baseline_key": [
+        0.9,
+        472,
+        2048,
+        128
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 5.498273276316468e-05,
+        "sigma_agg_median": 2.6952633180865604e-10,
+        "mu_k15_median": 5.515583325177431e-05,
+        "degenerate": true
+      },
+      "cell_mu_agg_median": 4.3750371332862414e-05,
+      "cell_mu_k15_median": 4.279858876543585e-05,
+      "class_Kagg": "baseline_degenerate",
+      "class_k15": "baseline_degenerate"
+    },
+    "mag0.9_high": {
+      "cross": "high",
+      "magnitude": 0.9,
+      "baseline_key": [
+        0.9,
+        472,
+        2048,
+        128
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 5.498273276316468e-05,
+        "sigma_agg_median": 2.6952633180865604e-10,
+        "mu_k15_median": 5.515583325177431e-05,
+        "degenerate": true
+      },
+      "cell_mu_agg_median": 0.00010509722778806463,
+      "cell_mu_k15_median": 9.203398440149613e-05,
+      "class_Kagg": "baseline_degenerate",
+      "class_k15": "baseline_degenerate"
+    },
+    "contLow_mid": {
+      "cross": "mid",
+      "magnitude": 0.3,
+      "baseline_key": [
+        0.5,
+        19,
+        256,
+        16
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.28402121365070343,
+        "sigma_agg_median": 2.40959586506051e-07,
+        "mu_k15_median": 0.28551167249679565,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.16995343565940857,
+      "cell_mu_k15_median": 0.16929594427347183,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    },
+    "D4_mid": {
+      "cross": "mid",
+      "magnitude": 0.3,
+      "baseline_key": [
+        0.5,
+        39,
+        256,
+        4
+      ],
+      "n_cell": 10,
+      "baseline": {
+        "n": 20,
+        "mu_agg_median": 0.2518290877342224,
+        "sigma_agg_median": 2.4559928313294677e-08,
+        "mu_k15_median": 0.1437182053923607,
+        "degenerate": false
+      },
+      "cell_mu_agg_median": 0.07659631036221981,
+      "cell_mu_k15_median": 0.060981033369898796,
+      "class_Kagg": "band_resident",
+      "class_k15": "band_resident"
+    }
+  },
+  "closing_framing": "inner-PAM-in-isolation; outer associative memory out of v2 scope"
+}

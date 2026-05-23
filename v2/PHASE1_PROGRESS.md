@@ -164,8 +164,38 @@ not the 12–15 hr the rule's text assumed. Budget-reconciliation item.
    or `not_characterised`?
 5. σ head: per-config baseline for Diff_σ too (1.2.5 measured Diff_μ only)?
 
-## 9. Next immediate action
-CHECKPOINT. Option 1 selected (decisive). Design chat specifies the Option-1 structure
-(items 1–5 above) + confirms the ~3-day compute before I build step 5 (baseline collection)
--> step 6 (recalibrate τ_W) -> step 7 (main effects with per-config thresholds). Controls +
-diagnostic data committed; canaries green; push hold preserved.
+## 9. Option-1 PILOT (240 runs, L_d=1) — robust variance-limited NULL
+14 cells (n=10) + 5 mag=0 baselines (n=20), per-K, in 390 min at 2x. Per-config baseline
+classification (cell Diff CI-low > own-baseline-median + τ_W). `results/phase1/pilot/`.
+
+**Signal density 0/14 discriminably-working — at K-aggregated AND k=15.** Categories: 9
+band_resident, 1 discriminably_non_working, 4 baseline_degenerate (high cross:
+cont-high/D=128/P=2048 -> σ variance-collapse, Diff_μ≈0).
+- **Signal present but variance-limited, not absent:** mag0.9_low median **1.259** (≫ its
+  threshold 0.850) but CV 0.42, CI [0.638, 1.504] straddles. 5/10 non-degenerate cells show
+  a positive perturbation effect (cell > baseline).
+- **R1 (mag=0.9) refuted:** large perturbation raises the low-cross median but not
+  resolvability (variance still swamps).
+- **R2 (k=15) refuted:** long horizon shows no more signal than K-aggregated.
+- **Paired analysis refuted** (`paired_analysis.json`): cell−baseline at the same seed
+  (shared init/trajectory/dropout) does NOT cancel the variance — paired CV stays 1.5–12+,
+  0/10 resolvable, and the effect sign flips across seeds. ⇒ the limiter is
+  training-trajectory divergence (data-driven), not sample size or shared-noise. Confirms
+  & strengthens PRE-D2's variance-limited reading.
+
+**Conclusion (scoped):** inner-PAM-in-isolation has **no discriminable working region** at
+L_d=1 across the property space, robust to per-config baselines, magnitude (incl. 0.9),
+prediction horizon (k=15), and paired variance-cancellation. Closing framing (design-chat):
+this characterises inner-PAM-in-isolation; the outer associative memory is out of v2 scope.
+
+**Caveat — capacity dimension untested:** the pilot is **L_d=1 only**. The full grid
+includes L_d∈{1,2,4}; PRE-D2 (L_d=2) was variance-limited but had some discriminable
+(mostly non-working) points. L_d=2/4 (decoder capacity) is NOT de-risked by this pilot.
+
+## 10. Next immediate action
+CHECKPOINT — full-collection decision. The L_d=1 null is robust; a ~3-day full collection at
+L_d=1 would near-certainly confirm it (low info gain). Open question: does decoder capacity
+(L_d=2/4) change the picture? Options: (A) conclude Phase 1 with the variance-limited /
+no-working-region finding; (B) focused L_d=2/4 pilot extension on a cell subset (~2-4 hr) to
+de-risk capacity before any full collection; (C) full collection anyway. Pilot + paired data
+committed; canaries green; push hold preserved.

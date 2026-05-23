@@ -1,0 +1,82 @@
+{
+  "label": "cell_contLow_mid_s5",
+  "L_d_main": 1,
+  "seed": 5,
+  "wall_clock_s": 199.46,
+  "steps_trained": 10000,
+  "final_interval_loss": -2926.26842,
+  "nan_inf": false,
+  "still_descending": false,
+  "stability_flag": "stable",
+  "diff_mu": 0.9103079438209534,
+  "diff_sigma": 2.101726295222761e-07,
+  "diff_mu_aggregate": 0.9103079438209534,
+  "diff_sigma_aggregate": 2.101726295222761e-07,
+  "diff_mu_per_k": [
+    0.9054010510444641,
+    0.9220847487449646,
+    0.9061489701271057,
+    0.909745991230011,
+    0.917464554309845,
+    0.90342777967453,
+    0.9023301005363464,
+    0.9178615808486938,
+    0.9096105694770813,
+    0.923321545124054,
+    0.9083937406539917,
+    0.9198693037033081,
+    0.9126690626144409,
+    0.9057245850563049,
+    0.8992171883583069,
+    0.9016563296318054
+  ],
+  "diff_sigma_per_k": [
+    1.6021920146158664e-07,
+    1.6547765824270755e-07,
+    1.981638888537418e-07,
+    2.0451452087399957e-07,
+    2.348794225781603e-07,
+    2.241242498257634e-07,
+    1.773641713498364e-07,
+    1.9214829194424965e-07,
+    1.7075224434393022e-07,
+    1.204551409728083e-07,
+    1.433389940075358e-07,
+    1.4988995644671377e-07,
+    2.4915090079957736e-07,
+    2.6885490456152183e-07,
+    3.202243590294529e-07,
+    3.83204081799704e-07
+  ],
+  "variance_collapse": false,
+  "k_report_idx": {
+    "k1": 0,
+    "k8": 7,
+    "k15": 14
+  },
+  "spec": {
+    "kind": "cell",
+    "tag": "contLow_mid",
+    "cross": "mid",
+    "magnitude": 0.3,
+    "baseline_key": [
+      0.5,
+      19,
+      256,
+      16
+    ],
+    "params": {
+      "period_P": 256,
+      "manifold_dim_D": 16,
+      "continuity_center": 19,
+      "fidelity_F": 0.97,
+      "magnitude_M": 0.3,
+      "locality_L": 0.5
+    },
+    "L_d_main": 1,
+    "seed": 5,
+    "perk": true,
+    "label": "cell_contLow_mid_s5",
+    "out_file": "/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v2/results/phase1/pilot/_runs/cell_contLow_mid_s5.json"
+  }
+}
