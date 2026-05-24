@@ -1,0 +1,105 @@
+{
+  "config": "mag=0 mid (P=256,D=16,center=39); training_steps=10000",
+  "checks": {
+    "sanity1_fit_training_stream": {
+      "pred_error_training": {
+        "err_mean": 0.998716413974762,
+        "err_k1": 1.0092629194259644,
+        "err_k16": 1.0075798034667969,
+        "cos_k1": -0.009262888692319393
+      },
+      "pred_error_heldout": {
+        "err_mean": 0.999095618724823,
+        "err_k1": 1.0110136270523071,
+        "err_k16": 1.0077091455459595,
+        "cos_k1": -0.011013559065759182
+      },
+      "diff_mu_training": 0.21672505140304565,
+      "diff_mu_heldout": 0.2178938239812851,
+      "verdict": "FAIL (does not fit even training stream -> upstream of perturbation)"
+    },
+    "sanity2_full_trajectory_swap": {
+      "pred_error_familiar_A": {
+        "err_mean": 0.999095618724823,
+        "err_k1": 1.0110136270523071,
+        "err_k16": 1.0077091455459595,
+        "cos_k1": -0.011013559065759182
+      },
+      "pred_error_novel_B": {
+        "err_mean": 1.0000628232955933,
+        "err_k1": 1.000043511390686,
+        "err_k16": 1.0001554489135742,
+        "cos_k1": -4.3499709136085585e-05
+      },
+      "delta_err_mean": 0.0009672045707702637,
+      "verdict": "FAIL (insensitive to full-trajectory replacement)"
+    },
+    "sanity3_metric_known_cases": {
+      "a_training_exact": {
+        "diff_mu": 0.21672505140304565,
+        "pred_error": 0.998716413974762
+      },
+      "b_orthogonal_offset": {
+        "diff_mu": 0.2394142746925354,
+        "pred_error": 1.0176715850830078
+      },
+      "c_random_noise": {
+        "diff_mu": 0.0019714566878974438,
+        "pred_error": 1.0004607439041138
+      },
+      "verdict": "FAIL (metric does not discriminate analytically-distinct streams)"
+    },
+    "sanity4_loss_trajectory": {
+      "L_d1": {
+        "initial": -2081.310303,
+        "final": -2788.356445,
+        "min": -3003.656982,
+        "n_points": 200,
+        "decreased": 707.0461419999997,
+        "every_2000": [
+          -2081.3103,
+          -2948.7251,
+          -2722.5381,
+          -2892.1743,
+          -2671.9883
+        ]
+      },
+      "L_d2": {
+        "initial": -1401.318237,
+        "final": -2922.262207,
+        "min": -2998.574707,
+        "n_points": 200,
+        "decreased": 1520.9439700000003,
+        "every_2000": [
+          -1401.3182,
+          -2859.791,
+          -2617.6912,
+          -2912.1494,
+          -2779.2368
+        ]
+      },
+      "L_d4": {
+        "initial": -275.008179,
+        "final": -2811.160645,
+        "min": -2996.336914,
+        "n_points": 200,
+        "decreased": 2536.152466,
+        "every_2000": [
+          -275.0082,
+          -2738.344,
+          -2844.6597,
+          -2570.0461,
+          -2861.4358
+        ]
+      },
+      "capacity_monotone_final": false,
+      "verdict": "PASS (loss decreases at all capacities)"
+    },
+    "sanity5_inter_seed_correlation": {
+      "inter_seed_output_cos": 0.1243581771850586,
+      "diff_mu_seed0_heldout": 0.2178938239812851,
+      "diff_mu_seed1_heldout": 0.0666540190577507,
+      "regime": "low_corr (<0.3): seeds learn DIFFERENT functions (unviable-egg, concrete)"
+    }
+  }
+}

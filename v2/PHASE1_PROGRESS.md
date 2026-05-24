@@ -239,8 +239,44 @@ not a property-space-specific or capacity-specific effect, so the un-swept axes 
 locality/period sweeps) are expected to inherit the same null; C2 (locality=0.9) already
 showed no help. Marginal information of the full grid is low against its cost.
 
-## 13. Next immediate action
-CHECKPOINT — conclude Phase 1. Per the pre-registered outcome, recommend concluding with the
-variance-limited-across-capacity finding (not running the full grid) and writing the Phase 1
-HANDOFF/closing (§10 of the instructions). Phase 2/3 hard-gate: CC does not initiate Phase
-2/3 autonomously. Awaiting design-chat confirmation to draft the HANDOFF. Canaries green.
+## 13. (superseded) — HANDOFF was drafted to conclude with the variance-limited finding
+Drafted `v2/PHASE1_HANDOFF.md`, then HELD for a mechanical sanity battery before commit.
+
+## 14. MECHANICAL SANITY BATTERY — BROKEN MECHANICS (finding invalidated)
+`scripts/run_phase1_sanity_battery.py` -> `results/phase1/sanity_battery.json` (drift
+detection, research_ops §15: do the train+eval mechanics produce meaningful numbers? The five
+pilot cross-checks all sat downstream of the same pipe and would converge identically whether
+the null is real or the pipe is broken).
+
+**Result: the predictor's mean head never learns to predict the trajectory.**
+- S1 (fit own training stream): `cos(mean, target)=−0.011` — orthogonal to truth, on the
+  TRAINING stream of a smooth period-256 loop.
+- `cos(mean, last_frame)=−0.019` — does not even learn the trivial copy-last-frame; yet
+  `cos(last_frame, target)=0.559` -> **the trivial baseline beats the trained predictor**.
+- `‖mean‖=0.75` (not zero-collapsed; uninformative direction); σ=0.056; loss=−2917 — the
+  loss "convergence" (S4 PASS) is the **variance head fitting the residual of an unlearned
+  mean** = plateau-at-chaos, not plateau-at-learned.
+- S2 (full-trajectory swap): err_familiar 0.999 ≈ err_novel 1.000 — insensitive because the
+  output is uninformative regardless of input.
+- S3: pred_error ≈1.0 on (a) training and (c) noise alike (FAIL); Diff_μ does vary with input
+  (0.217 vs 0.002) but is measuring the variance of an untrained mean.
+- S5: inter-seed output cos 0.124 — seeds settle into different uninformative functions.
+
+**Implication:** the Phase-1 "variance-limited / no-working-region" result is an **ARTIFACT of
+an untrained predictor**, not an architectural property. Diff_μ has measured variance-of-an-
+untrained-mean throughout. This **implicates PRE-D1a (baseline), PRE-E (τ_W), PRE-D2** — every
+v2 measurement built on this train+eval pipe. The HANDOFF draft is HELD/invalidated.
+
+**Likely root cause (pre-registered S1-fail branch):** `V2_TRAINING_STEPS=10000` single-window
+(batch=1) steps is far too few to train the ~22M-param v1 transformer; PRE-A's plateau detector
+saw the *variance* head converge and called it done (plateau-at-unlearned-mean). Needs a
+confirmatory longer-training test (train 1 predictor at e.g. 50k–500k steps and/or with
+batching; check whether `cos(mean, target)` rises above the trivial 0.56).
+
+## 15. Next immediate action — STOP, design-chat decision
+Do NOT conclude Phase 1 / write v2 closing on the current framing. Do NOT proceed to Phase
+2/3. Decisions for the design chat: (a) confirm root cause (longer-training / batching test);
+(b) scope of re-validation — the defect predates Phase 1 (PRE-A training-steps calibration), so
+PRE-A/D1a/D2/E likely need re-running once training is fixed; (c) whether v2's training recipe
+(online batch=1, step count, optimiser) is the defect or a deeper architecture-substrate issue.
+Battery committed; HANDOFF held (untracked, marked invalidated); push hold preserved.

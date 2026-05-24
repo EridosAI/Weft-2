@@ -75,13 +75,19 @@ def compute_diff_metrics_perk(predictor, eval_stream: torch.Tensor, device) -> d
 
 
 def train_one_perk(params: StreamParams, L_d_main: int, seed: int, U, device,
-                   training_steps: int, label: str = "") -> dict:
+                   training_steps: int, label: str = "",
+                   loss_log_every: int | None = None, return_model: bool = False):
     """Faithful copy of PRE-D1a train_one training loop; per-K eval. Returns a dict.
 
     Training is byte-for-byte the PRE-D1a recipe (same `_stream`, seed, AdamW config,
     loop, grad-clip) so `diff_mu_aggregate` reproduces `train_one`'s `diff_mu`.
     body_representation tracking is dropped (it is no-grad/detached and does not affect
     training); everything that touches the optimizer is identical.
+
+    Diagnostic hooks (additive, instrumentation-only — do NOT consume RNG or alter the
+    optimizer step, so bit-identity is preserved):
+      loss_log_every: if set, record [step, loss] every N steps (Sanity 4 trajectory).
+      return_model: if True, return (result_dict, predictor, train_emb, eval_t).
     """
     train_np = _stream(params, training_steps + WINDOW_W + PREDICT_K + 64, seed, U)
     eval_np = _stream(params, 2048, seed + 1000, U)
@@ -97,6 +103,7 @@ def train_one_perk(params: StreamParams, L_d_main: int, seed: int, U, device,
     body_early_done = False                    # mirror train_one's first-checkpoint forward
 
     interval_means, run_sum, run_cnt, steps = [], 0.0, 0, 0
+    loss_log = []
     nan_inf = False
     t0 = time.time()
     last_t = min(N - PREDICT_K - 1, WINDOW_W - 1 + training_steps)
@@ -110,7 +117,10 @@ def train_one_perk(params: StreamParams, L_d_main: int, seed: int, U, device,
         opt.zero_grad(set_to_none=True); loss.backward()
         torch.nn.utils.clip_grad_norm_(pred.parameters(), GRAD_CLIP_MAX_NORM)
         opt.step()
-        run_sum += float(loss.item()); run_cnt += 1; steps += 1
+        li = float(loss.item())
+        run_sum += li; run_cnt += 1; steps += 1
+        if loss_log_every and steps % loss_log_every == 0:
+            loss_log.append([steps, round(li, 6)])
         if run_cnt >= V2_SMOKE_CHECKPOINT_EVERY:
             interval_means.append(run_sum / run_cnt); run_sum, run_cnt = 0.0, 0
             if not body_early_done:
@@ -133,12 +143,17 @@ def train_one_perk(params: StreamParams, L_d_main: int, seed: int, U, device,
     else:
         metrics = compute_diff_metrics_perk(pred, eval_t, device)
 
-    return {
+    result = {
         "label": label, "L_d_main": L_d_main, "seed": seed,
         "wall_clock_s": round(wall, 2), "steps_trained": steps,
         "final_interval_loss": round(interval_means[-1], 6) if interval_means else float("nan"),
+        "interval_means": [round(x, 6) for x in interval_means],
+        "loss_log": loss_log,
         "nan_inf": nan_inf, "still_descending": still_descending, "stability_flag": flag,
         # back-compat scalar names (== train_one) + per-K extension:
         "diff_mu": metrics["diff_mu_aggregate"], "diff_sigma": metrics["diff_sigma_aggregate"],
         **metrics,
     }
+    if return_model:
+        return result, pred, emb, eval_t
+    return result
