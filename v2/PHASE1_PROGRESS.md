@@ -273,10 +273,38 @@ saw the *variance* head converge and called it done (plateau-at-unlearned-mean).
 confirmatory longer-training test (train 1 predictor at e.g. 50k–500k steps and/or with
 batching; check whether `cos(mean, target)` rises above the trivial 0.56).
 
-## 15. Next immediate action — STOP, design-chat decision
-Do NOT conclude Phase 1 / write v2 closing on the current framing. Do NOT proceed to Phase
-2/3. Decisions for the design chat: (a) confirm root cause (longer-training / batching test);
-(b) scope of re-validation — the defect predates Phase 1 (PRE-A training-steps calibration), so
-PRE-A/D1a/D2/E likely need re-running once training is fixed; (c) whether v2's training recipe
-(online batch=1, step count, optimiser) is the defect or a deeper architecture-substrate issue.
-Battery committed; HANDOFF held (untracked, marked invalidated); push hold preserved.
+## 15. (superseded by §16) — root cause was to be confirmed by a longer-training test
+
+## 16. ROOT CAUSE CONFIRMED — training-length insufficient (mechanics are SOUND)
+`scripts/run_phase1_training_length_test.py` -> `results/phase1/training_length_test.json`.
+cos(mean,target) vs steps (mid mag=0 L_d=1, smooth period-256 loop; trivial predict-last=0.559):
+
+| steps | 2k | **10k** | 25k | 50k | 100k | 150k | 200k |
+|---|---|---|---|---|---|---|---|
+| cos_k1 | +0.003 | **−0.014** | +0.033 | +0.397 | +0.934 | +0.945 | +0.953 |
+| ‖mean‖ | 0.27 | 0.19 | 0.19 | 0.87 | 0.90 | 0.94 | 0.94 |
+
+**The predictor learns the trajectory well (cos→0.95, ≫ trivial 0.56) — it just needs ~100k
+steps.** Sharp learning onset 25k→50k (grokking-like delayed generalisation); plateau by ~100k.
+`V2_TRAINING_STEPS=10000` sits in the pre-transition flat region (cos≈0) — exactly where every
+v2 measurement trained. PRE-A's plateau detector fired on the VARIANCE head saturating (loss
+−2901→−3013 over 2k→25k, "flat" in relative terms on a large NLL) while the MEAN head's learning
+transition (loss −3104→−4236, 50k→100k) had not yet happened. Plateau-at-chaos, confirmed.
+
+**Mechanics are SOUND** — substrate, architecture, eval metric, harness all work; only the step
+count was wrong. The entire "variance-limited / no-working-region" result is fully explained as a
+pre-learning-transition artifact.
+
+## 17. Next immediate action — STOP, design-chat re-plan (NOT autonomous)
+Decisions for the design chat (major implications):
+- **Recalibrate `V2_TRAINING_STEPS`** to the learned regime (~100k; diminishing returns after).
+  Redo PRE-A's plateau detection with a **mean-head-aware** criterion (cos(mean,target) /
+  prediction-error threshold), NOT just NLL-plateau — the variance head saturates first and
+  masks the mean head.
+- **Re-run everything training-dependent** at the new step count: PRE-A (step calibration),
+  PRE-D1a (baseline), PRE-E (τ_W), PRE-D2, and ALL of Phase 1.
+- **NOT affected** (no predictor training): PRE-B (worked-example measurement), PRE-C (arch
+  assertions), PRE-A's construction-sanity sweep, the substrate/property/protocol modules.
+- **Budget:** ~10× compute per run (100k vs 10k steps). Re-plan scale accordingly; per-config
+  baselines + pilot-first + the sanity battery remain the template.
+Phase 2/3 hard-gate stands. HANDOFF held (invalidated). Push hold preserved.
