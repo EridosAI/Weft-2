@@ -208,7 +208,39 @@ Confirmations:
 
 Runner parametrised by `--l-d` (output namespaced `pilot_Ld2/`, `pilot_Ld4/`).
 
-## 11. Next immediate action
-Run L_d=2 then L_d=4 pilots sequentially (~17 hr), each + paired analysis. On completion:
-report all three L_d arms (1/2/4) together against the pre-registered outcomes -> conclude
-Phase 1 or scope a targeted capacity-dependent collection. Push hold preserved.
+## 11. Capacity extension results — robust null ACROSS CAPACITY
+L_d=2 (480 min) + L_d=4 (661 min) = ~19 hr actual (est ~17). All three arms:
+
+| L_d | K-agg working | k=15 working | paired resolvable | categories (K-agg) | outcome |
+|---|---|---|---|---|---|
+| 1 | 0/14 | 0/14 | 0/10 | 9 band, 1 non-working, 4 degenerate | (matches) |
+| 2 | 0/14 | 0/14 | 0/10 | 10 band, 4 degenerate | **robust_null (<5%)** |
+| 4 | 0/14 | 0/14 | 0/10 | 8 band, 2 non-working, 4 degenerate | **robust_null (<5%)** |
+
+Pre-registered reading hit: **L_d=2/4 robust null matches L_d=1 -> finding generalises
+cleanly across decoder capacity.** The L_d=1 low-cross perturbation *elevation* (mag0.9_low
+1.259 vs baseline 0.789) does NOT persist at L_d=2/4 (0.279 vs 0.319; 0.559 vs 0.593) — higher
+capacity makes the null cleaner. The 4 baseline_degenerate cells are the high cross
+(cont-high/D=128/P=2048, σ variance-collapse) at every L_d.
+
+## 12. PHASE 1 SUBSTANTIVE FINDING (scoped)
+**inner-PAM-in-isolation exhibits no discriminable working region** across the tested
+property-space coverage (3 crosses spanning all five axes' low/mid/high; magnitude incl.
+0.9; mid-cross continuity/dim depth) and **all three decoder capacities (L_d 1/2/4)**, robust
+to: per-config bit-identical baselines (Option 1), long-horizon (k=15), and paired
+variance-cancellation. The limiter is **training-trajectory variance** (data-driven,
+seed-to-seed; not sample size, not config-baseline-offset, not capacity) — i.e.
+**variance-limited**, generalising PRE-D2's single-point reading to the property space ×
+capacity. Closing framing (design-chat): characterises inner-PAM-in-isolation; the outer
+associative memory is out of v2 scope.
+
+**Why the full ~3-day grid is not warranted:** the limitation is at the training-run level,
+not a property-space-specific or capacity-specific effect, so the un-swept axes (full
+locality/period sweeps) are expected to inherit the same null; C2 (locality=0.9) already
+showed no help. Marginal information of the full grid is low against its cost.
+
+## 13. Next immediate action
+CHECKPOINT — conclude Phase 1. Per the pre-registered outcome, recommend concluding with the
+variance-limited-across-capacity finding (not running the full grid) and writing the Phase 1
+HANDOFF/closing (§10 of the instructions). Phase 2/3 hard-gate: CC does not initiate Phase
+2/3 autonomously. Awaiting design-chat confirmation to draft the HANDOFF. Canaries green.

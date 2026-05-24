@@ -1,0 +1,120 @@
+{
+  "method": "paired Diff_\u03bc(cell_s) \u2212 Diff_\u03bc(baseline_s), same seed; bootstrap CI of median",
+  "tau_W_mu": 0.061301334761083126,
+  "resolvable_paired_count": 0,
+  "n_tested": 10,
+  "unpaired_working_count": 0,
+  "conclusion": "paired CV remains 1.5\u201312+ and no cell is resolvable paired -> the run-to-run variance is training-trajectory divergence (data-driven), NOT shared init/dropout; pairing does not rescue the signal. The perturbation effect is unstable across training runs (sign flips), confirming a variance-limited (not sample-limited) null at L_d=1.",
+  "cells": {
+    "mag0.1_low": {
+      "n_pairs": 10,
+      "paired_median": -0.363093838095665,
+      "paired_cv": 3.3557379375143706,
+      "paired_ci": [
+        -0.9916910007596016,
+        0.3504750430583954
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    },
+    "mag0.3_low": {
+      "n_pairs": 10,
+      "paired_median": -0.2053259313106537,
+      "paired_cv": 4.70444051140189,
+      "paired_ci": [
+        -0.8948371112346649,
+        0.20536060258746147
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    },
+    "mag0.7_low": {
+      "n_pairs": 10,
+      "paired_median": 0.03887876868247986,
+      "paired_cv": 5.069213670004374,
+      "paired_ci": [
+        -0.6566163301467896,
+        0.3884575366973877
+      ],
+      "sign_flips": false,
+      "resolvable_paired": false
+    },
+    "mag0.9_low": {
+      "n_pairs": 10,
+      "paired_median": -0.18121781945228577,
+      "paired_cv": 3.6798601261058264,
+      "paired_ci": [
+        -0.7677269279956818,
+        0.21374905109405518
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    },
+    "mag0.1_mid": {
+      "n_pairs": 10,
+      "paired_median": 0.20043208450078964,
+      "paired_cv": 23.457110597317605,
+      "paired_ci": [
+        -0.14258000254631042,
+        0.4846629500389099
+      ],
+      "sign_flips": false,
+      "resolvable_paired": false
+    },
+    "mag0.3_mid": {
+      "n_pairs": 10,
+      "paired_median": -0.12570124492049217,
+      "paired_cv": 2.1421948206307717,
+      "paired_ci": [
+        -0.18110724538564682,
+        -0.06151653826236725
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    },
+    "mag0.7_mid": {
+      "n_pairs": 10,
+      "paired_median": 0.21678794920444489,
+      "paired_cv": 11.090153606559191,
+      "paired_ci": [
+        -0.004529789090156555,
+        0.5135313272476196
+      ],
+      "sign_flips": false,
+      "resolvable_paired": false
+    },
+    "mag0.9_mid": {
+      "n_pairs": 10,
+      "paired_median": -0.14089408330619335,
+      "paired_cv": 3.6280191296509514,
+      "paired_ci": [
+        -0.19544154033064842,
+        0.12379933730698423
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    },
+    "contLow_mid": {
+      "n_pairs": 10,
+      "paired_median": -0.008303381502628326,
+      "paired_cv": 9.895974227562581,
+      "paired_ci": [
+        -0.08748031035065651,
+        0.04838243406265974
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    },
+    "D4_mid": {
+      "n_pairs": 10,
+      "paired_median": -0.08730341494083405,
+      "paired_cv": 6.022350202745228,
+      "paired_ci": [
+        -0.30647794529795647,
+        0.33999008871614933
+      ],
+      "sign_flips": true,
+      "resolvable_paired": false
+    }
+  }
+}
