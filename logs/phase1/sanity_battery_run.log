@@ -1,0 +1,19 @@
+/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v1/src/predictor/inner_pam_v1_primary.py:76: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/home/jason/.local/lib/python3.12/site-packages/torch/autograd/graph.py:865: UserWarning: Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable determinism call torch.use_deterministic_algorithms(True, warn_only=False). (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/attention_backward.cu:897.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[battery] device=cuda; training predictors (mag=0 mid) ...
+[battery] predictors trained.
+
+[battery] === RESULTS ===
+  sanity1_fit_training_stream: FAIL (does not fit even training stream -> upstream of perturbation)
+  sanity2_full_trajectory_swap: FAIL (insensitive to full-trajectory replacement)
+  sanity3_metric_known_cases: FAIL (metric does not discriminate analytically-distinct streams)
+  sanity4_loss_trajectory: PASS (loss decreases at all capacities)
+  sanity5_inter_seed_correlation: low_corr (<0.3): seeds learn DIFFERENT functions (unviable-egg, concrete)
+
+[battery] S1 fit: train_err_k1=1.009 cos_k1=-0.009 (held err_k1=1.011)
+[battery] S2 swap: err_familiar=0.999 err_novel=1.000
+[battery] S3 metric: a_err=0.999 c_noise_err=1.000 | a_dm=0.217 b_dm=0.239 c_dm=0.002
+[battery] S4 loss: L_d1 -2081.31->-2788.36 | L_d2 -1401.32->-2922.26 | L_d4 -275.01->-2811.16
+[battery] S5 inter-seed output cos = 0.124

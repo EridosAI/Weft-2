@@ -1,0 +1,55 @@
+[basevar] 40 new arm-runs (4 configs x n=10); reusing C1-L_d1 midpoint
+[harness] 1/40 (3.3 min) basevar_D4_s1 diff_mu=0.22857747972011566 flag=stable
+[harness] 2/40 (3.3 min) basevar_D4_s0 diff_mu=0.25639188289642334 flag=stable
+[harness] 3/40 (6.4 min) basevar_D4_s3 diff_mu=0.25426819920539856 flag=stable
+[harness] 4/40 (6.5 min) basevar_D4_s2 diff_mu=0.44417253136634827 flag=stable
+[harness] 5/40 (9.6 min) basevar_D4_s4 diff_mu=0.07887010276317596 flag=stable
+[harness] 6/40 (9.7 min) basevar_D4_s5 diff_mu=0.025203516706824303 flag=stable
+[harness] 7/40 (12.8 min) basevar_D4_s6 diff_mu=0.25050657987594604 flag=stable
+[harness] 8/40 (12.8 min) basevar_D4_s7 diff_mu=0.2636462152004242 flag=stable
+[harness] 9/40 (16.0 min) basevar_D4_s8 diff_mu=0.34110990166664124 flag=stable
+[harness] 10/40 (16.0 min) basevar_D4_s9 diff_mu=0.6734365820884705 flag=stable
+[harness] 11/40 (19.1 min) basevar_D128_s0 diff_mu=2.1292924429872073e-05 flag=stable
+[harness] 12/40 (19.1 min) basevar_D128_s1 diff_mu=2.1053436285001226e-05 flag=stable
+[harness] 13/40 (22.3 min) basevar_D128_s3 diff_mu=2.043789208983071e-05 flag=stable
+[harness] 14/40 (22.3 min) basevar_D128_s2 diff_mu=2.2064328732085414e-05 flag=stable
+[harness] 15/40 (25.4 min) basevar_D128_s5 diff_mu=2.24370087380521e-05 flag=stable
+[harness] 16/40 (25.4 min) basevar_D128_s4 diff_mu=2.9549497412517667e-05 flag=stable
+[harness] 17/40 (28.6 min) basevar_D128_s6 diff_mu=2.6985870135831647e-05 flag=stable
+[harness] 18/40 (28.6 min) basevar_D128_s7 diff_mu=2.5441173420404084e-05 flag=stable
+[harness] 19/40 (31.7 min) basevar_D128_s9 diff_mu=2.6817311663762666e-05 flag=stable
+[harness] 20/40 (31.8 min) basevar_D128_s8 diff_mu=2.707272142288275e-05 flag=stable
+[harness] 21/40 (34.9 min) basevar_contLow_s0 diff_mu=0.5308877229690552 flag=stable
+[harness] 22/40 (35.0 min) basevar_contLow_s1 diff_mu=0.2982270121574402 flag=stable
+[harness] 23/40 (38.0 min) basevar_contLow_s2 diff_mu=0.8709381818771362 flag=stable
+[harness] 24/40 (38.1 min) basevar_contLow_s3 diff_mu=0.7646181583404541 flag=stable
+[harness] 25/40 (41.2 min) basevar_contLow_s4 diff_mu=0.17473134398460388 flag=stable
+[harness] 26/40 (41.2 min) basevar_contLow_s5 diff_mu=0.42546918988227844 flag=stable
+[harness] 27/40 (44.4 min) basevar_contLow_s6 diff_mu=0.13782690465450287 flag=stable
+[harness] 28/40 (44.4 min) basevar_contLow_s7 diff_mu=0.15751604735851288 flag=stable
+[harness] 29/40 (47.6 min) basevar_contLow_s8 diff_mu=0.17779949307441711 flag=stable
+[harness] 30/40 (47.6 min) basevar_contLow_s9 diff_mu=0.2698154151439667 flag=stable
+[harness] 31/40 (50.8 min) basevar_contHigh_s0 diff_mu=0.006508256774395704 flag=stable
+[harness] 32/40 (50.8 min) basevar_contHigh_s1 diff_mu=0.009501082822680473 flag=stable
+[harness] 33/40 (53.9 min) basevar_contHigh_s2 diff_mu=0.000994788482785225 flag=stable
+[harness] 34/40 (53.9 min) basevar_contHigh_s3 diff_mu=0.0016271797940135002 flag=stable
+[harness] 35/40 (57.1 min) basevar_contHigh_s5 diff_mu=0.008861295878887177 flag=stable
+[harness] 36/40 (57.1 min) basevar_contHigh_s4 diff_mu=0.1113528162240982 flag=stable
+[harness] 37/40 (60.2 min) basevar_contHigh_s6 diff_mu=0.0009875149698927999 flag=stable
+[harness] 38/40 (60.2 min) basevar_contHigh_s7 diff_mu=0.0007727133925072849 flag=stable
+[harness] 39/40 (63.4 min) basevar_contHigh_s9 diff_mu=0.009178832173347473 flag=stable
+[harness] 40/40 (63.4 min) basevar_contHigh_s8 diff_mu=0.0006334891077131033 flag=stable
+[basevar] 40 runs done in 63.4 min
+
+[basevar] === D axis (mag=0, L_d=1, mid cross) ===
+  D4: median=0.2553 IQR=0.0877 (n=10)
+  D16_midpoint(=C1_Ld1): median=0.1590 IQR=0.1647 (n=10)
+  D128: median=0.0000 IQR=0.0000 (n=10)
+  D-axis relative spread = 1.606
+[basevar] === continuity axis ===
+  contLow_0.077: median=0.2840 IQR=0.3290 (n=10)
+  contMid_0.4(=C1_Ld1): median=0.1590 IQR=0.1647 (n=10)
+  contHigh_0.8: median=0.0041 IQR=0.0081 (n=10)
+  continuity-axis relative spread = 1.761
+
+[basevar] max relative spread = 1.761 -> Option 1 (per-config bit-identical baseline) — decisively wide

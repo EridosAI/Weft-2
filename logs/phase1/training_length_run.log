@@ -1,0 +1,14 @@
+/mnt/c/Users/Jason/Desktop/Eridos/Weft 2/v1/src/predictor/inner_pam_v1_primary.py:76: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/home/jason/.local/lib/python3.12/site-packages/torch/autograd/graph.py:865: UserWarning: Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable determinism call torch.use_deterministic_algorithms(True, warn_only=False). (Triggered internally at /pytorch/aten/src/ATen/native/transformers/cuda/attention_backward.cu:897.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[len] trivial predict-last baseline cos_k1 = 0.5586; period-256 reps=784
+[len] steps=  2000 cos_k1=+0.0034 cos_allK=+0.0014 mean_norm=0.270 (trivial=0.559) loss=-2901 [0.4min]
+[len] steps= 10000 cos_k1=-0.0142 cos_allK=+0.0021 mean_norm=0.194 (trivial=0.559) loss=-2990 [1.8min]
+[len] steps= 25000 cos_k1=+0.0330 cos_allK=+0.0053 mean_norm=0.185 (trivial=0.559) loss=-3013 [4.8min]
+[len] steps= 50000 cos_k1=+0.3968 cos_allK=+0.4216 mean_norm=0.870 (trivial=0.559) loss=-3104 [9.7min]
+[len] steps=100000 cos_k1=+0.9336 cos_allK=+0.9322 mean_norm=0.901 (trivial=0.559) loss=-4236 [19.1min]
+[len] still improving (50k->100k gain +0.5367); pushing to 200k ...
+[len] steps=150000 cos_k1=+0.9445 cos_allK=+0.9425 mean_norm=0.939 (trivial=0.559) loss=-4340 [28.8min]
+[len] steps=200000 cos_k1=+0.9529 cos_allK=+0.9512 mean_norm=0.943 (trivial=0.559) loss=-4454 [38.3min]
+[len] FINAL cos_k1=+0.9529 vs trivial 0.5586 -> TRAINING-LENGTH: cos rises above the trivial baseline with more steps
