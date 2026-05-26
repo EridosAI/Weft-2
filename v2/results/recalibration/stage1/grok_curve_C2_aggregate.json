@@ -1,0 +1,43 @@
+{
+  "cell_id": "C2",
+  "construction": {
+    "L_d": 2,
+    "period_P": 256,
+    "manifold_dim_D": 16,
+    "continuity_center": 39,
+    "magnitude_M": 0.0,
+    "locality_L": 0.5
+  },
+  "measured_properties": {
+    "measured_C": 0.4179443420893112,
+    "magnitude": 0.0,
+    "locality": 0.50390625,
+    "period": 256,
+    "D_global": 16
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "trivial_baseline_cos_k1": 0.5584530234336853,
+  "lock_step_candidate_per_seed": [
+    125000,
+    100000,
+    150000
+  ],
+  "max_cos_k1_per_seed": [
+    0.9716,
+    0.9688,
+    0.9723
+  ],
+  "not_grokked_per_seed": [
+    false,
+    false,
+    false
+  ],
+  "lock_step_candidate_max": 150000,
+  "lock_step_candidate_median": 125000,
+  "within_cell_spread_ratio": 1.5,
+  "any_not_grokked": false
+}

@@ -1,5 +1,55 @@
 # Weft Inner PAM v2 — HANDOFF
 
+## RECALIBRATION STAGE 1 COMPLETE — **STOP fired** (C4 D=128); lock-value decision is experiment-chat work
+
+**Date:** 2026-05-26. **Stage 1 = multi-cell grokking detection** (recalibration instr §3). 7 cells × 3 predictor seeds = **21 grok-curve runs to 200k steps**, all `rc=0`. Ran ~12.1 h wall at 2× local on the RTX 4080 Super (23.9 h sequential-equivalent). Results: `results/recalibration/stage1/` (21 `grok_curve_{cell}_seed{N}.json`, 7 `_aggregate.json`, `lock_decision.json`). Code commit `02f9222`; results commit follows this HANDOFF edit.
+
+### Headline: the broken-mechanics root cause is CONFIRMED FIXED
+The mean head now **learns** — `cos(mean,target)` rises in a sharp grokking transition from ~0 to **0.95–0.98 on 6 of 7 cells** (at the broken `V2_TRAINING_STEPS=10000` it was ~0, below the trivial 0.56 baseline). 10k steps was simply far too short. **Grok onset is cleanly dimensionality-coupled:** D=4 onset ~25–50k, D=16 ~50–100k, **D=128 ~175k and still climbing at the 200k ceiling.**
+
+### Per-cell results (mean-head-aware lock criterion, instr §3.3)
+| cell | L_d | D | continuity | mag | lock_candidate / seed | cell max | max_cos (n=3) | within-seed spread |
+|---|---|---|---|---|---|---|---|---|
+| C1 (anchor) | 1 | 16 | c39 (C≈0.42) | 0 | 175k/175k/175k | 175k | 0.95–0.96 | 1.0× |
+| C2 | 2 | 16 | c39 | 0 | 125k/100k/150k | 150k | 0.97 | 1.5× |
+| C3 | 4 | 16 | c39 | 0 | 150k/175k/175k | 175k | 0.965 | 1.17× |
+| **C4** | 1 | **128** | c39 (forced **C≈1.0**) | 0 | **200k/200k/200k** | **200k** | **0.82–0.85** | 1.0× |
+| C5 | 1 | 16 | c39 | 0.9 | 175k/175k/150k | 175k | 0.955 | 1.17× |
+| C6 | 1 | 4 | c5 (C≈0.42) | 0 | 50k/50k/75k | 75k | 0.979 | 1.5× |
+| C7 | 1 | 16 | c59 (C≈0.87) | 0 | 100k/100k/100k | 100k | 0.965 | 1.0× |
+
+### STOP condition (instr §3.5) — why Stage 2 is NOT entered
+- **C4 (D=128), all three seeds `lock_step_candidate = 200000 > 175000`.** C4 is the `D == P//2` forced-continuity boundary cell (§3.1 caveat; measured C≈1.0). It groks very late and **never plateaus within the 200k budget** — seed0 stays cos≈0.01 through 150k, then 0.44→**0.82** at 200k; seed1 0.56→0.85; all still rising at the ceiling.
+- Derived overflow: `max(lock_step_candidate_max)×1.1 = 200000×1.1 = 220000 > 200000` budget ceiling characterised by the confirmatory test (PHASE1_PROGRESS §16). **`lock_steps_proposed = null`.**
+- **All other STOP guards clean:** within-cell across-seed spread ≤1.5× (n=3 seed-instability guard never tripped — seed convergence is tight, e.g. C1/C4/C7 identical across seeds); inter-cell `lock_step_candidate_max` spread = **2.67×** (C6 75k → C4 200k), under the 4× threshold. No not-grokked-within-budget cell (C4 clears trivial+0.10; it is grokked-but-not-plateaued).
+
+Per §3.5: **CC has NOT proceeded to Stage 2, has NOT written the `V2_TRAINING_STEPS` config lock** (`results/pre_a/v2_training_steps.json` still holds the invalidated 10000; `--write-lock` refuses while a STOP stands). The lock value is decided by the experiment chat with these curves in hand.
+
+### Decision needed from the experiment chat (the C4 question)
+Options CC sees (presented, not chosen):
+1. **Exclude C4** as the flagged `D==P//2` forced-continuity boundary special case (§3.1 already caveats it; it is not a "normal" cell). Remaining cells' max = **175k** (C1/C3/C5) → `175000×1.1 = 192500` → round-to-clean = **`V2_TRAINING_STEPS = 200000`**. Clean, in-budget. *(Note: if the downstream pilot's dim-depth axis reaches D=128 at L_d=1, the slow-grok behaviour resurfaces there — worth weighing.)*
+2. **Extend the budget for C4** (>200k) to find its true plateau — exceeds the 200k ceiling and needs a fresh budget characterisation.
+3. **Lock at 200000 and accept C4 as "barely grokked at the ceiling"** — but C4 has not reached post-asymptotic, violating the lock criterion for that cell.
+
+### Fork 2 decision input (instr §3.8) — measured per-arm cost + cascade estimate
+Measured at the 200k grok-run length (RTX 4080 Super; cost scales ~linearly in steps): **L_d=1 ≈ 58.8 min/arm, L_d=2 ≈ 75.7, L_d=4 ≈ 107.4** (peak VRAM 1.65–1.85 GB/arm; 2× concurrency safe). Per 1k steps: L_d=1 ≈ 0.294 min, L_d=2 ≈ 0.378, L_d=4 ≈ 0.537.
+
+Cascade ballpark **at a 200k lock** (2× local; round figures, experiment chat refines):
+| stage | arm-runs | ~2× local |
+|---|---|---|
+| 3 (unviable-egg, 30: 20×L1+10×L4) | 30 | ~19 h |
+| 4 (PRE-D1a L_d-specific, §6 = 60) | 60 | ~40 h |
+| 6 (PRE-D2, 200×L2) | 200 | ~5.3 d |
+| 7 (controls, 120) | 120 | ~3.4 d |
+| 8 (baseline-var, 40×L1) | 40 | ~20 h |
+| 9 (pilot L_d=1, 240×L1) | 240 | ~4.9 d |
+| **through Stage 9** | ~690 | **~17 days** |
+| 10 (capacity, 480) | 480 | ~15 days |
+
+**Implication:** a ~200k lock is **20× the original 10k assumption**, so the cascade is *weeks* at 2× local (dominated by Stages 6/9/10). This makes the **vast.ai case strong** (nominal 8× → through Stage 9 ≈ 2 days, ≈ $160 at $3.20/hr; +Stage 10 ≈ +$150) — *or* motivates reconsidering whether downstream stages need the full 200k (most downstream cells are L_d=1 mid configs that grok by ~175k). **CC does not make the Fork 2 call;** it continues only when the experiment chat sets the lock and compute strategy. If vast.ai is chosen, the §3.9 cross-hardware smoke gates the rental session.
+
+---
+
 ## PHASE 0 COMPLETE — hands off to the Phase 0.5 design chat
 
 **Outcome: all seven Phase 0 sub-phases completed; no unresolved STOP.** PRE-A (0.1) · PRE-C (0.2) · PRE-B (0.3) · PRE-D1c (0.4) · PRE-D1a (0.5) · PRE-E (0.6) · PRE-D2 (0.7). Commits: `60c8680, dbe6e34, 65fecf3, c1c9d16, ca3972d, de80e76, 63eb9c5, b2d0ec7`. Arm-runs consumed: PRE-A 1 (smoke), PRE-C 0, PRE-B 0, PRE-D1c 0, PRE-D1a 40, PRE-E 0, PRE-D2 200 = **~241**.

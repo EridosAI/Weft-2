@@ -1,0 +1,43 @@
+{
+  "cell_id": "C6",
+  "construction": {
+    "L_d": 1,
+    "period_P": 32,
+    "manifold_dim_D": 4,
+    "continuity_center": 5,
+    "magnitude_M": 0.0,
+    "locality_L": 0.5
+  },
+  "measured_properties": {
+    "measured_C": 0.38079248528155385,
+    "magnitude": 0.0,
+    "locality": 0.5,
+    "period": 32,
+    "D_global": 4
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "trivial_baseline_cos_k1": 0.576197624206543,
+  "lock_step_candidate_per_seed": [
+    50000,
+    50000,
+    75000
+  ],
+  "max_cos_k1_per_seed": [
+    0.9792,
+    0.9795,
+    0.9796
+  ],
+  "not_grokked_per_seed": [
+    false,
+    false,
+    false
+  ],
+  "lock_step_candidate_max": 75000,
+  "lock_step_candidate_median": 50000,
+  "within_cell_spread_ratio": 1.5,
+  "any_not_grokked": false
+}
