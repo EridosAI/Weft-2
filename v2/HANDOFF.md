@@ -1,5 +1,20 @@
 # Weft Inner PAM v2 — HANDOFF
 
+## RESEARCH LINE CLOSED — full history pushed, archive imminent 2026-05-27
+
+Full-history audit complete (v0 → v1 → v2):
+- HEAD at audit: `f661f1e` — this marker commit is pushed on top as the final commit (final HEAD in the close-out summary).
+- `origin/main` matches HEAD: 0 unpushed, 0 remote-ahead. All v0/v1/v2 history is on the remote (the v0/v1 push-hold question is resolved — everything was pushed).
+- Total commits in research line: **113** at audit (114 including this marker).
+- Per-tree top commits at audit: v0 `2150815`, v1 `58e91d7`, v2 `f661f1e` (this marker supersedes as the v2 top); shared `58e91d7`.
+- Branches: `main` + two fully-merged local-only session branches (`claude/determined-williams-44571a`, `claude/happy-goldwasser-bdd4f6`); `git branch --no-merged main` empty (no unmerged work).
+- Frozen-tree intact (`git diff 58e91d7 HEAD -- v0 v1 shared` empty).
+- All canaries pass: 131 pytest + 11 PRE-D arch assertions.
+
+The Weft 2 working directory is being moved to `Eridos/ARCHIVE/Weft 2/` after this commit lands and pushes. No further work on this research line is planned.
+
+---
+
 ## v2 CLOSED — push hold lifted, record published 2026-05-26
 
 **Decision:** v2 closes after Stage 1 of the recalibration phase. Stages 2–10 will not run. The grokking finding (mechanics CONFIRMED FIXED; mean head groks to 0.95–0.98 with sufficient steps; grok onset scales with manifold dimensionality D=4→~25k, D=16→~50–100k, D=128→~175k+) and the architectural-shape reading (transformer + path-prediction-NLL produces strong inter-seed convergence on stationary periodic substrate, which is function-approximator success rather than associative-memory phenomenology) are sufficient closing evidence. Further compute on this architecture is not justified for the Weft research line.
