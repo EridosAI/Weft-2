@@ -1,5 +1,25 @@
 # Weft Inner PAM v2 — HANDOFF
 
+## v2 CLOSED — push hold lifted, record published 2026-05-26
+
+**Decision:** v2 closes after Stage 1 of the recalibration phase. Stages 2–10 will not run. The grokking finding (mechanics CONFIRMED FIXED; mean head groks to 0.95–0.98 with sufficient steps; grok onset scales with manifold dimensionality D=4→~25k, D=16→~50–100k, D=128→~175k+) and the architectural-shape reading (transformer + path-prediction-NLL produces strong inter-seed convergence on stationary periodic substrate, which is function-approximator success rather than associative-memory phenomenology) are sufficient closing evidence. Further compute on this architecture is not justified for the Weft research line.
+
+**Record state:**
+- All Stage 1 commits published to `origin/main` (https://github.com/EridosAI/Weft-2)
+- Published v0/v1/v2 record HEAD: `7892076` (this closing-marker commit is pushed on top as the final commit)
+- Frozen-tree intact (`git diff 58e91d7 HEAD -- v0 v1 shared` empty)
+- Canaries pass: **131 pytest** (121 inherited + 10 Stage 1 mean-head-plateau detector tests) + 11 PRE-D arch assertions
+- Remote is a NEW repo (`EridosAI/Weft-2`); the pre-existing `EridosAI/Weft` is an unrelated V-JEPA/PAM-Tiered project (no shared history) and was NOT used. The new repo's init commit (LICENSE + .gitignore) was merged in (`--allow-unrelated-histories`); LICENSE retained, .gitignore kept ours.
+
+**What did not happen, deliberately:**
+- No `V2_TRAINING_STEPS` lock written (still the invalidated 10000; never written because Stage 1 STOP fired at C4 D=128)
+- Stage 2 (sanity battery at lock) and Stages 3–10 of the recalibration cascade
+- Phase 1 main effects, Phase 2, cross-encoder generalisation — all out of v2 scope from the start
+
+**Closing document:** `WEFT_INNER_PAM_v2_CLOSING.md` (drafted in experiment chat; lands in the repo as a separate follow-up commit, not in this push batch).
+
+---
+
 ## RECALIBRATION STAGE 1 COMPLETE — **STOP fired** (C4 D=128); lock-value decision is experiment-chat work
 
 **Date:** 2026-05-26. **Stage 1 = multi-cell grokking detection** (recalibration instr §3). 7 cells × 3 predictor seeds = **21 grok-curve runs to 200k steps**, all `rc=0`. Ran ~12.1 h wall at 2× local on the RTX 4080 Super (23.9 h sequential-equivalent). Results: `results/recalibration/stage1/` (21 `grok_curve_{cell}_seed{N}.json`, 7 `_aggregate.json`, `lock_decision.json`). Code commit `02f9222`; results commit follows this HANDOFF edit.
